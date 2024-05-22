@@ -1,0 +1,7 @@
+**/.venv/
+*.pyc
+GFO_fireball_object_detection_training_set/
+yolov8_labels/
+yolov8_fireball_dataset/
+runs/
+**.pt

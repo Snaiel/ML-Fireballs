@@ -1,0 +1,9 @@
+path: yolov8_fireball_dataset
+train: images/train
+val: images/val
+test:  images/test
+
+names:
+  0: fireball
+
+# ch: 1
