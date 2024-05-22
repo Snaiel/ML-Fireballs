@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from skimage import io
 from pathlib import Path
-from dataset_utils.point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv, IMAGE_DIM
+from dataset.point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv, IMAGE_DIM
 
 fireball_title = "03_2016-07-28_043558_K_DSC_8287"
 
