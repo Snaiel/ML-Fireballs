@@ -6,8 +6,9 @@ NOTES: Fireballs are hard to notice. Too small.
 
 from pathlib import Path
 import shutil
-from dataset.point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv
+from dataset import IMAGE_DIM
 from dataset.prepare_dataset import prepare_dataset, gfo_jpegs, gfo_pickings, dataset_folder
+from dataset.point_pickings import PointPickings
 
 fireball_dataset = prepare_dataset()
 
@@ -21,7 +22,16 @@ for dataset, fireballs in fireball_dataset.items():
             Path(dataset_folder, "images", dataset, fireball_name + ".jpg")
         )
         
-        label = get_yolov8_label_from_point_pickings_csv(Path(gfo_pickings, fireball_name + ".csv"))
+        pp = PointPickings(Path(gfo_pickings, fireball_name + ".csv"))
+
+        norm_bb_centre_x = pp.bb_centre_x / IMAGE_DIM[0]
+        norm_bb_centre_y = pp.bb_centre_y / IMAGE_DIM[1]
+
+        norm_bb_width = pp.bounding_box_dim[0] / IMAGE_DIM[0]
+        norm_bb_height = pp.bounding_box_dim[1] / IMAGE_DIM[1]
+
+        label = [norm_bb_centre_x, norm_bb_centre_y, norm_bb_width, norm_bb_height]
+
         label.insert(0, 0)
 
         with open(Path(dataset_folder, "labels", dataset, fireball_name + ".txt"), 'x') as label_file:
