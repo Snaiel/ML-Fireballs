@@ -5,3 +5,4 @@ yolov8_labels/
 yolov8_fireball_dataset/
 runs/
 **.pt
+__pycache__/

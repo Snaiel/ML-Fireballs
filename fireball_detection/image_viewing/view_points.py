@@ -5,17 +5,20 @@ from pathlib import Path
 
 fireball_name = "005_2017-07-30_134712_E_DSC_0445"
 
-GFO_dataset_folder = "GFO_fireball_object_detection_training_set"
+file_path = Path(__file__)
+root_folder = file_path.parents[2]
+
+GFO_DATASET_FOLDER = Path(root_folder, "data", "GFO_fireball_object_detection_training_set")
 
 # Load the image using skimage
-image = io.imread(Path(GFO_dataset_folder, "jpegs", fireball_name + ".thumb.jpg"))
+image = io.imread(Path(GFO_DATASET_FOLDER, "jpegs", fireball_name + ".thumb.jpg"))
 
 # Plot the image using matplotlib
 plt.imshow(image)
 plt.axis('off')  # Hide axes for better image display
 
 # Read the CSV file using pandas
-data = pd.read_csv(Path(GFO_dataset_folder, "point_pickings_csvs", fireball_name + ".csv"))
+data = pd.read_csv(Path(GFO_DATASET_FOLDER, "point_pickings_csvs", fireball_name + ".csv"))
 
 # Assume the CSV has columns named 'x' and 'y'
 x_coords = data['x_image_thumb']

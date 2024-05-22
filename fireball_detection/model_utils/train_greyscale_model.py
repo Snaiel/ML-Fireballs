@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from skimage.color import rgb2gray
-from ultralytics import YOLO
 from ultralytics.models.yolo.detect.train import DetectionTrainer
 from ultralytics.models.yolo.detect.val import DetectionValidator
 

@@ -2,17 +2,17 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from skimage import io
 from pathlib import Path
-from point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv, IMAGE_DIM
+from dataset_utils.point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv, IMAGE_DIM
 
 fireball_title = "03_2016-07-28_043558_K_DSC_8287"
 
 file_path = Path(__file__)
-parent_folder = file_path.parents[0]
+root_folder = file_path.parents[2]
 
-GFO_DATASET_FOLDER = "GFO_fireball_object_detection_training_set"
+GFO_DATASET_FOLDER = Path(root_folder, "data", "GFO_fireball_object_detection_training_set")
 
-fireball_image_path = Path(parent_folder, GFO_DATASET_FOLDER, "jpegs", fireball_title + ".thumb.jpg")
-point_pickings_path = Path(parent_folder, GFO_DATASET_FOLDER, "point_pickings_csvs", fireball_title + ".csv")
+fireball_image_path = Path(GFO_DATASET_FOLDER, "jpegs", fireball_title + ".thumb.jpg")
+point_pickings_path = Path(GFO_DATASET_FOLDER, "point_pickings_csvs", fireball_title + ".csv")
 
 bounding_box = get_yolov8_label_from_point_pickings_csv(point_pickings_path)
 

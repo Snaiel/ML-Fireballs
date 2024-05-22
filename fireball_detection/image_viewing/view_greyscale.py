@@ -3,7 +3,7 @@ from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
 
 # Read the image using OpenCV
-image = cv2.imread('yolov8_fireball_dataset/images/test/03_2020-05-16_071327_K_DSC_6175.jpg')
+image = cv2.imread('yolov8_fireball_dataset/images/test/03_2016-10-09_072928_K_DSC_3282.jpg')
 
 # Convert the image to grayscale using scikit-image
 gray_image = rgb2gray(image)
