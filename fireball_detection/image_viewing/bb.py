@@ -1,44 +1,77 @@
 import matplotlib.pyplot as plt
+from dataset.fireball import Fireball
+from dataset.create.raw import RawFireball
+from dataset.create.tile_centred import TileCentredFireball
+from image_viewing import FIREBALL_FILENAME, FIREBALL_IMAGE_PATH
 from matplotlib.patches import Rectangle
 from skimage import io
-from pathlib import Path
-from dataset.point_pickings_to_bounding_boxes import get_yolov8_label_from_point_pickings_csv, IMAGE_DIM
+import argparse
+import numpy as np
 
-fireball_title = "03_2016-07-28_043558_K_DSC_8287"
 
-file_path = Path(__file__)
-root_folder = file_path.parents[2]
+def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
+    # Display the image using matplotlib
+    fig, ax = plt.subplots()
+    ax.imshow(image)
 
-GFO_DATASET_FOLDER = Path(root_folder, "data", "GFO_fireball_object_detection_training_set")
+    dim = image.shape
+    if not image_dimensions:
+        image_dimensions = (dim[1], dim[0], *dim[2:])
 
-fireball_image_path = Path(GFO_DATASET_FOLDER, "jpegs", fireball_title + ".thumb.jpg")
-point_pickings_path = Path(GFO_DATASET_FOLDER, "point_pickings_csvs", fireball_title + ".csv")
+    # Define the rectangle parameters: (x, y, width, height)
+    c_x, c_y, rect_width, rect_height = label
+    c_x *= image_dimensions[0]
+    c_y *= image_dimensions[1]
+    rect_width *= image_dimensions[0]
+    rect_height *= image_dimensions[1]
 
-bounding_box = get_yolov8_label_from_point_pickings_csv(point_pickings_path)
+    rect_x = c_x - rect_width / 2
+    rect_y = c_y - rect_height / 2
 
-# Load the image using skimage
-image = io.imread(fireball_image_path)
+    # Create a rectangle patch
+    rect = Rectangle((rect_x, rect_y), rect_width, rect_height,
+                    linewidth=2, edgecolor='r', facecolor='none')
 
-# Display the image using matplotlib
-fig, ax = plt.subplots()
-ax.imshow(image)
+    # Add the rectangle to the plot
+    ax.add_patch(rect)
 
-# Define the rectangle parameters: (x, y, width, height)
-c_x, c_y, rect_width, rect_height = bounding_box
-c_x *= IMAGE_DIM[0] 
-c_y *= IMAGE_DIM[1] 
-rect_width *= IMAGE_DIM[0] 
-rect_height *= IMAGE_DIM[1]
+    # Show the plot with the image and rectangle
+    plt.show()
 
-rect_x = c_x - rect_width / 2
-rect_y = c_y - rect_height / 2
 
-# Create a rectangle patch
-rect = Rectangle((rect_x, rect_y), rect_width, rect_height,
-                 linewidth=2, edgecolor='r', facecolor='none')
+def show_fireball_bb(fireball_type: Fireball) -> None:
+    fireball: Fireball = fireball_type(FIREBALL_FILENAME)
 
-# Add the rectangle to the plot
-ax.add_patch(rect)
+    label = fireball.label
+    print(f"Label info: {label}")
 
-# Show the plot with the image and rectangle
-plt.show()
+    # Load the image using skimage
+    image = fireball.image if fireball.stores_image else io.imread(FIREBALL_IMAGE_PATH)
+
+    plot_fireball_bb(image, label, fireball.image_dimensions)
+
+
+
+def main():
+    # Create argument parser
+    parser = argparse.ArgumentParser(description='View image and bounding box of fireball')
+
+    # Add positional arguments
+    parser.add_argument('fireball', type=str, help='Type of fireball dataset to view: raw, tile_centred')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    fireball_types = {
+        "raw": RawFireball,
+        "tile_centred": TileCentredFireball
+    }
+
+    if args.fireball not in fireball_types:
+        parser.error("No fireball type exists for: " + args.fireball)
+
+    show_fireball_bb(fireball_types[args.fireball])
+
+
+if __name__ == "__main__":
+    main()
