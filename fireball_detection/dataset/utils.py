@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from dataset import DATASET_FOLDER, DATA_YAML, GFO_JPEGS
 
 
-def prepare_dataset(dataset_size: int = 6555) -> dict:
+def prepare_dataset(dataset_size: int) -> dict:
     """
     returns a dictionary containing "train", "val", "test"
     lists of fireballs jpg filenames from the gfo folder.
@@ -51,6 +51,9 @@ def prepare_dataset(dataset_size: int = 6555) -> dict:
     train_fireballs, val_fireballs = train_test_split(temp_fireballs, train_size=0.8, random_state=RANDOM_SEED)
     # 64% train, 16% val, 20% test
 
+    print("Train Val Test")
+    print(len(train_fireballs), len(val_fireballs), len(test_fireballs))
+
     fireball_dataset = {
         "train": train_fireballs,
         "val": val_fireballs,
@@ -60,7 +63,7 @@ def prepare_dataset(dataset_size: int = 6555) -> dict:
     return fireball_dataset
 
 
-def create_dataset(fireball_type: Fireball, dataset_size: int = None):
+def create_dataset(fireball_type: Fireball, dataset_size: int = 6555):
     fireball_dataset = prepare_dataset(dataset_size)
     for dataset, fireballs in fireball_dataset.items():
         print(f"Creating {dataset} dataset...")
