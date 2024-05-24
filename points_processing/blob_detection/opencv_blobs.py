@@ -15,9 +15,13 @@
     - opencv-python
 
     Usage:
-    Run the script to perform blob detection on the predefined sample image and display the detected blobs.
+        Run the script to perform blob detection on the predefined sample image and display the detected blobs.
 
-    Ctrl-Z to exit.
+        Whilst in `points_processing/`, run:
+
+        python3 blob_detection/opencv_blobs.py
+
+        Ctrl-Z to exit.
 
     Note:
     OpenCV blob detection is unsophisticated and finnicky to set up.

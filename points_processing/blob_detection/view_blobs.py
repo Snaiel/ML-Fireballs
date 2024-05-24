@@ -18,7 +18,11 @@
     - scikit-learn (regression and RANSAC)
 
     Usage:
-    Run the script to perform blob detection and polynomial curve fitting on a predefined set of sample images and display the results.
+        Run the script to perform blob detection and polynomial curve fitting on a predefined set of sample images and display the results.
+
+        Whilst in `points_processing/`, run:
+
+        python3 blob_detection/view_blobs.py
 """
 
 

@@ -1,64 +1,87 @@
+"""
+    Crop fireball image using the corresponding thumbnail tile.
 
-import os, re
-from math import sqrt
+    Usage:
+        Import module and call load_cropped_image
+
+        Run as script to view cropped fireballs. While in `points_processing` folder, run:
+
+        python3 thumb_tile/crop_using_thumb_tile.py
+"""
+
+
+import os
+import re
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import skimage as ski
-from skimage.feature import blob_dog
 
-file_path = Path(__file__)
-dfn_highlights_folder = Path(file_path.parents[1], 'dfn_highlights')
 
-# Define regular expression pattern to capture thumb, numbers, and tile
-pattern = re.compile(r'^(.*?)\.thumb\.(\d+)\.(\d+)\.tile', re.IGNORECASE)
+# Matches: 025_2021-09-09_053629_E_DSC_0379.thumb.4800.1600.tile
+TILE_FILE_PATTERN = re.compile(r'^(.*?)\.thumb\.(\d+)\.(\d+)\.tile', re.IGNORECASE)
 
-for event_folder in os.listdir(dfn_highlights_folder):
-    print(event_folder)
 
-    for file in os.listdir(os.path.join(dfn_highlights_folder, event_folder)):
-        match = re.search(pattern, file)
+def load_cropped_image(event_folder_path: str, crop_size: int = 2500) -> np.ndarray | None:
+    """
+        Load and Crop Image from Event Folder
+
+        This function loads an image from a specified event folder, searches for the thumb tile,
+        and crops the image to a predefined square size around specified coordinates extracted from the file name.
+
+        Parameters:
+        - event_folder (str): The path to the event folder containing the image and tile files.
+        - crop_size (int): The length of a side of the square that will be cropped.
+
+        Returns:
+        - np.ndarray | None: The cropped image as a NumPy array if a matching file is found; otherwise, None.
+    """
+
+    match = None
+    for file in os.listdir(event_folder_path):
+        match = re.search(TILE_FILE_PATTERN, file)
         if match:
-            event_name = match.group(1)
-            x = match.group(2)
-            y = match.group(3)
-            print(event_name, x, y)
+            break
+    
+    if match is None:
+        return None
 
-            image = ski.io.imread(os.path.join(dfn_highlights_folder, event_folder, event_name + "-G.jpeg"))
+    event_name = match.group(1)
+    x = match.group(2)
+    y = match.group(3)
+    print(event_name, x, y)
 
-            crop_size = 2500  # Size of the square crop
+    image = ski.io.imread(Path(event_folder_path, event_name + "-G.jpeg"))
 
-            # Calculate the top-left corner coordinates for cropping
-            tl_x_coord = int(x) - crop_size // 2
-            tl_x_coord = tl_x_coord if tl_x_coord >= 0 else 1
-            tl_y_coord = int(y) - crop_size // 2
-            tl_y_coord = tl_y_coord if tl_y_coord >= 0 else 1
+    # Calculate the top-left corner coordinates for cropping
+    tl_x_coord = max (1, int(x) - crop_size // 2)
+    tl_y_coord = max(1, int(y) - crop_size // 2)
 
-            br_x_coord = tl_x_coord + crop_size
-            br_x_coord = br_x_coord if br_x_coord <= image.shape[1] else image.shape[1]
-            br_y_coord = tl_y_coord + crop_size
-            br_y_coord = br_y_coord if br_y_coord <= image.shape[0] else image.shape[0]
+    br_x_coord = min(tl_x_coord + crop_size, image.shape[1])
+    br_y_coord = min(tl_y_coord + crop_size, image.shape[0])
 
-            # Perform cropping
-            cropped_image = image[tl_y_coord:br_y_coord, tl_x_coord:br_x_coord]
+    # Perform cropping
+    cropped_image = image[tl_y_coord:br_y_coord, tl_x_coord:br_x_coord]
 
-            # Return (y-coord, x-coord, radius)
-            blobs_dog = blob_dog(cropped_image, max_sigma=20, threshold=.025)
-            # Compute radii in the 3rd column.
-            blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
+    return cropped_image
 
-            # Plot the original image with fitted curve
-            fig, ax = plt.subplots(figsize=(6, 6))
-            ax.set_title(event_folder)
-            ax.imshow(cropped_image, cmap='gray')
 
-            # Plot pink circles around inlier points
-            for blob in blobs_dog:
-                y, x, r = blob
-                c = plt.Circle((x, y), r, color='pink', linewidth=2, fill=False)
-                ax.add_patch(c)
+def main():
+    dfn_highlights_folder = Path(Path(__file__).parents[2], 'data', 'dfn_highlights')
+    for event_folder in os.listdir(dfn_highlights_folder):
+        cropped_image = load_cropped_image(Path(dfn_highlights_folder, event_folder))
 
-            # plt.title(event_folder)
-            plt.tight_layout()
-            plt.axis('off')
-            plt.show()
+        # Plot the original image with fitted curve
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.set_title(event_folder)
+        ax.imshow(cropped_image, cmap='gray')
+
+        # plt.title(event_folder)
+        plt.tight_layout()
+        plt.axis('off')
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()

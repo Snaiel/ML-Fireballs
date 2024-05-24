@@ -17,7 +17,11 @@
     - skimage (scikit-image)
 
     Usage:
-    Run the script directly to see the blob detection results on a predefined sample image.
+        Run the script directly to see the blob detection results on a predefined sample image.
+
+        Whilst in `points_processing/`, run:
+
+        python3 blob_detection/scikit_blobs.py
 """
 
 from math import sqrt

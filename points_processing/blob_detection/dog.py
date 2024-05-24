@@ -11,7 +11,11 @@
     - scikit-image
 
     Usage:
-    Run the script to perform blob detection on the predefined sample image and display the detected blobs.
+        Run the script to perform blob detection on the predefined sample image and display the detected blobs.
+
+        Whilst in `points_processing/`, run:
+
+        python3 blob_detection/dog.py
 """
 
 
