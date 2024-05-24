@@ -1,9 +1,34 @@
-import cv2
-import numpy as np
+"""
+    Blob Detection Script using OpenCV
+
+    This script performs blob detection on a grayscale image using OpenCV's SimpleBlobDetector. 
+    The script sets up the parameters for blob detection, detects blobs in the image, and visualizes the detected blobs.
+
+    The main functionalities of this script include:
+    - Loading a grayscale image from a specified file path.
+    - Configuring blob detection parameters such as threshold, area, color, convexity, inertia, and minimum distance between blobs.
+    - Initializing the blob detector based on the OpenCV version.
+    - Detecting blobs in the image.
+    - Drawing detected blobs on the image and displaying the result.
+
+    Dependencies:
+    - opencv-python
+
+    Usage:
+    Run the script to perform blob detection on the predefined sample image and display the detected blobs.
+
+    Ctrl-Z to exit.
+
+    Note:
+    OpenCV blob detection is unsophisticated and finnicky to set up.
+"""
+
 from pathlib import Path
 
-file_path = Path(__file__)
-image_path = Path(file_path.parents[1], 'fireball_images', 'cropped', '071_2021-12-14_032259_E_DSC_0611-G_cropped.jpeg')
+import cv2
+import numpy as np
+
+image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '071_2021-12-14_032259_E_DSC_0611-G_cropped.jpeg')
 
 im = cv2.imread(
     str(image_path),

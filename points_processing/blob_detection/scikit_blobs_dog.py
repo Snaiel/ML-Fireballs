@@ -1,13 +1,29 @@
-from math import sqrt
-import skimage as ski
-from skimage import data
-from skimage.feature import blob_dog
+"""
+    Blob Detection Script using Difference of Gaussian (DoG)
 
-import matplotlib.pyplot as plt
+    This script performs blob detection on a grayscale image using the Difference of Gaussian (DoG) method from the scikit-image library.
+    The script includes the following main functionalities:
+    - Loading a grayscale image from a specified file path.
+    - Detecting blobs in the image using the DoG method.
+    - Visualizing the detected blobs on the original image using matplotlib.
+
+    Dependencies:
+    - scikit-image
+
+    Usage:
+    Run the script to perform blob detection on the predefined sample image and display the detected blobs.
+"""
+
+
+from math import sqrt
 from pathlib import Path
 
-file_path = Path(__file__)
-image_path = Path(file_path.parents[1], 'fireball_images', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
+import matplotlib.pyplot as plt
+import skimage as ski
+from skimage.feature import blob_dog
+
+
+image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
 
 image = ski.io.imread(image_path)
 

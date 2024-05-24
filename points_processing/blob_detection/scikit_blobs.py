@@ -1,3 +1,25 @@
+"""
+    Blob Detection Script using Skimage
+
+    This script performs blob detection on images using three different methods:
+    1. Laplacian of Gaussian (LoG)
+    2. Difference of Gaussian (DoG)
+    3. Determinant of Hessian (DoH)
+
+    The script includes the following main functionalities:
+    - Detect blobs in an image provided as a numpy array.
+    - Load an image from a file path and detect blobs using the three methods.
+    - Display the detected blobs on the original image using matplotlib.
+
+    Dependencies:
+    - numpy
+    - matplotlib
+    - skimage (scikit-image)
+
+    Usage:
+    Run the script directly to see the blob detection results on a predefined sample image.
+"""
+
 from math import sqrt
 import skimage as ski
 from skimage.feature import blob_dog, blob_log, blob_doh
@@ -38,11 +60,9 @@ def doh_blob_detection_from_file(image_path: str) -> ndarray:
 def main():
     from pathlib import Path
 
-    file_path = Path(__file__)
-    image_path = Path(file_path.parents[1], 'fireball_images', 'cropped', '044_2021-10-28_064629_E_DSC_0731-G_cropped.jpeg')
+    image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '044_2021-10-28_064629_E_DSC_0731-G_cropped.jpeg')
 
     image = ski.io.imread(image_path)
-    print(type(image))
 
     blobs_log = log_blob_detection(image)
     blobs_dog = dog_blob_detection(image)

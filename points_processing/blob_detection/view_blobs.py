@@ -1,19 +1,43 @@
-from math import sqrt
+"""
+    Blob Detection and Polynomial Curve Fitting Script
+
+    This script performs blob detection on a set of grayscale images using the Difference of Gaussian (DoG) method from the scikit-image library.
+    It fits polynomial curves to the detected blobs using both standard linear regression and RANSAC (RANdom SAmple Consensus).
+    The results, including inliers and outliers detected by RANSAC, are visualized on the original images using matplotlib.
+
+    The script includes the following functionalities:
+    - Loading grayscale images from a specified directory.
+    - Rotating images to landscape orientation if necessary.
+    - Detecting blobs in the images using the DoG method.
+    - Fitting polynomial curves to the detected blobs using both standard linear regression and RANSAC.
+    - Visualizing the detected blobs and fitted curves on the original images.
+    - Using check buttons to toggle the visibility of various elements in the plot.
+
+    Dependencies:
+    - scikit-image (image processing)
+    - scikit-learn (regression and RANSAC)
+
+    Usage:
+    Run the script to perform blob detection and polynomial curve fitting on a predefined set of sample images and display the results.
+"""
+
+
 import os
+from math import sqrt
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
 from matplotlib.widgets import CheckButtons
 from skimage.feature import blob_dog
-from sklearn.linear_model import RANSACRegressor, LinearRegression
+from sklearn.linear_model import LinearRegression, RANSACRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from pathlib import Path
 
 
 def main():
-    file_path = Path(__file__)
-    cropped_images_folder = Path(file_path.parents[1], 'fireball_images', 'cropped')
+    cropped_images_folder = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped')
 
     for image_file in os.listdir(cropped_images_folder):
 
