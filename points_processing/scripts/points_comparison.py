@@ -1,14 +1,28 @@
+import os
 import time
-from math import sqrt
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import pandas as pd
-from fireball_point_picker import FireballPointPicker
+from pipelines.full_auto import retrieve_fireball
 from skimage import io, transform
 
-current_fireball = "071_CAO_RASC"
+## Retrieve necessary files
+fireball_name = "071_CAO_RASC"
 
+file_path = Path(__file__)
+dfn_highlights_folder = Path(file_path.parents[2], "data", "dfn_highlights")
+for folder in os.listdir(dfn_highlights_folder):
+    if folder == fireball_name:
+        for file in os.listdir(Path(dfn_highlights_folder, folder)):
+            if file.endswith("-G.jpeg"):
+                image_path = Path(dfn_highlights_folder, folder, file)
+            if file.endswith(".csv"):
+                csv_path = Path(dfn_highlights_folder, folder, file)
+
+
+## Fireball Cropping
 dfn_highlights_croppings = {
     "025_Elginfield": ((4900, 1150), (5600, 2800)),
     "044_Vermilion": ((1050, 3040), (2250, 3690)),
@@ -16,21 +30,18 @@ dfn_highlights_croppings = {
     "071_CAO_RASC": ((4950, 2220), (6300, 2430))
 }
 
-current_fireball_croppings = dfn_highlights_croppings[current_fireball]
-
-file_path = Path(__file__)
-image_path = Path(file_path.parents[1], 'dfn_highlights/071_CAO_RASC/071_2021-12-14_032259_E_DSC_0611-G.jpeg')
+current_fireball_croppings = dfn_highlights_croppings[fireball_name]
 
 image = io.imread(image_path)
 cropped_image = image[
     current_fireball_croppings[0][1]:current_fireball_croppings[1][1],
     current_fireball_croppings[0][0]:current_fireball_croppings[1][0]
 ]
-
-scale_factor = 4
-
 print(cropped_image.shape)
 
+
+## Upscaling image
+scale_factor = 4
 scaled_image = transform.resize(
     cropped_image,
     (cropped_image.shape[0] * scale_factor, cropped_image.shape[1] * scale_factor),
@@ -39,101 +50,100 @@ scaled_image = transform.resize(
 
 start_time = time.time()
 
-fireball_point_picker = FireballPointPicker(scaled_image)
+## Picking points
+fireball = retrieve_fireball(scaled_image, min_radius=12, threshold=4)
 
 end_time = time.time()
 execution_time = end_time - start_time
 print("Execution time:", execution_time)
 
 print("Result")
-points = fireball_point_picker.fireball_points
+points = fireball.fireball_points
+
+# Create dataframe from auto pickings
+auto_df = pd.DataFrame(columns=['auto_x', 'auto_y', 'de_bruijn_index', 'zero_or_one'])
+
 for point in points:
-    if fireball_point_picker.rotated:
-        point[0], point[1] = point[1], point[0]
-        point[0] = scaled_image.shape[1] - point[0]
-    point[0] = (point[0] / scale_factor) + current_fireball_croppings[0][0]
-    point[1] = (point[1] / scale_factor) + current_fireball_croppings[0][1]
-    print(point)
+    x = (point.x / scale_factor) + current_fireball_croppings[0][0]
+    y = (point.y / scale_factor) + current_fireball_croppings[0][1]
+    auto_df = pd.concat(
+        [auto_df, pd.DataFrame([[x, y, point.de_bruijn_pos, point.de_bruijn_val]],
+        columns=['auto_x', 'auto_y', 'de_bruijn_index', 'zero_or_one'])],
+        ignore_index=True
+    )
 
-fireball_point_picker.show_plot()
+print(auto_df.to_string(index=False))
 
+
+## Read manual pickings
 pd.set_option('display.max_columns', None)
+manual_df = pd.read_csv(csv_path)
+manual_df = manual_df.iloc[:, [0, 1, 4, 6]]
 
-
-df = pd.read_csv(Path(file_path.parents[1], "dfn_highlights/071_CAO_RASC/071_2021-12-14_032259_E_DSC_0611-G_DN211214_03_2024-02-20_114318_sophie_nocomment.csv"))
-df = df.iloc[:, [0, 1, 4, 6]]
-
-df = df.rename(columns={
+manual_df = manual_df.rename(columns={
     "x_image": "manual_x",
     "y_image": "manual_y",
     "de_bruijn_sequence_element_index": "de_bruijn_index"
 })
 
-df.insert(2, 'auto_x', None)
-df.insert(3, 'auto_y', None)
-df.insert(6, 'offset_x', None)
-df.insert(7, 'offset_y', None)
-df.insert(8, 'distance', None)
-
-print(df)
-
-offsets = []
-
-df_i = 0
+print(manual_df.to_string(index=False))
 
 
-for i, point in enumerate(points):
 
-    while df_i < len(df) - 1 and point[2] > df.iloc[df_i, 4]:
-        df_i += 1
-
-    if point[3] == '0':
-        df.iloc[df_i, 2] = point[0]
-        df.iloc[df_i, 3] = point[1]
-        df.iloc[df_i, 6] = point[0] - df.iloc[df_i, 0]
-        df.iloc[df_i, 7] = point[1] - df.iloc[df_i, 1]
-        df.iloc[df_i, 8] = sqrt((point[0] - df.iloc[df_i, 0])**2 + (point[1] - df.iloc[df_i, 1])**2)
-    else:
-        closest_i = 0
-        closest_d = 1000
-        f_df = df[df['de_bruijn_index'] == point[2]]
-        
-        for index, row in f_df.iterrows():
-            d = sqrt((point[0] - row[0])**2 + (point[1] - row[1])**2)
-            if d < closest_d:
-                closest_i = index
-                closest_d = d
-
-        df.iloc[closest_i, 2] = point[0]
-        df.iloc[closest_i, 3] = point[1]
-        df.iloc[closest_i, 6] = point[0] - df.iloc[closest_i, 0]
-        df.iloc[closest_i, 7] = point[1] - df.iloc[closest_i, 1]
-        df.iloc[closest_i, 8] = closest_d
+## Visualise Fireball
+# Create a figure and axis
+fig, ax = plt.subplots()
 
 
-print(df.to_string(index=False))
-print("Average Distance:", df['distance'].mean())
+# Plot the image
+ax.imshow(fireball.image, cmap='gray', aspect='equal')
 
 
-# Assuming df is your DataFrame
-plt.figure(figsize=(8, 6))
+# Plot Blobs
+for node in fireball.fireball_blobs:
+    x, y, r = node
+    # blob radius
+    outer_circle = patches.Circle((x, y), r, color='lime', linewidth=2, fill=False)
+    # Add the patches to the axis
+    ax.add_patch(outer_circle)
 
-# Plot the offset values
-plt.scatter(df['offset_x'], df['offset_y'], color='black', label='Offset')
 
-# Plot a red dot at the origin
-plt.scatter(0, 0, color='red', label='Origin')
+# Plot Auto Pickings
+for index, row in auto_df.iterrows():
+    x = row['auto_x']
+    y = row['auto_y']
 
-# Get the maximum absolute offset value
-max_offset = max(abs(df['offset_x'].max()), abs(df['offset_x'].min()), abs(df['offset_y'].max()), abs(df['offset_y'].min()))
+    x = (x - current_fireball_croppings[0][0]) * scale_factor
+    y = (y - current_fireball_croppings[0][1]) * scale_factor
 
-# Set the limits of the plot axes symmetrically around the origin
-plt.xlim(-max_offset, max_offset)
-plt.ylim(-max_offset, max_offset)
+    ax.add_patch(
+        patches.Circle((x, y), 0.5, color='lime', fill=True)
+    )
 
-plt.xlabel('Offset X')
-plt.ylabel('Offset Y')
-plt.title('Scatter Plot of Offset Values with Origin at Center: ' + current_fireball)
-plt.legend()
-plt.grid(True)
+    ax.text(x, y + 50, int(row['zero_or_one']), color="pink").set_clip_on(True)
+    ax.text(x, y + 100, int(row['de_bruijn_index']), color="pink").set_clip_on(True)
+
+
+# Plot Manual Pickings
+for index, row in manual_df.iterrows():
+    x = row['manual_x']
+    y = row['manual_y']
+
+    x = (x - current_fireball_croppings[0][0]) * scale_factor
+    y = (y - current_fireball_croppings[0][1]) * scale_factor
+
+    if fireball.rotated:
+        x, y = y, x
+        y = fireball.image.shape[0] - y
+
+    ax.add_patch(
+        patches.Circle((x, y), 0.5, color='red', fill=True)
+    )
+
+    ax.text(x, y - 30, int(row['zero_or_one']), color="white").set_clip_on(True)
+    ax.text(x, y - 80, int(row['de_bruijn_index']), color="white").set_clip_on(True)
+
+
+
+# Display the plot
 plt.show()

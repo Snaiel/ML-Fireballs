@@ -23,6 +23,7 @@ from scipy import signal
 @dataclass
 class FullAutoFireball:
     image: np.ndarray
+    rotated: bool
     fireball_blobs: FireballBlobs
     removed_unusually_small_blobs: FireballBlobs
     distances: np.ndarray[float]
@@ -33,7 +34,7 @@ class FullAutoFireball:
     fireball_points: list[FireballPoint]
 
 
-def retrieve_fireball(image: np.ndarray | PosixPath | str) -> FullAutoFireball:
+def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAutoFireball:
     """
         Retrieves fireball information from the given image. Processes the image to make
         it landscape orientation, detects fireball blobs, calculates distances between nodes,
@@ -61,12 +62,14 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str) -> FullAutoFireball:
         raise Exception("image must be file path or ndarray image")
     
     print("Making image landscape...")
-    image = make_image_landscape(image)
+    rotated_image = make_image_landscape(image)
+    rotated = rotated_image.shape != image.shape
+    image = rotated_image
 
     ## Blob Detection
     print("Retrieving nodes...")
     fireball_blobs: FireballBlobs
-    fireball_blobs = get_fireball_blobs(image)
+    fireball_blobs = get_fireball_blobs(image, **kwargs)
     fireball_blobs = sort_fireball_blobs(fireball_blobs)
 
     ## Remove Small Blobs
@@ -162,6 +165,7 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str) -> FullAutoFireball:
 
     fireball = FullAutoFireball(
         image,
+        rotated,
         fireball_blobs,
         removed_unusually_small_blobs,
         distances,
@@ -200,7 +204,9 @@ def visualise_fireball(fireball: FullAutoFireball):
     for node in fireball.fireball_blobs:
         x, y, r = node
         c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
+        d = plt.Circle((x, y), 0.5, color='lime', fill=True)
         axd['left'].add_patch(c)
+        axd['left'].add_patch(d)
 
     # Plot unusually small blobs
     for node in fireball.removed_unusually_small_blobs:

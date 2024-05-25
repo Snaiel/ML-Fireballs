@@ -10,7 +10,7 @@ from math import sqrt
 FireballBlobs = np.ndarray[tuple[float, float, float]]
 
 
-def get_fireball_blobs(image: np.ndarray, min_radius: float = 3, max_radius: float = 30, threshold: float = 0.025) -> FireballBlobs:
+def get_fireball_blobs(image: np.ndarray, min_radius: float = 3, max_radius: float = 30, threshold: float = 0.025, **kwargs) -> FireballBlobs:
     """
         Retrieves the fireball blobs in an image in the following steps:
 
@@ -31,6 +31,14 @@ def get_fireball_blobs(image: np.ndarray, min_radius: float = 3, max_radius: flo
         |----------------|--------------------------------------|
         | FireballBlobs  | List of fireball blobs (x, y, r)     |
     """
+    for key, value in kwargs.items():
+        if key == 'min_radius':
+            min_radius = value
+        elif key == 'max_radius':
+            max_radius = value
+        elif key == 'threshold':
+            threshold = value
+    
     blobs = blob_dog(
         image,
         min_sigma=min_radius // sqrt(2),
