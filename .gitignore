@@ -1,8 +1,15 @@
+# Virtual environment
 **/.venv/
+
+# Python bytecode
 *.pyc
+__pycache__/
+
+# Datasets and labels
 GFO_fireball_object_detection_training_set/
 yolov8_labels/
 yolov8_fireball_dataset/
+
+# Training runs and models
 runs/
 **.pt
-__pycache__/

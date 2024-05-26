@@ -29,7 +29,7 @@ def show_points(fireball_name: str) -> None:
 
 
 def main():
-    fireball_name = "029_2019-10-01_124829_E_DSC_0258"
+    fireball_name = "064_2023-10-24_110029_E_DSC_0101"
     show_points(fireball_name)
 
 
