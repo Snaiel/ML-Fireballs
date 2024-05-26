@@ -9,7 +9,7 @@ from dataset.fireball import Fireball
 from dataset.utils import create_dataset
 from skimage import io
 
-WINDOW_DIM = (1840, 1228)
+WINDOW_DIM = (1280, 1280)
 
 
 class TileCentredFireball(Fireball):
