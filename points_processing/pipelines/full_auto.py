@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
 from core.assign import FireballPoint, assign_labels_to_blobs
-from core.blobs import (FireballBlobs, get_fireball_blobs,
+from core.blobs import (FireballBlobs, get_blob_brightnesses,
+                        get_fireball_blobs,
                         get_indices_of_unusually_small_blobs,
                         sort_fireball_blobs)
 from core.distances import (get_distance_groups,
@@ -25,6 +26,7 @@ class FullAutoFireball:
     image: np.ndarray
     rotated: bool
     fireball_blobs: FireballBlobs
+    brightnesses: list[float]
     removed_unusually_small_blobs: FireballBlobs
     distances: np.ndarray[float]
     removed_blobs_unusually_small_distances: FireballBlobs
@@ -74,12 +76,20 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
 
     ## Remove Small Blobs
     unusually_small_blobs = get_indices_of_unusually_small_blobs(fireball_blobs[:, 2])
+    print("Indices of small blobs:", unusually_small_blobs, '\n\n')
     removed_unusually_small_blobs = fireball_blobs[unusually_small_blobs]
     fireball_blobs = np.delete(
         fireball_blobs,
         unusually_small_blobs,
         axis=0
     )
+
+    ## Brightnesses
+    brightnesses = get_blob_brightnesses(image, fireball_blobs)
+    print("Brightnesses:")
+    for brightness in brightnesses:
+        print(brightness)
+    print()
 
     ## Distances Between Nodes                       
     distances = get_distances_between_blobs(fireball_blobs[:, :2])
@@ -167,6 +177,7 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
         image,
         rotated,
         fireball_blobs,
+        brightnesses,
         removed_unusually_small_blobs,
         distances,
         removed_blobs_unusually_small_distances,
@@ -240,19 +251,11 @@ def visualise_fireball(fireball: FullAutoFireball):
     axd['upper right'].set_title("Distances Between Nodes")
 
 
-    ## Plot Noramlised Frequency Histogram
-    min_distance = min(fireball.distances)
-    max_distance = max(fireball.distances)
-
-    normalised = (fireball.distances[:] - min_distance) / (max_distance - min_distance)
-    rounded = np.round(normalised[:] * 20) / 20
-
-
     ## Plot the frequency graph
-    axd['lower right'].hist(rounded, bins=20, align='left', edgecolor='black', density=True)
+    axd['lower right'].hist(fireball.distances, bins=20, align='left', edgecolor='black', density=True)
     axd['lower right'].set_xlabel('Number')
     axd['lower right'].set_ylabel('Frequency')
-    axd['lower right'].set_title('Normalised Distances Between Nodes Frequency Histogram')
+    axd['lower right'].set_title('Distances Between Nodes Frequency Histogram')
     axd['lower right'].grid(True)
 
 

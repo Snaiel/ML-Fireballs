@@ -117,3 +117,33 @@ def get_indices_of_unusually_small_blobs(blobs_sizes: np.ndarray[float]) -> list
             indices_small_blobs.append(i)
     
     return indices_small_blobs
+
+
+def get_circle_brightness(image: np.ndarray, x: int, y: int, r: float):
+    """
+    Calculate the average brightness of a circle in a grayscale image.
+    
+    :param image: np.ndarray, 2D array representing the grayscale image.
+    :param x: int, x-coordinate of the circle's center.
+    :param y: int, y-coordinate of the circle's center.
+    :param r: int, radius of the circle.
+    :return: float, average brightness within the circle.
+    """
+    rows, cols = image.shape
+    Y, X = np.ogrid[:rows, :cols]
+    
+    # Create a boolean mask for the circle
+    dist_from_center = np.sqrt((X - x)**2 + (Y - y)**2)
+    
+    # Extract pixel values within the circle
+    circle_pixels = image[dist_from_center <= r]
+    
+    # Calculate and return the average brightness
+    return circle_pixels.mean()
+
+
+def get_blob_brightnesses(image: np.ndarray, blobs: FireballBlobs) -> list[float]:
+    brightnesses = []
+    for x, y, r in blobs:
+        brightnesses.append(get_circle_brightness(image, x, y, r))
+    return brightnesses
