@@ -1,10 +1,11 @@
 from ultralytics import YOLO
 
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8m.pt")
 results = model.train(
     data="yolov8_fireball_dataset/data.yaml",
     epochs=100,
-    imgsz=640,
-    pretrained=False,
-    save_period=20
+    imgsz=1280,
+    pretrained=True,
+    save_period=20,
+    batch=-1
 )

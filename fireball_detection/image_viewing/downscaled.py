@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from skimage import io, transform
 from pathlib import Path
 
-def downscale_image(image_path, max_dim=640):
+def downscale_image(image_path, max_dim=1280):
     # Load the image
     image = io.imread(image_path)
     
@@ -32,6 +32,6 @@ def display_image(image):
     plt.axis('off')  # Hide axis
     plt.show()
 
-image_path = Path("yolov8_fireball_dataset/images/train/03_2016-07-28_043558_K_DSC_8287.jpg")
+image_path = Path("../data/GFO_fireball_object_detection_training_set/jpegs/62_2016-05-12_180528_S_DSC_3102.thumb.jpg")
 downscaled_image = downscale_image(image_path)
 display_image(downscaled_image)
