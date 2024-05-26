@@ -7,14 +7,14 @@ NOTES: Fireballs are hard to notice. Too small.
 import shutil
 from pathlib import Path
 
-from dataset import IMAGE_DIM, GFO_JPEGS, DATASET_FOLDER
+from dataset import IMAGE_DIM, GFO_JPEGS, DATASET_FOLDER, GFO_THUMB_EXT
 from dataset.fireball import Fireball
 from dataset.utils import create_dataset
 
 
 class RawFireball(Fireball):
-    def __init__(self, fireball_filename: str) -> None:
-        super().__init__(fireball_filename)
+    def __init__(self, fireball_name: str) -> None:
+        super().__init__(fireball_name)
 
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]
         norm_bb_centre_y = self.pp.bb_centre_y / IMAGE_DIM[1]
@@ -29,7 +29,7 @@ class RawFireball(Fireball):
 
     def save_image(self, dataset: str) -> None:
         shutil.copy(
-            Path(GFO_JPEGS, self.fireball_filename),
+            Path(GFO_JPEGS, self.fireball_name + GFO_THUMB_EXT),
             Path(DATASET_FOLDER, "images", dataset, self.fireball_name + ".jpg")
         )
 

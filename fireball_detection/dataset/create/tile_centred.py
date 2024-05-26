@@ -4,7 +4,7 @@ Puts the point pickings in the centre of a 1840x1228 window.
 
 from pathlib import Path
 
-from dataset import IMAGE_DIM, GFO_JPEGS
+from dataset import IMAGE_DIM, GFO_JPEGS, GFO_THUMB_EXT
 from dataset.fireball import Fireball
 from dataset.utils import create_dataset
 from skimage import io
@@ -13,8 +13,8 @@ WINDOW_DIM = (1840, 1228)
 
 
 class TileCentredFireball(Fireball):
-    def __init__(self, fireball_filename: str) -> None:
-        super().__init__(fireball_filename)
+    def __init__(self, fireball_name: str) -> None:
+        super().__init__(fireball_name)
 
         # Calculate the x-coordinate of the left edge of the window
         window_x1 = self.pp.bb_centre_x - (WINDOW_DIM[0] / 2)
@@ -62,7 +62,7 @@ class TileCentredFireball(Fireball):
         window_y2 = int(window_y2)
 
 
-        fireball_image = io.imread(Path(GFO_JPEGS, fireball_filename))
+        fireball_image = io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
         cropped_image = fireball_image[window_y1:window_y2, window_x1:window_x2]
         
         self._image = cropped_image

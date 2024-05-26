@@ -2,30 +2,36 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from skimage import io
 from pathlib import Path
+from dataset import GFO_JPEGS, GFO_PICKINGS
 
-fireball_name = "005_2017-07-30_134712_E_DSC_0445"
 
-file_path = Path(__file__)
-root_folder = file_path.parents[2]
+def show_points(fireball_name: str) -> None:
+    # Load the image using skimage
+    image = io.imread(Path(GFO_JPEGS, fireball_name + ".thumb.jpg"))
 
-GFO_DATASET_FOLDER = Path(root_folder, "data", "GFO_fireball_object_detection_training_set")
+    # Plot the image using matplotlib
+    plt.imshow(image)
+    plt.axis('off')  # Hide axes for better image display
 
-# Load the image using skimage
-image = io.imread(Path(GFO_DATASET_FOLDER, "jpegs", fireball_name + ".thumb.jpg"))
+    # Read the CSV file using pandas
+    data = pd.read_csv(Path(GFO_PICKINGS, fireball_name + ".csv"))
 
-# Plot the image using matplotlib
-plt.imshow(image)
-plt.axis('off')  # Hide axes for better image display
+    # Assume the CSV has columns named 'x' and 'y'
+    x_coords = data['x_image_thumb']
+    y_coords = data['y_image_thumb']
 
-# Read the CSV file using pandas
-data = pd.read_csv(Path(GFO_DATASET_FOLDER, "point_pickings_csvs", fireball_name + ".csv"))
+    # Plot a dot on the image for every row in the data
+    plt.scatter(x_coords, y_coords, c='red', s=10)  # c for color, s for size of the dots
 
-# Assume the CSV has columns named 'x' and 'y'
-x_coords = data['x_image_thumb']
-y_coords = data['y_image_thumb']
+    # Show the final plot with the image and points
+    plt.title(fireball_name)
+    plt.show()
 
-# Plot a dot on the image for every row in the data
-plt.scatter(x_coords, y_coords, c='red', s=10)  # c for color, s for size of the dots
 
-# Show the final plot with the image and points
-plt.show()
+def main():
+    fireball_name = "029_2019-10-01_124829_E_DSC_0258"
+    show_points(fireball_name)
+
+
+if __name__ == "__main__":
+    main()

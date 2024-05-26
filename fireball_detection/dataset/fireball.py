@@ -8,19 +8,18 @@ from skimage import io
 class Fireball:
 
 
-    def __init__(self, fireball_filename: str) -> None:
-        self._image: np.ndarray
-        self._label: list
-        self._image_dimensions: tuple[int, int]
+    def __init__(self, fireball_name: str) -> None:
+        self._image: np.ndarray = None
+        self._label: list = None
+        self._image_dimensions: tuple[int, int] = None
 
-        self.fireball_filename = fireball_filename
-        self.fireball_name = fireball_filename.split(".")[0]
+        self.fireball_name = fireball_name
         self.pp = PointPickings(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
 
 
     @property
     def stores_image(self) -> bool:
-        return self.image.any()
+        return self.image is not None
 
 
     @property

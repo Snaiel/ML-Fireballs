@@ -1,12 +1,14 @@
+import argparse
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-from dataset.fireball import Fireball
+import numpy as np
+from dataset import GFO_JPEGS
 from dataset.create.raw import RawFireball
 from dataset.create.tile_centred import TileCentredFireball
-from image_viewing import FIREBALL_FILENAME, FIREBALL_IMAGE_PATH
+from dataset.fireball import Fireball
 from matplotlib.patches import Rectangle
 from skimage import io
-import argparse
-import numpy as np
 
 
 def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
@@ -40,6 +42,9 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
 
 
 def show_fireball_bb(fireball_type: Fireball) -> None:
+    FIREBALL_FILENAME = "10_2018-09-10_203029_S_DSC_0312.thumb.jpg"
+    FIREBALL_IMAGE_PATH = Path(GFO_JPEGS, FIREBALL_FILENAME)
+    
     fireball: Fireball = fireball_type(FIREBALL_FILENAME)
 
     label = fireball.label

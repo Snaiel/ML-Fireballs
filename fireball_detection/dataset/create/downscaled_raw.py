@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import skimage
-from dataset import GFO_JPEGS, IMAGE_DIM
+from dataset import GFO_JPEGS, IMAGE_DIM, GFO_THUMB_EXT
 from dataset.fireball import Fireball
 from dataset.utils import create_dataset
 
@@ -17,8 +17,8 @@ from dataset.utils import create_dataset
 class DownscaledRawFireball(Fireball):
     max_dim: int = 1280
 
-    def __init__(self, fireball_filename: str) -> None:
-        super().__init__(fireball_filename)
+    def __init__(self, fireball_name: str) -> None:
+        super().__init__(fireball_name)
 
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]
         norm_bb_centre_y = self.pp.bb_centre_y / IMAGE_DIM[1]
@@ -26,7 +26,7 @@ class DownscaledRawFireball(Fireball):
         norm_bb_width = self.pp.bounding_box_dim[0] / IMAGE_DIM[0]
         norm_bb_height = self.pp.bounding_box_dim[1] / IMAGE_DIM[1]
 
-        image = skimage.io.imread(Path(GFO_JPEGS, fireball_filename))
+        image = skimage.io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
 
         # make landscape
         height, width = image.shape[:2]

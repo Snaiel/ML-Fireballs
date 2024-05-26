@@ -10,6 +10,8 @@ GFO_DATASET_FOLDER = Path(Path(__file__).parents[2], "data", "GFO_fireball_objec
 GFO_JPEGS = Path(GFO_DATASET_FOLDER, "jpegs")
 GFO_PICKINGS = Path(GFO_DATASET_FOLDER, "point_pickings_csvs")
 
+GFO_THUMB_EXT = ".thumb.jpg"
+
 # output folder
 DATASET_FOLDER = Path("yolov8_fireball_dataset")
 # YOLOv8 data config file

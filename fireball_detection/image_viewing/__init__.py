@@ -1,5 +1,0 @@
-from pathlib import Path
-from dataset import GFO_JPEGS
-
-FIREBALL_FILENAME = "03_2020-08-20_070659_K_DSC_6995.thumb.jpg"
-FIREBALL_IMAGE_PATH = Path(GFO_JPEGS, FIREBALL_FILENAME)
