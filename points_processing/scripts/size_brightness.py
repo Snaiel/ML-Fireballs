@@ -5,7 +5,7 @@ from scripts.points_comparison import (FireballPickingsComparison,
 
 
 def main():
-    comparison: FireballPickingsComparison = retrieve_comparison("044_Vermilion")
+    comparison: FireballPickingsComparison = retrieve_comparison("071_CAO_RASC")
     visual_comparison(comparison, False)
 
     ## Visualise Brightnesses
@@ -40,8 +40,8 @@ def main():
 
     ## Visualise Blob sizes
     size_series = pd.Series(comparison.fireball.fireball_blobs[:, 2])
-    size_smoving_avg = size_series.rolling(window=5, center=True).mean()
-    size_spercent_difference = ((size_series - size_smoving_avg) / size_smoving_avg) * 100
+    size_moving_avg = size_series.rolling(window=5, center=True).mean()
+    size_percent_difference = ((size_series - size_moving_avg) / size_moving_avg) * 100
 
     # Create figure and axes
     fig3, ax3 = plt.subplots()
@@ -50,8 +50,8 @@ def main():
     ax3.plot(blobs_x_values, comparison.fireball.fireball_blobs[:, 2], marker='o', label="Blob Size")
 
     # Plot the moving average
-    ax3.plot(blobs_x_values, size_smoving_avg, color='red', linestyle='--', label="Moving Average")
-    ax3.plot(blobs_x_values, size_spercent_difference, color='orange', linestyle='--', label="% Difference from Moving Average")
+    ax3.plot(blobs_x_values, size_moving_avg, color='red', linestyle='--', label="Moving Average")
+    ax3.plot(blobs_x_values, size_percent_difference, color='orange', linestyle='--', label="% Difference from Moving Average")
 
     handles, labels = ax3.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
@@ -67,7 +67,7 @@ def main():
     ## Visualise mean blob size and brightness moving averages
     fig4, ax4 = plt.subplots()
 
-    ax4.plot(blobs_x_values, (brightness_percent_difference + size_spercent_difference) / 2, color='lime', linestyle='--', label="Combined % Difference")
+    ax4.plot(blobs_x_values, (brightness_percent_difference + size_percent_difference) / 2, color='lime', linestyle='--', label="Combined % Difference")
     ax4.axhline(y=-20, color='red', linestyle='-', label="Threshold")
 
     handles, labels = ax4.get_legend_handles_labels()

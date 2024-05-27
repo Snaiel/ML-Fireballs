@@ -134,6 +134,21 @@ def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = 
         # Add the patches to the axis
         ax.add_patch(outer_circle)
 
+    # Plot removed blobs based on size and brightness
+    for node in comparison.fireball.removed_blobs_size_brightness:
+        x, y, r = node
+        c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
+        ax.add_patch(c)
+
+    ## Distance Groups
+    cumulative_node_count = 0
+    for i in range(len(comparison.fireball.distance_groups)):
+        node = comparison.fireball.fireball_blobs[cumulative_node_count]
+        x, y, r = node
+        c = plt.Circle((x, y), r, color='pink', linewidth=2, fill=False)
+        ax.add_patch(c)
+
+        cumulative_node_count += len(comparison.fireball.distance_groups[i])
 
     # Plot Auto Pickings
     for index, row in comparison.auto_df.iterrows():

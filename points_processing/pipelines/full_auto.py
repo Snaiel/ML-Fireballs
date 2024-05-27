@@ -6,8 +6,7 @@ import numpy as np
 import skimage as ski
 from core.assign import FireballPoint, assign_labels_to_blobs
 from core.blobs import (FireballBlobs, get_blob_brightnesses,
-                        get_fireball_blobs,
-                        get_indices_of_unusually_small_blobs,
+                        get_false_positives_based_on_blobs, get_fireball_blobs,
                         sort_fireball_blobs)
 from core.distances import (get_distance_groups,
                             get_distance_labels_using_k_means,
@@ -27,7 +26,7 @@ class FullAutoFireball:
     rotated: bool
     fireball_blobs: FireballBlobs
     brightnesses: list[float]
-    removed_unusually_small_blobs: FireballBlobs
+    removed_blobs_size_brightness: FireballBlobs
     distances: np.ndarray[float]
     removed_blobs_unusually_small_distances: FireballBlobs
     distance_groups: list[np.ndarray[float]]
@@ -74,22 +73,25 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
     fireball_blobs = get_fireball_blobs(image, **kwargs)
     fireball_blobs = sort_fireball_blobs(fireball_blobs)
 
-    ## Remove Small Blobs
-    unusually_small_blobs = get_indices_of_unusually_small_blobs(fireball_blobs[:, 2])
-    print("Indices of small blobs:", unusually_small_blobs, '\n\n')
-    removed_unusually_small_blobs = fireball_blobs[unusually_small_blobs]
-    fireball_blobs = np.delete(
-        fireball_blobs,
-        unusually_small_blobs,
-        axis=0
-    )
-
     ## Brightnesses
     brightnesses = get_blob_brightnesses(image, fireball_blobs)
     print("Brightnesses:")
     for brightness in brightnesses:
         print(brightness)
     print()
+
+    ## Remove false positives based on blob size and brightness
+    mean_percent_difference, false_positive_indices_size_brightess = get_false_positives_based_on_blobs(image, fireball_blobs)
+    removed_blobs_size_brightness = fireball_blobs[false_positive_indices_size_brightess]
+    fireball_blobs = np.delete(
+        fireball_blobs,
+        false_positive_indices_size_brightess,
+        axis=0
+    )
+    print("Size and brightness mean percent difference from respective moving averages:")
+    print(mean_percent_difference)
+    print("Fireball blob indices to remove based on size and brightness:")
+    print(false_positive_indices_size_brightess)
 
     ## Distances Between Nodes                       
     distances = get_distances_between_blobs(fireball_blobs[:, :2])
@@ -173,12 +175,14 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
         alignment
     )
 
+    original_blobs = sort_fireball_blobs(np.concatenate((fireball_blobs, removed_blobs_size_brightness, removed_blobs_unusually_small_distances)))
+
     fireball = FullAutoFireball(
         image,
         rotated,
-        fireball_blobs,
+        original_blobs,
         brightnesses,
-        removed_unusually_small_blobs,
+        removed_blobs_size_brightness,
         distances,
         removed_blobs_unusually_small_distances,
         distance_groups,
@@ -219,8 +223,8 @@ def visualise_fireball(fireball: FullAutoFireball):
         axd['left'].add_patch(c)
         axd['left'].add_patch(d)
 
-    # Plot unusually small blobs
-    for node in fireball.removed_unusually_small_blobs:
+    # Plot removed blobs based on size and brightness
+    for node in fireball.removed_blobs_size_brightness:
         x, y, r = node
         c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
         axd['left'].add_patch(c)

@@ -1,10 +1,12 @@
+from math import sqrt
+
 import numpy as np
+import pandas as pd
 from core import RANDOM_STATE
 from skimage.feature import blob_dog
 from sklearn.linear_model import RANSACRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from math import sqrt
 
 
 FireballBlobs = np.ndarray[tuple[float, float, float]]
@@ -119,16 +121,24 @@ def get_indices_of_unusually_small_blobs(blobs_sizes: np.ndarray[float]) -> list
     return indices_small_blobs
 
 
-def get_circle_brightness(image: np.ndarray, x: int, y: int, r: float):
+def get_circle_brightness(image: np.ndarray, x: int, y: int, r: float) -> float:
     """
-    Calculate the average brightness of a circle in a grayscale image.
-    
-    :param image: np.ndarray, 2D array representing the grayscale image.
-    :param x: int, x-coordinate of the circle's center.
-    :param y: int, y-coordinate of the circle's center.
-    :param r: int, radius of the circle.
-    :return: float, average brightness within the circle.
+        Calculates the average brightness of a circle in a grayscale image.
+        
+        ### Parameters
+        | Name  | Type         | Description                                |
+        |-------|--------------|--------------------------------------------|
+        | image | np.ndarray   | 2D array representing the grayscale image. |
+        | x     | int          | x-coordinate of the circle's center.       |
+        | y     | int          | y-coordinate of the circle's center.       |
+        | r     | float        | radius of the circle.                      |
+
+        ### Returns
+        | Type   | Description                           |
+        |--------|---------------------------------------|
+        | float  | average brightness within the circle. |
     """
+
     rows, cols = image.shape
     Y, X = np.ogrid[:rows, :cols]
     
@@ -143,7 +153,59 @@ def get_circle_brightness(image: np.ndarray, x: int, y: int, r: float):
 
 
 def get_blob_brightnesses(image: np.ndarray, blobs: FireballBlobs) -> list[float]:
+    """
+        Calculates the average brightness within each blob in a grayscale image.
+
+        ### Parameters
+        | Name   | Type            | Description                                          |
+        |--------|-----------------|------------------------------------------------------|
+        | image  | np.ndarray      | 2D array representing the grayscale image.           |
+        | blobs  | FireballBlobs   | list of blobs (x, y, r).                             |
+
+        ### Returns
+        | Type        | Description                                  |
+        |-------------|----------------------------------------------|
+        | list[float] | List of average brightness of each blob.     |
+    """
+
     brightnesses = []
     for x, y, r in blobs:
         brightnesses.append(get_circle_brightness(image, x, y, r))
     return brightnesses
+
+
+def get_false_positives_based_on_blobs(image: np.ndarray, blobs: FireballBlobs, threshold: float = -20) -> tuple[pd.Series, list[int]]:
+    """
+        Identifies false positives based on the characteristics of detected blobs in a grayscale image.
+
+        It computes the size and brightness of each blob. It also computes the moving average of the
+        size and brightness. It then takes the percentage difference of each value with its corresponding
+        moving average. Being a certain percent difference below the threshold constitutes being a false positive.
+
+        ### Parameters
+        | Name       | Type                 | Description                                                |
+        |------------|----------------------|------------------------------------------------------------|
+        | image      | np.ndarray           | 2D array representing the grayscale image.                 |
+        | blobs      | FireballBlobs        | Object containing information about detected blobs.        |
+        | threshold  | float (default: -20) | Threshold value for determining false positives.           |
+
+        ### Returns
+        | Type            | Description                                                       |
+        |-----------------|-------------------------------------------------------------------|
+        | pd.Series       | Series containing the mean percent difference for each blob.      |
+        | list[int]       | List of indices corresponding to blobs identified as false positives. |
+    """
+    brightnesses = get_blob_brightnesses(image, blobs)
+
+    brightness_series = pd.Series(brightnesses)
+    brightness_moving_avg = brightness_series.rolling(window=5, center=True).mean()
+    brightness_percent_difference = ((brightness_series - brightness_moving_avg) / brightness_moving_avg) * 100
+
+    size_series = pd.Series(blobs[:, 2])
+    size_moving_avg = size_series.rolling(window=5, center=True).mean()
+    size_percent_difference = ((size_series - size_moving_avg) / size_moving_avg) * 100
+
+    mean_percent_difference = (brightness_percent_difference + size_percent_difference) / 2
+    indices = mean_percent_difference.index[mean_percent_difference < threshold].to_list()
+
+    return mean_percent_difference, indices
