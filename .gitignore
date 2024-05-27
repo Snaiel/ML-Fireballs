@@ -9,6 +9,7 @@ __pycache__/
 GFO_fireball_object_detection_training_set/
 yolov8_labels/
 yolov8_fireball_dataset/
+multi_tiered_test_data/
 
 # Training runs and models
 runs/

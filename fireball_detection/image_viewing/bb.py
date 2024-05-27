@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from dataset import GFO_JPEGS
+from dataset import GFO_JPEGS, GFO_THUMB_EXT
 from dataset.create.raw import RawFireball
 from dataset.create.tile_centred import TileCentredFireball
 from dataset.fireball import Fireball
@@ -42,16 +42,16 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
 
 
 def show_fireball_bb(fireball_type: Fireball) -> None:
-    FIREBALL_FILENAME = "10_2018-09-10_203029_S_DSC_0312.thumb.jpg"
-    FIREBALL_IMAGE_PATH = Path(GFO_JPEGS, FIREBALL_FILENAME)
-    
-    fireball: Fireball = fireball_type(FIREBALL_FILENAME)
+    fireball_name = "008_2021-02-27_030659_E_DSC_0402"
+    fireball_image_path = Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT)
+
+    fireball: Fireball = fireball_type(fireball_name)
 
     label = fireball.label
     print(f"Label info: {label}")
 
     # Load the image using skimage
-    image = fireball.image if fireball.stores_image else io.imread(FIREBALL_IMAGE_PATH)
+    image = fireball.image if fireball.stores_image else io.imread(fireball_image_path)
 
     plot_fireball_bb(image, label, fireball.image_dimensions)
 

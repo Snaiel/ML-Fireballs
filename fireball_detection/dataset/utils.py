@@ -70,5 +70,5 @@ def create_dataset(fireball_type: Fireball, dataset_size: int = 6555):
         for fireball_filename in fireballs:
             fireball_name = fireball_filename.split(".")[0]
             fireball: Fireball = fireball_type(fireball_name)
-            fireball.save_image(dataset)
-            fireball.save_label(dataset)
+            fireball.save_image(Path(DATASET_FOLDER, "images", dataset))
+            fireball.save_label(Path(DATASET_FOLDER, "labels", dataset))

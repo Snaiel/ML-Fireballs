@@ -8,25 +8,23 @@ from dataset import IMAGE_DIM, GFO_JPEGS, GFO_THUMB_EXT
 from dataset.fireball import Fireball
 from dataset.utils import create_dataset
 from skimage import io
-
-WINDOW_DIM = (1280, 1280)
-
+from dataset.point_pickings import PointPickings
 
 class TileCentredFireball(Fireball):
-    def __init__(self, fireball_name: str) -> None:
-        super().__init__(fireball_name)
+    def __init__(self, fireball_name: str, point_pickings: PointPickings = None, window_dim: tuple[int, int] = (1280, 1280)) -> None:
+        super().__init__(fireball_name, point_pickings)
 
         # Calculate the x-coordinate of the left edge of the window
-        window_x1 = self.pp.bb_centre_x - (WINDOW_DIM[0] / 2)
+        window_x1 = self.pp.bb_centre_x - (window_dim[0] / 2)
 
         # Calculate the x-coordinate of the right edge of the window
-        window_x2 = self.pp.bb_centre_x + (WINDOW_DIM[0] / 2)
+        window_x2 = self.pp.bb_centre_x + (window_dim[0] / 2)
 
         # Calculate the distance between the left edge of the window and the left image boundary
-        left_off_bounds = (WINDOW_DIM[0] / 2) - self.pp.bb_centre_x
+        left_off_bounds = (window_dim[0] / 2) - self.pp.bb_centre_x
 
         # Calculate the distance between the right edge of the window and the right image boundary
-        right_off_bounds = (WINDOW_DIM[0] / 2) - (IMAGE_DIM[0] - self.pp.bb_centre_x)
+        right_off_bounds = (window_dim[0] / 2) - (IMAGE_DIM[0] - self.pp.bb_centre_x)
 
         # Adjust window coordinates if it goes off the left or right bounds of the image
         if left_off_bounds > 0:
@@ -37,16 +35,16 @@ class TileCentredFireball(Fireball):
             window_x2 = IMAGE_DIM[0]
 
         # Calculate the y-coordinate of the top edge of the window
-        window_y1 = self.pp.bb_centre_y - (WINDOW_DIM[1] / 2)
+        window_y1 = self.pp.bb_centre_y - (window_dim[1] / 2)
 
         # Calculate the y-coordinate of the bottom edge of the window
-        window_y2 = self.pp.bb_centre_y + (WINDOW_DIM[1] / 2)
+        window_y2 = self.pp.bb_centre_y + (window_dim[1] / 2)
 
         # Calculate the distance between the top edge of the window and the top image boundary
-        top_off_bounds = (WINDOW_DIM[1] / 2) - self.pp.bb_centre_y
+        top_off_bounds = (window_dim[1] / 2) - self.pp.bb_centre_y
 
         # Calculate the distance between the bottom edge of the window and the bottom image boundary
-        bottom_off_bounds = (WINDOW_DIM[1] / 2) - (IMAGE_DIM[1] - self.pp.bb_centre_y)
+        bottom_off_bounds = (window_dim[1] / 2) - (IMAGE_DIM[1] - self.pp.bb_centre_y)
 
         # Adjust window coordinates if it goes off the top or bottom bounds of the image
         if top_off_bounds > 0:
@@ -82,17 +80,17 @@ class TileCentredFireball(Fireball):
         new_bb_centre_y = (new_bb_min_y + new_bb_max_y) / 2
 
         # These new normalised values are now relative to the window
-        norm_bb_centre_x = (new_bb_centre_x - window_x1) / WINDOW_DIM[0]
-        norm_bb_centre_y = (new_bb_centre_y - window_y1) / WINDOW_DIM[1]
+        norm_bb_centre_x = (new_bb_centre_x - window_x1) / window_dim[0]
+        norm_bb_centre_y = (new_bb_centre_y - window_y1) / window_dim[1]
 
-        norm_bb_width = new_bb_width / WINDOW_DIM[0]
-        norm_bb_height = new_bb_height / WINDOW_DIM[1]
+        norm_bb_width = new_bb_width / window_dim[0]
+        norm_bb_height = new_bb_height / window_dim[1]
 
 
         # final label
         self._label = [norm_bb_centre_x, norm_bb_centre_y, norm_bb_width, norm_bb_height]
 
-        self._image_dimensions = WINDOW_DIM
+        self._image_dimensions = window_dim
 
 
 if __name__ == "__main__":

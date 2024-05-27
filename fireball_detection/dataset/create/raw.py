@@ -7,14 +7,16 @@ NOTES: Fireballs are hard to notice. Too small.
 import shutil
 from pathlib import Path
 
-from dataset import IMAGE_DIM, GFO_JPEGS, DATASET_FOLDER, GFO_THUMB_EXT
+from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
 from dataset.fireball import Fireball
+from dataset.point_pickings import PointPickings
 from dataset.utils import create_dataset
+from PIL import ExifTags, Image
 
 
 class RawFireball(Fireball):
-    def __init__(self, fireball_name: str) -> None:
-        super().__init__(fireball_name)
+    def __init__(self, fireball_name: str, point_pickings: PointPickings) -> None:
+        super().__init__(fireball_name, point_pickings)
 
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]
         norm_bb_centre_y = self.pp.bb_centre_y / IMAGE_DIM[1]
@@ -27,11 +29,30 @@ class RawFireball(Fireball):
         self._image_dimensions = IMAGE_DIM
     
 
-    def save_image(self, dataset: str) -> None:
-        shutil.copy(
-            Path(GFO_JPEGS, self.fireball_name + GFO_THUMB_EXT),
-            Path(DATASET_FOLDER, "images", dataset, self.fireball_name + ".jpg")
-        )
+    def save_image(self, folder: str) -> None:
+        image_path = Path(GFO_JPEGS, self.fireball_name + GFO_THUMB_EXT)
+        dest_path = Path(folder, self.fireball_name + ".jpg")
+
+
+        image = Image.open(image_path)
+        exif = image.getexif()
+        for tag_id, value in exif.items():
+            # Get the tag name from TAGS dictionary
+            tag_name = ExifTags.TAGS.get(tag_id, tag_id)
+            
+            # Check if this is the Orientation tag
+            if tag_name == 'Orientation':
+                orientation_value = value
+        
+        
+        if orientation_value == 1:
+            shutil.copy(
+                image_path,
+                dest_path
+            )
+        else:
+            image.save(dest_path)
+
 
 
 if __name__ == "__main__":

@@ -4,17 +4,18 @@ RANDOM_SEED = 2024
 IMAGE_DIM = (7360, 4912)
 BB_PADDING = 0.05
 
-# gfo dataset folder containing jpegs and point picking csvs
-GFO_DATASET_FOLDER = Path(Path(__file__).parents[2], "data", "GFO_fireball_object_detection_training_set")
 
+DATA_FOLDER = Path(Path(__file__).parents[2], "data")
+
+# gfo dataset folder containing jpegs and point picking csvs
+GFO_DATASET_FOLDER = Path(DATA_FOLDER, "GFO_fireball_object_detection_training_set")
 GFO_JPEGS = Path(GFO_DATASET_FOLDER, "jpegs")
 GFO_PICKINGS = Path(GFO_DATASET_FOLDER, "point_pickings_csvs")
 
+GFO_FIXES_FOLDER = Path(DATA_FOLDER, "gfo_fixes")
+
 GFO_THUMB_EXT = ".thumb.jpg"
 
-GFO_FIXES_FOLDER = Path(Path(__file__).parents[2], "data", "gfo_fixes")
 
-# output folder
-DATASET_FOLDER = Path("yolov8_fireball_dataset")
-# YOLOv8 data config file
-DATA_YAML = Path("data.yaml")
+DATASET_FOLDER = Path(DATA_FOLDER, "fireball_object_detection")
+DATA_ = Path(Path(__file__).parents[1], "cfg", "data.yaml")
