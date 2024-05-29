@@ -18,4 +18,4 @@ GFO_THUMB_EXT = ".thumb.jpg"
 
 
 DATASET_FOLDER = Path(DATA_FOLDER, "fireball_object_detection")
-DATA_ = Path(Path(__file__).parents[1], "cfg", "data.yaml")
+DATA_YAML = Path(Path(__file__).parents[1], "cfg", "data.yaml")
