@@ -8,17 +8,19 @@ from pathlib import Path
 
 import numpy as np
 import skimage
-from dataset import GFO_JPEGS, IMAGE_DIM, GFO_THUMB_EXT
+from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
 from dataset.fireball import Fireball
+from dataset.point_pickings import PointPickings
 from dataset.utils import create_dataset
 
 ## NOTE: THIS TAKES FOREVER. CHANGE IT TO USE GPU NEXT TIME.
 
+
 class DownscaledRawFireball(Fireball):
     max_dim: int = 1280
 
-    def __init__(self, fireball_name: str) -> None:
-        super().__init__(fireball_name)
+    def __init__(self, fireball_name: str, point_pickings: PointPickings = None) -> None:
+        super().__init__(fireball_name, point_pickings)
 
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]
         norm_bb_centre_y = self.pp.bb_centre_y / IMAGE_DIM[1]

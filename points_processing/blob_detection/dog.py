@@ -25,27 +25,39 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import skimage as ski
 from skimage.feature import blob_dog
+import os
 
 
-image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
+def show_dog(image_path: str) -> None:
+    image = ski.io.imread(image_path, True)
 
-image = ski.io.imread(image_path)
+    blobs_dog = blob_dog(image, max_sigma=20, threshold=.1)
+    blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
 
-image_gray = image
+    fig, ax = plt.subplots(figsize=(6, 6))
 
-blobs_dog = blob_dog(image_gray, max_sigma=20, threshold=.025)
-blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
+    ax.set_title('Difference of Gaussian')
+    ax.imshow(image, cmap='gray')
 
-fig, ax = plt.subplots(figsize=(6, 6))
+    for blob in blobs_dog:
+        y, x, r = blob
+        c = plt.Circle((x, y), r, color='lime', linewidth=1, fill=False)
+        ax.add_patch(c)
 
-ax.set_title('Difference of Gaussian')
-ax.imshow(image, cmap='gray')
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
 
-for blob in blobs_dog:
-    y, x, r = blob
-    c = plt.Circle((x, y), r, color='lime', linewidth=1, fill=False)
-    ax.add_patch(c)
 
-plt.axis('off')
-plt.tight_layout()
-plt.show()
+def main():
+    # image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
+    # image_path = "../data/multi_tiered/lengths_test_set/500to1000at1280/images/test/04_2021-07-31_051929_K_DSC_1221.jpg"
+
+    folder_path = Path("../data/multi_tiered/lengths_test_set/500to1000at1280/images/test")
+
+    for i, image_path in enumerate(os.listdir(folder_path)):
+        print(i, image_path)
+        show_dog(Path(folder_path, image_path))
+
+if __name__ == "__main__":
+    main()

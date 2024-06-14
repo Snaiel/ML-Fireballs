@@ -15,7 +15,7 @@ from PIL import ExifTags, Image
 
 
 class RawFireball(Fireball):
-    def __init__(self, fireball_name: str, point_pickings: PointPickings) -> None:
+    def __init__(self, fireball_name: str, point_pickings: PointPickings = None) -> None:
         super().__init__(fireball_name, point_pickings)
 
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]

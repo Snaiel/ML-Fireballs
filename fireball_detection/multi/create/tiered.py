@@ -1,12 +1,9 @@
 from pathlib import Path
-import os, shutil
-import pandas as pd
 from dataset import GFO_PICKINGS
 from dataset.point_pickings import PointPickings
 from dataset.create.raw import RawFireball
 from dataset.create.tile_centred import TileCentredFireball
 from dataset.utils import get_train_val_test_split
-from math import sqrt
 from multi.create import prepare_folders, get_folder_path
 
 
