@@ -9,7 +9,7 @@ __pycache__/
 data/
 !data/dfn_highlights/
 !data/fireball_images/
-!data/gfo_fixes
+!data/gfo_fixes/
 
 # Training runs and models
 fireball_detection/fireballs/
