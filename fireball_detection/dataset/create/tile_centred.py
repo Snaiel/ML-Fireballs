@@ -4,11 +4,13 @@ Puts the point pickings in the centre of a 1840x1228 window.
 
 from pathlib import Path
 
-from dataset import IMAGE_DIM, GFO_JPEGS, GFO_THUMB_EXT
+from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
+from dataset.create import MIN_BB_DIM_SIZE
 from dataset.fireball import Fireball
+from dataset.point_pickings import PointPickings
 from dataset.utils import create_dataset
 from skimage import io
-from dataset.point_pickings import PointPickings
+
 
 class TileCentredFireball(Fireball):
     def __init__(self, fireball_name: str, point_pickings: PointPickings = None, window_dim: tuple[int, int] = (1280, 1280)) -> None:
@@ -73,8 +75,8 @@ class TileCentredFireball(Fireball):
         new_bb_min_y = max(window_y1, self.pp.bb_min_y)
         new_bb_max_y = min(window_y2, self.pp.bb_max_y)
 
-        new_bb_width = new_bb_max_x - new_bb_min_x
-        new_bb_height = new_bb_max_y - new_bb_min_y
+        new_bb_width = max(new_bb_max_x - new_bb_min_x, MIN_BB_DIM_SIZE)
+        new_bb_height = max(new_bb_max_y - new_bb_min_y, MIN_BB_DIM_SIZE)
 
         new_bb_centre_x = (new_bb_min_x + new_bb_max_x) / 2
         new_bb_centre_y = (new_bb_min_y + new_bb_max_y) / 2

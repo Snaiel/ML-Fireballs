@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import skimage
 from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
+from dataset.create import MIN_BB_DIM_SIZE
 from dataset.fireball import Fireball
 from dataset.point_pickings import PointPickings
 from dataset.utils import create_dataset
@@ -22,11 +23,14 @@ class DownscaledRawFireball(Fireball):
     def __init__(self, fireball_name: str, point_pickings: PointPickings = None) -> None:
         super().__init__(fireball_name, point_pickings)
 
+        bb_width = max(self.pp.bounding_box_dim[0], MIN_BB_DIM_SIZE)
+        bb_height = max(self.pp.bounding_box_dim[1], MIN_BB_DIM_SIZE)
+
         norm_bb_centre_x = self.pp.bb_centre_x / IMAGE_DIM[0]
         norm_bb_centre_y = self.pp.bb_centre_y / IMAGE_DIM[1]
 
-        norm_bb_width = self.pp.bounding_box_dim[0] / IMAGE_DIM[0]
-        norm_bb_height = self.pp.bounding_box_dim[1] / IMAGE_DIM[1]
+        norm_bb_width = bb_width / IMAGE_DIM[0]
+        norm_bb_height = bb_height / IMAGE_DIM[1]
 
         image = skimage.io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
 

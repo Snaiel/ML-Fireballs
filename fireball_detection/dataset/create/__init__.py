@@ -1,0 +1,1 @@
+MIN_BB_DIM_SIZE = 20
