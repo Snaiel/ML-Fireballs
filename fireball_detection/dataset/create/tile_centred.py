@@ -5,10 +5,9 @@ Puts the point pickings in the centre of a 1840x1228 window.
 from pathlib import Path
 
 from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
-from dataset.create import MIN_BB_DIM_SIZE
+from dataset.create import MIN_BB_DIM_SIZE, create_dataset
 from dataset.fireball import Fireball
 from dataset.point_pickings import PointPickings
-from dataset.utils import create_dataset
 from skimage import io
 
 
