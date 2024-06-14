@@ -6,10 +6,10 @@
 __pycache__/
 
 # Datasets and labels
-GFO_fireball_object_detection_training_set/
-yolov8_labels/
-yolov8_fireball_dataset/
-multi_tiered*/
+data/
+!data/dfn_highlights/
+!data/fireball_images/
+!data/gfo_fixes
 
 # Training runs and models
 runs/
