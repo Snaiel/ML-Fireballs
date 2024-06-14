@@ -12,5 +12,7 @@ data/
 !data/gfo_fixes
 
 # Training runs and models
-runs/
+fireball_detection/fireballs/
+fireball_detection/runs/
+fireball_detection/wandb/
 **.pt
