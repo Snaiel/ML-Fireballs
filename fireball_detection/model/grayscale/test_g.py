@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-from fireball_detection.model.train_g import GreyScaleValidator
+from fireball_detection.model.grayscale.train_g import GreyScaleValidator
 
 model = YOLO("runs/detect/train17/weights/best.pt")
 validation_results = model.val(
