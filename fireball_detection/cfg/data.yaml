@@ -1,4 +1,4 @@
-path: yolov8_fireball_dataset
+path: fireball_object_detection
 train: images/train
 val: images/val
 test:  images/test
