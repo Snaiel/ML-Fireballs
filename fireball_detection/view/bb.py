@@ -42,7 +42,7 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
 
 
 def show_fireball_bb(fireball_type: Fireball) -> None:
-    fireball_name = "008_2021-02-27_030659_E_DSC_0402"
+    fireball_name = "62_2019-05-24_112659_S_DSC_0209"
     fireball_image_path = Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT)
 
     fireball: Fireball = fireball_type(fireball_name)

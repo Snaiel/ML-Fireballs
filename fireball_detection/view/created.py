@@ -1,7 +1,7 @@
 from dataset import DATASET_FOLDER
 from pathlib import Path
 import os
-from image_viewing.bb import plot_fireball_bb
+from view.bb import plot_fireball_bb
 from skimage import io
 import argparse
 
