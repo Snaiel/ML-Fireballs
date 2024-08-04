@@ -3,10 +3,10 @@ import yaml
 from pathlib import Path
 
 
-# model = YOLO("yolov8n.pt")
-model = YOLO("runs/detect/train16/weights/last.pt")
+model = YOLO("yolov8n.pt")
+# model = YOLO("runs/detect/train16/weights/last.pt")
 
-data = "../data/fireball_object_detection/data.yaml"
+data = "../data/object_detection/data.yaml"
 
 
 kwargs = {}
@@ -21,14 +21,14 @@ if USE_TUNED_ARGS:
 model.train(
     data=data,
     epochs=100,
-    imgsz=640,
+    imgsz=400,
     pretrained=True,
     **kwargs
 )
 
 model.val(
     data=data,
-    imgsz=640,
+    imgsz=400,
     plots=True,
     split="test"
 )

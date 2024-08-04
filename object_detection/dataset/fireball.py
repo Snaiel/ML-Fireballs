@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import skimage as ski
@@ -8,7 +9,7 @@ from dataset.point_pickings import PointPickings
 
 class Fireball:
 
-    def __init__(self, fireball_name: str, point_pickings: PointPickings = None) -> None:
+    def __init__(self, fireball_name: str, point_pickings: Optional[PointPickings] = None) -> None:
         self._image: np.ndarray = None
         self._label: list = None
         self._image_dimensions: tuple[int, int] = None

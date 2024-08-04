@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dataset import GFO_JPEGS, GFO_THUMB_EXT
 from dataset.create.raw import RawFireball
-from dataset.create.tile_centred import TileCentredFireball
+from dataset.tile_centred import TileCentredFireball
 from dataset.fireball import Fireball
 from matplotlib.patches import Rectangle
 from skimage import io

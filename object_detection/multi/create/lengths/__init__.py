@@ -2,7 +2,7 @@ from pathlib import Path, PosixPath
 
 import pandas as pd
 from dataset.create.raw import RawFireball
-from dataset.create.tile_centred import TileCentredFireball
+from dataset.tile_centred import TileCentredFireball
 from dataset.point_pickings import PointPickings
 from multi.create import get_folder_path
 

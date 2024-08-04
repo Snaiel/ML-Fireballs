@@ -2,7 +2,7 @@ from pathlib import Path
 from dataset import GFO_PICKINGS
 from dataset.point_pickings import PointPickings
 from dataset.create.raw import RawFireball
-from dataset.create.tile_centred import TileCentredFireball
+from dataset.tile_centred import TileCentredFireball
 from dataset.utils import get_train_val_test_split
 from multi.create import prepare_folders, get_folder_path
 
