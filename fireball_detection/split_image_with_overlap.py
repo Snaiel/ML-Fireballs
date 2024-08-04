@@ -1,9 +1,9 @@
 import cv2
-path_to_img = "../data/GFO_fireball_object_detection_training_set/jpegs/03_2016-07-28_043558_K_DSC_8287.thumb.jpg"
+path_to_img = "../data/GFO_fireball_object_detection_training_set/jpegs/25_2016-08-22_202428_S_DSC_2787.thumb.jpg"
 img = cv2.imread(path_to_img)
 img_h, img_w, _ = img.shape
-split_width = 1840
-split_height = 1228
+split_width = 400
+split_height = 400
 
 
 def start_points(size, split_size, overlap=0):
@@ -26,15 +26,16 @@ def start_points(size, split_size, overlap=0):
 X_points = start_points(img_w, split_width, 0.5)
 Y_points = start_points(img_h, split_height, 0.5)
 
-print("Total tiles:", X_points * Y_points)
+print(X_points, Y_points, len(X_points), len(Y_points))
+print("Total tiles:", len(X_points) * len(Y_points))
 
 count = 0
 name = 'splitted'
 frmt = 'jpeg'
 
-# for i in Y_points:
-#     print(count)
-#     for j in X_points:
-#         split = img[i:i+split_height, j:j+split_width]
-#         cv2.imwrite('{}_{}.{}'.format(name, count, frmt), split)
-#         count += 1
+for i in Y_points:
+    print(count)
+    for j in X_points:
+        split = img[i:i+split_height, j:j+split_width]
+        cv2.imwrite(f"{name}_{i / split_height :.1f}_{j / split_width :.1f}.{frmt}", split)
+        count += 1
