@@ -41,7 +41,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 
 def main():
-    cropped_images_folder = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped')
+    cropped_images_folder = Path(Path(__file__).parents[2], 'data', 'fireball_highlights', 'cropped')
 
     for image_file in os.listdir(cropped_images_folder):
 

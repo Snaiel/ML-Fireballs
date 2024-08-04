@@ -32,7 +32,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '071_2021-12-14_032259_E_DSC_0611-G_cropped.jpeg')
+image_path = Path(Path(__file__).parents[2], 'data', 'fireball_highlights', 'cropped', '071_2021-12-14_032259_E_DSC_0611-G_cropped.jpeg')
 
 im = cv2.imread(
     str(image_path),

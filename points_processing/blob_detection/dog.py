@@ -50,7 +50,7 @@ def show_dog(image_path: str) -> None:
 
 
 def main():
-    # image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
+    # image_path = Path(Path(__file__).parents[2], 'data', 'fireball_highlights', 'cropped', '051_2021-12-11_182730_E_DSC_0884-G_cropped.jpeg')
     # image_path = "../data/multi_tiered/lengths_test_set/500to1000at1280/images/test/04_2021-07-31_051929_K_DSC_1221.jpg"
 
     folder_path = Path("../data/multi_tiered/lengths_test_set/500to1000at1280/images/test")

@@ -6,9 +6,10 @@
 __pycache__/
 
 # Datasets and labels
-data/
+!data/
+data/*
 !data/dfn_highlights/
-!data/fireball_images/
+!data/fireball_highlights/
 !data/gfo_fixes/
 
 # Training runs and models

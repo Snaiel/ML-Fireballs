@@ -64,7 +64,7 @@ def doh_blob_detection_from_file(image_path: str) -> ndarray:
 def main():
     from pathlib import Path
 
-    image_path = Path(Path(__file__).parents[2], 'data', 'fireball_images', 'cropped', '044_2021-10-28_064629_E_DSC_0731-G_cropped.jpeg')
+    image_path = Path(Path(__file__).parents[2], 'data', 'fireball_highlights', 'cropped', '044_2021-10-28_064629_E_DSC_0731-G_cropped.jpeg')
 
     image = ski.io.imread(image_path)
 
