@@ -56,7 +56,7 @@ def retrieve_included_coordinates():
 
 
 def main():
-    image_path = ("data/GFO_fireball_object_detection_training_set/jpegs/03_2021-02-19_104758_K_DSC_4277.thumb.jpg")
+    image_path = ("data/GFO_fireball_object_detection_training_set/jpegs/043_2021-05-12_163859_E_DSC_0946.thumb.jpg")
     image = mpimg.imread(image_path)
 
     included_coordinates = retrieve_included_coordinates()
