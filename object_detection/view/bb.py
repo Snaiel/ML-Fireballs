@@ -3,12 +3,14 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from dataset import GFO_JPEGS, GFO_THUMB_EXT
-from dataset.create.raw import RawFireball
-from dataset.tile_centred import TileCentredFireball
-from dataset.fireball import Fireball
 from matplotlib.patches import Rectangle
 from skimage import io
+
+from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT
+from object_detection.dataset.create.raw import RawFireball
+from object_detection.dataset.create.split_tiles import SplitTilesFireball
+from object_detection.dataset.fireball import Fireball
+from object_detection.dataset.tile_centred import TileCentredFireball
 
 
 def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
@@ -21,21 +23,22 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
         image_dimensions = (dim[1], dim[0], *dim[2:])
 
     # Define the rectangle parameters: (x, y, width, height)
-    c_x, c_y, rect_width, rect_height = label
-    c_x *= image_dimensions[0]
-    c_y *= image_dimensions[1]
-    rect_width *= image_dimensions[0]
-    rect_height *= image_dimensions[1]
+    if label:
+        c_x, c_y, rect_width, rect_height = label
+        c_x *= image_dimensions[0]
+        c_y *= image_dimensions[1]
+        rect_width *= image_dimensions[0]
+        rect_height *= image_dimensions[1]
 
-    rect_x = c_x - rect_width / 2
-    rect_y = c_y - rect_height / 2
+        rect_x = c_x - rect_width / 2
+        rect_y = c_y - rect_height / 2
 
-    # Create a rectangle patch
-    rect = Rectangle((rect_x, rect_y), rect_width, rect_height,
-                    linewidth=2, edgecolor='r', facecolor='none')
+        # Create a rectangle patch
+        rect = Rectangle((rect_x, rect_y), rect_width, rect_height,
+                        linewidth=2, edgecolor='r', facecolor='none')
 
-    # Add the rectangle to the plot
-    ax.add_patch(rect)
+        # Add the rectangle to the plot
+        ax.add_patch(rect)
 
     # Show the plot with the image and rectangle
     plt.show()
@@ -54,7 +57,6 @@ def show_fireball_bb(fireball_type: Fireball) -> None:
     image = fireball.image if fireball.stores_image else io.imread(fireball_image_path)
 
     plot_fireball_bb(image, label, fireball.image_dimensions)
-
 
 
 def main():

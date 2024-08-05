@@ -14,6 +14,6 @@ data/*
 
 # Training runs and models
 object_detection/fireballs/
-object_detection/runs/
-object_detection/wandb/
 **.pt
+runs/
+wandb/
