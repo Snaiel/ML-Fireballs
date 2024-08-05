@@ -1,9 +1,9 @@
 from pathlib import Path, PosixPath
 
 import pandas as pd
-from dataset.create.raw import RawFireball
-from dataset.tile_centred import TileCentredFireball
-from dataset.point_pickings import PointPickings
+from object_detection.dataset.create.raw import RawFireball
+from object_detection.dataset.tile_centred import TileCentredFireball
+from object_detection.dataset.point_pickings import PointPickings
 from multi.create import get_folder_path
 
 

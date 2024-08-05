@@ -2,9 +2,9 @@ import os
 import shutil
 from pathlib import Path
 
-from dataset import DATA_YAML, DATASET_FOLDER
-from dataset.fireball import Fireball
-from dataset.utils import get_train_val_test_split
+from object_detection.dataset import DATA_YAML, DATASET_FOLDER
+from object_detection.dataset.fireball import Fireball
+from object_detection.dataset.utils import get_train_val_test_split
 
 
 MIN_BB_DIM_SIZE = 20

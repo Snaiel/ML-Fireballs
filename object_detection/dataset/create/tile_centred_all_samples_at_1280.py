@@ -1,5 +1,5 @@
-from dataset.create import create_dataset
-from dataset.tile_centred import TileCentredFireball
+from object_detection.dataset.create import create_dataset
+from object_detection.dataset.tile_centred import TileCentredFireball
 
 
 class TileCentredFireballAt1280(TileCentredFireball):

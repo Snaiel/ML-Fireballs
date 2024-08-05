@@ -3,7 +3,7 @@ from math import sqrt
 from pathlib import Path
 
 from dataset import GFO_PICKINGS
-from dataset.point_pickings import PointPickings
+from object_detection.dataset.point_pickings import PointPickings
 from multi.create import prepare_folders
 from multi.create.lengths import SUB_FOLDERS, create_folder
 

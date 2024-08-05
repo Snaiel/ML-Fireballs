@@ -1,9 +1,11 @@
-from dataset import DATASET_FOLDER
-from pathlib import Path
-import os
-from view.bb import plot_fireball_bb
-from skimage import io
 import argparse
+import os
+from pathlib import Path
+
+from skimage import io
+
+from object_detection.dataset import DATASET_FOLDER
+from object_detection.view.bb import plot_fireball_bb
 
 
 def main():

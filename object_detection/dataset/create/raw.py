@@ -7,11 +7,12 @@ NOTES: Fireballs are hard to notice. Too small.
 import shutil
 from pathlib import Path
 
-from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
-from dataset.create import MIN_BB_DIM_SIZE, create_dataset
-from dataset.fireball import Fireball
-from dataset.point_pickings import PointPickings
 from PIL import ExifTags, Image
+
+from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
+from object_detection.dataset.create import MIN_BB_DIM_SIZE, create_dataset
+from object_detection.dataset.fireball import Fireball
+from object_detection.dataset.point_pickings import PointPickings
 
 
 class RawFireball(Fireball):

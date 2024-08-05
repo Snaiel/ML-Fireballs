@@ -8,10 +8,11 @@ from pathlib import Path
 
 import numpy as np
 import skimage
-from dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
-from dataset.create import MIN_BB_DIM_SIZE, create_dataset
-from dataset.fireball import Fireball
-from dataset.point_pickings import PointPickings
+
+from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
+from object_detection.dataset.create import MIN_BB_DIM_SIZE, create_dataset
+from object_detection.dataset.fireball import Fireball
+from object_detection.dataset.point_pickings import PointPickings
 
 ## NOTE: THIS TAKES FOREVER. CHANGE IT TO USE GPU NEXT TIME.
 

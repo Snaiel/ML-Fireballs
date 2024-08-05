@@ -1,8 +1,8 @@
 import os
 
-from dataset import RANDOM_SEED
 from sklearn.model_selection import train_test_split
-from dataset import GFO_JPEGS
+
+from object_detection.dataset import GFO_JPEGS, RANDOM_SEED
 
 
 def get_train_val_test_split(dataset_size: int = None) -> dict:

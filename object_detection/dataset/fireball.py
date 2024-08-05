@@ -3,16 +3,22 @@ from typing import Optional
 
 import numpy as np
 import skimage as ski
-from dataset import GFO_PICKINGS
-from dataset.point_pickings import PointPickings
+
+from object_detection.dataset import GFO_PICKINGS
+from object_detection.dataset.point_pickings import PointPickings
 
 
 class Fireball:
 
+    pp: PointPickings
+    image: np.ndarray
+    label: list
+    image_dimensions: tuple[int, int]
+
     def __init__(self, fireball_name: str, point_pickings: Optional[PointPickings] = None) -> None:
-        self._image: np.ndarray = None
-        self._label: list = None
-        self._image_dimensions: tuple[int, int] = None
+        self.image: np.ndarray = None
+        self.label: list = None
+        self.image_dimensions: tuple[int, int] = None
 
         self.fireball_name = fireball_name
 
@@ -27,21 +33,6 @@ class Fireball:
         return self.image is not None
 
 
-    @property
-    def image(self) -> np.ndarray:
-        return self._image
-
-
-    @property
-    def label(self) -> list:
-        return self._label
-    
-
-    @property
-    def image_dimensions(self) -> tuple[int, int]:
-        return self._image_dimensions
-
-
     def save_image(self, folder: str) -> None:
         ski.io.imsave(
             Path(folder, self.fireball_name + ".jpg"),
@@ -51,6 +42,7 @@ class Fireball:
 
 
     def save_label(self, folder: str) -> None:
+        # this is for the class label
         if self.label[0] != 0:
             self.label.insert(0, 0)
 
