@@ -1,11 +1,12 @@
-from included import retrieve_included_coordinates
-from numpy import ndarray
-import cv2
-from ultralytics import YOLO
 from pathlib import Path
 
+import cv2
+from included import retrieve_included_coordinates
+from numpy import ndarray
+from ultralytics import YOLO
 
-SQUARE_SIZE = 400
+from fireball_detection import SQUARE_SIZE
+
 
 class Tile:
     position: tuple[float, float]

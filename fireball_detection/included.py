@@ -1,12 +1,11 @@
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.image as mpimg
-import pandas as pd
 from pathlib import Path
 
+import matplotlib.image as mpimg
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import pandas as pd
 
-SQUARE_SIZE = 400
-IMAGE_DIMENSIONS = (7360, 4912)
+from fireball_detection import IMAGE_DIMENSIONS, SQUARE_SIZE
 
 
 def retrieve_start_points(size, split_size, overlap=0):
@@ -48,12 +47,16 @@ def retrieve_included_coordinates():
     merged_df = pd.merge(all_coordinates, discarded_coordinates, on=['y', 'x'], how='outer', indicator=True)
     # Remove common rows from the merged DataFrame
     included_coordinates = merged_df[merged_df['_merge'] != 'both'].drop(columns=['_merge'])
+
+    included_coordinates['x'], included_coordinates['y'] = included_coordinates['y'], included_coordinates['x']
+
     print(included_coordinates)
+
     return list(included_coordinates.itertuples(index=False, name=None))
 
 
 def main():
-    image_path = "../data/GFO_fireball_object_detection_training_set/jpegs/043_2021-05-12_163859_E_DSC_0946.thumb.jpg"
+    image_path = ("data/GFO_fireball_object_detection_training_set/jpegs/03_2021-02-19_104758_K_DSC_4277.thumb.jpg")
     image = mpimg.imread(image_path)
 
     included_coordinates = retrieve_included_coordinates()
@@ -62,9 +65,7 @@ def main():
     ax.imshow(image)
 
     for pos in included_coordinates:
-        y = pos[0]
-        x = pos[1]
-        square = patches.Rectangle((x, y), SQUARE_SIZE, SQUARE_SIZE, linewidth=1, edgecolor='lime', facecolor='none')
+        square = patches.Rectangle(pos, SQUARE_SIZE, SQUARE_SIZE, linewidth=1, edgecolor='lime', facecolor='none')
         ax.add_patch(square)
 
     ax.axis('off')
