@@ -1,8 +1,12 @@
 import copy
+import gc
+import time
 from pathlib import Path
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from numpy import ndarray
 from skimage import io
 from ultralytics import YOLO
@@ -21,44 +25,9 @@ class Tile:
         self.position = position
         self.image = image
 
+FireballBoxes = list[tuple[float, float, float, float]]
 
-included_coordinates = retrieve_included_coordinates()
-img = io.imread(Path(Path(__file__).parents[1], "data/GFO_fireball_object_detection_training_set/jpegs/005_2019-06-01_104929_E_DSC_0119.thumb.jpg"))
-
-tiles: list[Tile] = []
-
-for pos in included_coordinates:
-    tiles.append(
-        Tile(
-            pos,
-            img[pos[1] : pos[1] + SQUARE_SIZE, pos[0] : pos[0] + SQUARE_SIZE]
-        )
-    )
-
-
-model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
-
-detected_tiles: list[Tile] = []
-
-for tile in tiles:
-    results = model(tile.image)
-    if len(results[0].boxes.conf) > 0:
-        tile.boxes = results[0].boxes
-        detected_tiles.append(tile)
-
-boxes = []
-
-for tile in detected_tiles:
-    for box in tile.boxes.xyxy:
-        box = box.cpu()
-        boxes.append(
-            [
-                tile.position[0] + box[0],
-                tile.position[1] + box[1],
-                tile.position[0] + box[2],
-                tile.position[1] + box[3]
-            ]
-        )
+INCLUDED_COORDINATES = retrieve_included_coordinates()
 
 
 def merge_bboxes(bboxes, delta_x=0.1, delta_y=0.1):
@@ -136,21 +105,77 @@ def merge_bboxes(bboxes, delta_x=0.1, delta_y=0.1):
     return new_bboxes
 
 
-boxes = merge_bboxes(boxes)
+def detect_fireballs(image: ndarray) -> FireballBoxes:
+    model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
+    
+    tiles: list[Tile] = []
+    for pos in INCLUDED_COORDINATES:
+        tiles.append(
+            Tile(
+                pos,
+                image[pos[1] : pos[1] + SQUARE_SIZE, pos[0] : pos[0] + SQUARE_SIZE]
+            )
+        )
 
-fig, ax = plt.subplots()
-ax.imshow(img)
+    detected_tiles: list[Tile] = []
+    for tile in tiles:
+        results = model.predict(tile.image, verbose=False)
+        if len(results[0].boxes.conf) > 0:
+            tile.boxes = copy.copy(results[0].boxes)
+            detected_tiles.append(tile)
 
-for box in boxes:
-    rect = patches.Rectangle(
-        (box[0], box[1]),
-        box[2] - box[0],
-        box[3] - box[1],
-        linewidth=2,
-        edgecolor='r',
-        facecolor='none'
-    )
-    ax.add_patch(rect)
+    boxes = []
+    for tile in detected_tiles:
+        for box in tile.boxes.xyxy:
+            box = box.cpu()
+            boxes.append(
+                [
+                    float(tile.position[0] + box[0]),
+                    float(tile.position[1] + box[1]),
+                    float(tile.position[0] + box[2]),
+                    float(tile.position[1] + box[3])
+                ]
+            )
 
-plt.tight_layout()
-plt.show()
+    boxes = merge_bboxes(boxes)
+    return boxes
+
+
+def plot_boxes(image: ndarray, boxes: list) -> tuple[Figure, Axes]:
+    fig = Figure()
+    ax = fig.subplots(1)
+    ax.imshow(image)
+
+    for box in boxes:
+        rect = patches.Rectangle(
+            (box[0], box[1]),
+            box[2] - box[0],
+            box[3] - box[1],
+            linewidth=1,
+            edgecolor='r',
+            facecolor='none'
+        )
+        ax.add_patch(rect)
+
+    ax.axis('off')
+    fig.tight_layout()
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
+
+    return fig, ax
+
+
+def main():
+    t0 = time.time()
+    image = io.imread(Path(Path(__file__).parents[1], "data/GFO_fireball_object_detection_training_set/jpegs/43_2016-06-02_211159_S_DSC_1621.thumb.jpg"))
+    t1 = time.time()
+    boxes = detect_fireballs(image)
+    t2 = time.time()
+    print(t1 - t0, t2 - t1, t2 - t0)
+
+    fig, ax = plot_boxes(image, boxes)
+    # fig.savefig("nice.jpg", bbox_inches='tight', pad_inches=0, dpi=600)
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
