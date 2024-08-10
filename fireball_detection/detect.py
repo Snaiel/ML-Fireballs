@@ -30,6 +30,23 @@ FireballBoxes = list[tuple[float, float, float, float]]
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 
 
+def intersect(bbox, bbox_):
+    """
+    Arguments:
+        bbox {list} -- bounding box of float_values [xmin, ymin, xmax, ymax]
+        bbox_ {list} -- bounding box of float_values [xmin, ymin, xmax, ymax]
+    Returns:
+        {boolean} -- true if the bboxes intersect
+    """
+    # https://stackoverflow.com/questions/40795709/checking-whether-two-rectangles-overlap-in-python-using-two-bottom-left-corners
+    return not (
+        bbox[0] > bbox_[2]
+        or bbox[2] < bbox_[0]
+        or bbox[1] > bbox_[3]
+        or bbox[3] < bbox_[1]
+    )
+
+
 def merge_bboxes(bboxes, delta_x=0.1, delta_y=0.1):
     """
     https://gist.github.com/YaYaB/39f9df9d481d784b786ad88eea8533e8
@@ -41,22 +58,6 @@ def merge_bboxes(bboxes, delta_x=0.1, delta_y=0.1):
     Returns:
         {list} -- list of bounding boxes merged
     """
-
-    def intersect(bbox, bbox_):
-        """
-        Arguments:
-            bbox {list} -- bounding box of float_values [xmin, ymin, xmax, ymax]
-            bbox_ {list} -- bounding box of float_values [xmin, ymin, xmax, ymax]
-        Returns:
-            {boolean} -- true if the bboxes intersect
-        """
-        # https://stackoverflow.com/questions/40795709/checking-whether-two-rectangles-overlap-in-python-using-two-bottom-left-corners
-        return not (
-            bbox[0] > bbox_[2]
-            or bbox[2] < bbox_[0]
-            or bbox[1] > bbox_[3]
-            or bbox[3] < bbox_[1]
-        )
 
     # Sort bboxes by ymin
     bboxes = sorted(bboxes, key=lambda x: x[1])
@@ -107,7 +108,7 @@ def merge_bboxes(bboxes, delta_x=0.1, delta_y=0.1):
 
 def detect_fireballs(image: ndarray) -> FireballBoxes:
     model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
-    
+
     tiles: list[Tile] = []
     for pos in INCLUDED_COORDINATES:
         tiles.append(
@@ -142,8 +143,7 @@ def detect_fireballs(image: ndarray) -> FireballBoxes:
 
 
 def plot_boxes(image: ndarray, boxes: list) -> tuple[Figure, Axes]:
-    fig = Figure()
-    ax = fig.subplots(1)
+    fig, ax = plt.subplots()
     ax.imshow(image)
 
     for box in boxes:
@@ -173,7 +173,9 @@ def main():
     print(t1 - t0, t2 - t1, t2 - t0)
 
     fig, ax = plot_boxes(image, boxes)
-    # fig.savefig("nice.jpg", bbox_inches='tight', pad_inches=0, dpi=600)
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
+    plt.tight_layout()
+    # fig.savefig("yeah.png", bbox_inches='tight', pad_inches=0, dpi=600)
     plt.show()
 
 

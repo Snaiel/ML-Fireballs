@@ -56,7 +56,7 @@ def retrieve_included_coordinates():
 
 
 def main():
-    image_path = ("data/GFO_fireball_object_detection_training_set/jpegs/043_2021-05-12_163859_E_DSC_0946.thumb.jpg")
+    image_path = Path(Path(__file__).parents[1], "data/GFO_fireball_object_detection_training_set/jpegs/03_2020-08-20_070659_K_DSC_6995.thumb.jpg")
     image = mpimg.imread(image_path)
 
     included_coordinates = retrieve_included_coordinates()
@@ -69,7 +69,9 @@ def main():
         ax.add_patch(square)
 
     ax.axis('off')
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
     plt.tight_layout()
+    # fig.savefig("bruh.png", bbox_inches='tight', pad_inches=0, dpi=600)
     plt.show()
 
 
