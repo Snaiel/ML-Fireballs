@@ -21,7 +21,7 @@ def main():
     images_folder = Path(DATASET_FOLDER, "images", args.dataset)
     labels_folder = Path(DATASET_FOLDER, "labels", args.dataset)
 
-    images = os.listdir(images_folder)
+    images = sorted(os.listdir(images_folder))
 
     for image_filename in images:
         image_file = Path(images_folder, image_filename)
