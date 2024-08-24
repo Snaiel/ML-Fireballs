@@ -50,8 +50,6 @@ def retrieve_included_coordinates():
 
     included_coordinates['x'], included_coordinates['y'] = included_coordinates['y'], included_coordinates['x']
 
-    print(included_coordinates)
-
     return list(included_coordinates.itertuples(index=False, name=None))
 
 
