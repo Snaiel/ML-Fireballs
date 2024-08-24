@@ -34,7 +34,10 @@ class FireballBox:
         self.conf = conf
     
     def __repr__(self) -> str:
-        return f"<{self.conf} {self.box}>"
+        return f"{self.conf} {' '.join(map(str, self.box))}"
+    
+    def __str__(self) -> str:
+        return f"<{self.conf:.2f} ({', '.join(f'{i:.2f}' for i in self.box)})>"
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
@@ -140,8 +143,9 @@ def merge_bboxes(fireballs: list[FireballBox], margin: float = 0.1) -> list[Fire
     return new_fireballs
 
 
-def detect_fireballs(image: ndarray) -> list[FireballBox]:
-    model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
+def detect_fireballs(image: ndarray, model: YOLO | None = None) -> list[FireballBox]:
+    if model is None:
+        model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
 
     tiles: list[Tile] = []
     for pos in INCLUDED_COORDINATES:
@@ -196,10 +200,11 @@ def plot_boxes(image: ndarray, fireballs: list[FireballBox]) -> tuple[Figure, Ax
         )
         ax.text(
             fireball.box[0],
-            fireball.box[1] - 10,
+            fireball.box[1] - 10 if fireball.box[1] > 20 else fireball.box[3] + 25,
             f"{fireball.conf:.2f}",
             color='r',
-            fontsize=8
+            fontsize=8,
+            va='bottom' if fireball.box[1] > 20 else 'top'
         )
 
     ax.axis('off')
@@ -210,7 +215,7 @@ def plot_boxes(image: ndarray, fireballs: list[FireballBox]) -> tuple[Figure, Ax
 
 
 def main():
-    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/03_2017-05-09_105129_K_DSC_8529.thumb.jpg"
+    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/03_2020-02-27_131328_K_DSC_4670.thumb.jpg"
 
     t0 = time.time()
     image = io.imread(Path(Path(__file__).parents[1], fireball_image))

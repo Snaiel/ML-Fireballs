@@ -45,7 +45,7 @@ for fireball_file in os.listdir(THUMB_TEST_BOXES_FOLDER):
     with open(Path(THUMB_TEST_BOXES_FOLDER, fireball_file)) as file:
         lines = file.readlines()
         for line in lines:
-            boxes.append([float(x) for x in line.split(" ")[:4]])
+            boxes.append([float(x) for x in line.split(" ")[1:]])
     
     pp_bb = []
     with open(Path(THUMB_TEST_PP_BB_FOLDER, fireball_file)) as file:

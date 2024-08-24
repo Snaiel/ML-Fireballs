@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle
 from skimage import io
+from ultralytics import YOLO
 
 from fireball_detection.detect import detect_fireballs, plot_boxes
 from object_detection.dataset import DATA_FOLDER, GFO_JPEGS, GFO_PICKINGS
@@ -57,7 +58,7 @@ def get_iou(pred_box, gt_box):
     return iou
 
 
-def test_fireball(fireball_file: str, detected_boxes: list, preds: list) -> None:
+def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: list) -> None:
     fireball_name = fireball_file.split(".")[0]
         
     if fireball_name + ".txt" in detected_boxes and fireball_name + ".jpg" in preds:
@@ -67,22 +68,18 @@ def test_fireball(fireball_file: str, detected_boxes: list, preds: list) -> None
     print(f"detecting {fireball_name}")
 
     image = io.imread(Path(THUMB_TEST_IMAGES_FOLDER, fireball_file))
-    boxes = detect_fireballs(image)
-
-    pp = PointPickings(Path(GFO_PICKINGS, fireball_name + ".csv"))
-    
-    for box in boxes:
-        box.append(get_iou(box, (pp.bb_min_x, pp.bb_min_y, pp.bb_max_x, pp.bb_max_y)))
+    fireballs = detect_fireballs(image, model)
 
     with open(Path(THUMB_TEST_BOXES_FOLDER, fireball_name + ".txt"), "w") as boxes_file:
         lines = []
-        for box in boxes:
-            print(fireball_name, box)
-            lines.append(" ".join(map(str, box)))
+        for fireball in fireballs:
+            print(fireball_name, fireball)
+            lines.append(repr(fireball))
         boxes_file.write("\n".join(lines))
 
-    fig, ax = plot_boxes(image, boxes)
+    fig, ax = plot_boxes(image, fireballs)
 
+    pp = PointPickings(Path(GFO_PICKINGS, fireball_name + ".csv"))
     ax.add_patch(
         Rectangle(
             (pp.bb_min_x, pp.bb_min_y),
@@ -93,21 +90,22 @@ def test_fireball(fireball_file: str, detected_boxes: list, preds: list) -> None
             facecolor='none'
         )
     )
-
+    
     fig.savefig(Path(THUMB_TEST_PREDS_FOLDER, fireball_name + ".jpg"), bbox_inches='tight', pad_inches=0, dpi=600)
     
     plt.cla()
     plt.clf()
     plt.close('all')
-    del fig, ax, pp, image, boxes
-    print(gc.collect())
+    del fig, ax, pp, image, fireballs
+    gc.collect()
 
 
 def run_tests(queue: mp.Queue, detected_boxes: list, preds: list) -> None:
+    model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
     while True:
         try:
             fireball_file = queue.get(False)
-            test_fireball(fireball_file, detected_boxes, preds)
+            test_fireball(model, fireball_file, detected_boxes, preds)
         except:
             break
         
