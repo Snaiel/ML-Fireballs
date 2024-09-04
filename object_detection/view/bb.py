@@ -1,4 +1,5 @@
 import argparse
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -6,11 +7,7 @@ import numpy as np
 from matplotlib.patches import Rectangle
 from skimage import io
 
-from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT
-from object_detection.dataset.create.raw import RawFireball
-from object_detection.dataset.create.split_tiles import SplitTilesFireball
-from object_detection.dataset.fireball import Fireball
-from object_detection.dataset.tile_centred import TileCentredFireball
+from object_detection.dataset import DATASET_FOLDER
 
 
 def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
@@ -44,40 +41,33 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
     plt.show()
 
 
-def show_fireball_bb(fireball_type: Fireball) -> None:
-    fireball_name = "62_2019-05-24_112659_S_DSC_0209"
-    fireball_image_path = Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT)
-
-    fireball: Fireball = fireball_type(fireball_name)
-
-    label = fireball.label
-    print(f"Label info: {label}")
-
-    # Load the image using skimage
-    image = fireball.image if fireball.stores_image else io.imread(fireball_image_path)
-
-    plot_fireball_bb(image, label, fireball.image_dimensions)
-
-
 def main():
     # Create argument parser
     parser = argparse.ArgumentParser(description='View image and bounding box of fireball')
 
     # Add positional arguments
-    parser.add_argument('fireball', type=str, help='Type of fireball dataset to view: raw, tile_centred')
+    parser.add_argument('dataset', type=str, help='Which dataset to view: train, val, test')
 
     # Parse the command-line arguments
     args = parser.parse_args()
+    
+    images_folder = Path(DATASET_FOLDER, "images", args.dataset)
+    labels_folder = Path(DATASET_FOLDER, "labels", args.dataset)
 
-    fireball_types = {
-        "raw": RawFireball,
-        "tile_centred": TileCentredFireball
-    }
+    images = sorted(os.listdir(images_folder))
 
-    if args.fireball not in fireball_types:
-        parser.error("No fireball type exists for: " + args.fireball)
+    for image_filename in images:
+        image_file = Path(images_folder, image_filename)
 
-    show_fireball_bb(fireball_types[args.fireball])
+        fireball_name = image_filename.split(".")[0]
+
+        with open(Path(labels_folder, fireball_name + ".txt"), "r") as label_file:
+            label = label_file.read().split(" ")
+            label = [float(i) for i in label[1:]]
+
+        image = io.imread(image_file)
+
+        plot_fireball_bb(image, label)
 
 
 if __name__ == "__main__":

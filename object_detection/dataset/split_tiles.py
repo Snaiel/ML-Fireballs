@@ -8,10 +8,10 @@ from skimage import io
 
 from fireball_detection.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
-from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT, IMAGE_DIM
-from object_detection.dataset.create import MIN_BB_DIM_SIZE, create_dataset
+from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT
 from object_detection.dataset.fireball import Fireball
 from object_detection.dataset.point_pickings import PointPickings
+from object_detection.dataset.utils import MIN_BB_DIM_SIZE, create_dataset
 
 included_coordinates = retrieve_included_coordinates()
 

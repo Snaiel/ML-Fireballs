@@ -1,7 +1,0 @@
-path: multi_tiered/
-train: images/train
-val: images/val
-test: images/test
-
-names:
-  0: fireball
