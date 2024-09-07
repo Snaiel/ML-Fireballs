@@ -15,7 +15,7 @@ from ultralytics import YOLO
 from fireball_detection.detect import detect_fireballs, plot_boxes
 from object_detection.dataset import DATA_FOLDER, GFO_JPEGS, GFO_PICKINGS
 from object_detection.dataset.point_pickings import PointPickings
-from object_detection.dataset.utils import get_train_val_test_split
+from object_detection.dataset.kfold import get_train_val_test_split
 
 THUMB_TEST_SET_FOLDER = Path(DATA_FOLDER, "thumb_test_set")
 

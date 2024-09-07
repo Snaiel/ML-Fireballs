@@ -9,22 +9,24 @@ from ultralytics.utils.ops import xywhn2xyxy
 
 from fireball_detection.detect import intersect
 
+from tqdm import tqdm
 
-model = YOLO(Path(Path(__file__).parents[2], "data", "e15.pt"))
 
-TEST_IMAGES_FOLDER = Path(Path(__file__).parents[2], "data", "object_detection", "images", "test")
-TEST_LABELS_FOLDER = Path(Path(__file__).parents[2], "data", "object_detection", "labels", "test")
+model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", "train22", "weights", "best.pt"))
 
-image_files = os.listdir(TEST_IMAGES_FOLDER)
+VAL_IMAGES_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", "fold0", "images", "val")
+VAL_LABELS_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", "fold0", "labels", "val")
+
+image_files = os.listdir(VAL_IMAGES_FOLDER)
 image_files = [i for i in image_files if not "negative" in i]
 print("total positive samples:", len(image_files))
 
 images = {}
 
 
-for i in image_files:
-    image = io.imread(Path(TEST_IMAGES_FOLDER, i))
-    image = cv2.copyMakeBorder(image, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+for i in tqdm(image_files, desc="loading images"):
+    image = io.imread(Path(VAL_IMAGES_FOLDER, i))
+    # image = cv2.copyMakeBorder(image, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=(114, 114, 114))
     images[i] = image
 
 true_positives = 0
@@ -33,9 +35,9 @@ total_boxes = 0
 
 false_negative_files = []
 
-for file, image in images.items():
+for file, image in tqdm(images.items(), desc="running predictions"):
     fireball = file.split(".")[0]
-    with open(Path(TEST_LABELS_FOLDER, fireball + ".txt")) as label_file:
+    with open(Path(VAL_LABELS_FOLDER, fireball + ".txt")) as label_file:
         xyxy = xywhn2xyxy(
             np.array([float(i) for i in label_file.read().split(" ")[1:]]), #xywh
             400,
@@ -63,5 +65,5 @@ print("total boxes:", total_boxes)
 print("true positives:", true_positives)
 print("false positives:", false_positives)
 
-with open(Path(Path(__file__).parents[2], "data", "false_negatives.txt"), 'w') as file:
-    file.write("\n".join(false_negative_files))
+# with open(Path(Path(__file__).parents[2], "data", "false_negatives.txt"), 'w') as file:
+#     file.write("\n".join(false_negative_files))

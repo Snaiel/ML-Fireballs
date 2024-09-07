@@ -8,14 +8,14 @@ from skimage import io
 
 from fireball_detection.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
-from object_detection.dataset import GFO_JPEGS, GFO_THUMB_EXT
-from object_detection.dataset.fireball import Fireball
+from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT
 from object_detection.dataset.point_pickings import PointPickings
-from object_detection.dataset.utils import MIN_BB_DIM_SIZE, create_dataset
+
+
+MIN_BB_DIM_SIZE = 20
+MIN_POINTS_IN_TILE = 3
 
 included_coordinates = retrieve_included_coordinates()
-
-MIN_POINTS_IN_TILE = 3
 
 
 @dataclass
@@ -27,13 +27,17 @@ class FireballTile:
     image: np.ndarray = None
 
 
-class SplitTilesFireball(Fireball):
+class SplitTilesFireball:
+
+    fireball_name: str
+    pp: PointPickings
 
     fireball_tiles: list[FireballTile]
     negative_tiles: list[FireballTile]
 
-    def __init__(self, fireball_name: str, point_pickings: PointPickings = None, ) -> None:
-        super().__init__(fireball_name, point_pickings)
+    def __init__(self, fireball_name: str) -> None:
+        self.fireball_name = fireball_name
+        self.pp = PointPickings(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
 
         fireball_image = io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
 
@@ -69,11 +73,11 @@ class SplitTilesFireball(Fireball):
             points_dim = (pp_max_x - pp_min_x, pp_max_y - pp_min_y)
             padding = 0.05
 
-            bb_min_x = pp_min_x - (points_dim[0] * padding)
-            bb_max_x = pp_max_x + (points_dim[0] * padding)
+            bb_min_x = max(pp_min_x - (points_dim[0] * padding), tile.position[0])
+            bb_max_x = min(pp_max_x + (points_dim[0] * padding), tile.position[0] + SQUARE_SIZE)
 
-            bb_min_y = pp_min_y - (points_dim[1] * padding)
-            bb_max_y = pp_max_y + (points_dim[1] * padding)
+            bb_min_y = max(pp_min_y - (points_dim[1] * padding), tile.position[1])
+            bb_max_y = min(pp_max_y + (points_dim[1] * padding), tile.position[1] + SQUARE_SIZE)
 
             bb_centre_x = (bb_min_x + bb_max_x) / 2
             bb_centre_y = (bb_min_y + bb_max_y) / 2
@@ -100,7 +104,7 @@ class SplitTilesFireball(Fireball):
         self.negative_tiles = negative_tiles
 
 
-    def save_image(self, folder: str) -> None:
+    def save_images(self, folder: str) -> None:
         for i, tile in enumerate(self.fireball_tiles):
             io.imsave(
                 Path(folder, f"{self.fireball_name}_{i}.jpg"),
@@ -115,14 +119,10 @@ class SplitTilesFireball(Fireball):
             )
 
 
-    def save_label(self, folder: str) -> None:
+    def save_labels(self, folder: str) -> None:
         for i, tile in enumerate(self.fireball_tiles):
             label = (0, tile.bb_centre[0], tile.bb_centre[1], tile.bb_dim[0], tile.bb_dim[1])
             with open(Path(folder, f"{self.fireball_name}_{i}.txt"), 'x') as label_file:
                 label_file.write(" ".join(str(item) for item in label))
         for i in range(len(self.negative_tiles)):
             open(Path(folder, f"{self.fireball_name}_negative_{i}.txt"), 'x').close()
-
-
-if __name__ == "__main__":
-    create_dataset(SplitTilesFireball)

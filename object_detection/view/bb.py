@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.patches import Rectangle
 from skimage import io
 
-from object_detection.dataset import DATASET_FOLDER
+from object_detection.dataset import DATA_FOLDER
 
 
 def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
@@ -46,13 +46,13 @@ def main():
     parser = argparse.ArgumentParser(description='View image and bounding box of fireball')
 
     # Add positional arguments
-    parser.add_argument('dataset', type=str, help='Which dataset to view: train, val, test')
+    parser.add_argument('dataset', type=str, help='Which dataset to view: train, val')
 
     # Parse the command-line arguments
     args = parser.parse_args()
     
-    images_folder = Path(DATASET_FOLDER, "images", args.dataset)
-    labels_folder = Path(DATASET_FOLDER, "labels", args.dataset)
+    images_folder = Path(DATA_FOLDER, "kfold_object_detection", "fold0", "images", args.dataset)
+    labels_folder = Path(DATA_FOLDER, "kfold_object_detection", "fold0", "labels", args.dataset)
 
     images = sorted(os.listdir(images_folder))
 
