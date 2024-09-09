@@ -8,14 +8,15 @@ import numpy as np
 import skimage.io as io
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from tqdm import tqdm
 from ultralytics.utils.ops import xywhn2xyxy
 
 
 with open(Path(Path(__file__).parents[2], "data", "false_negatives.txt")) as file:
     false_negative_fireballs = [i.strip() for i in file.readlines()]
 
-TEST_IMAGES_FOLDER = Path(Path(__file__).parents[2], "data", "object_detection", "images", "test")
-TEST_LABELS_FOLDER = Path(Path(__file__).parents[2], "data", "object_detection", "labels", "test")
+TEST_IMAGES_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", "fold0", "images", "val")
+TEST_LABELS_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", "fold0", "labels", "val")
 
 FALSE_NEGATIVE_IMAGES_FOLDER = Path(Path(__file__).parents[2], "data", "false_negative_images")
 if not FALSE_NEGATIVE_IMAGES_FOLDER.exists():
@@ -23,7 +24,7 @@ if not FALSE_NEGATIVE_IMAGES_FOLDER.exists():
 
 matplotlib.use("agg")
 
-for fireball in false_negative_fireballs:
+for fireball in tqdm(false_negative_fireballs, desc="generating plots"):
     image = io.imread(Path(TEST_IMAGES_FOLDER, fireball + ".jpg"))
 
     with open(Path(TEST_LABELS_FOLDER, fireball + ".txt")) as label_file:
