@@ -64,7 +64,7 @@ for fireball_file in os.listdir(THUMB_TEST_BOXES_FOLDER):
 
     intersects = False
     for box in boxes:
-        if intersect(box, pp_bb):
+        if intersects(box, pp_bb):
             intersects = True
             break
 

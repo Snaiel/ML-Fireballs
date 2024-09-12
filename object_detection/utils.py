@@ -1,3 +1,24 @@
+import numpy as np
+import cv2
+
+
+def add_border(image: np.ndarray, border: int) -> np.ndarray:
+    """
+    Adds a constant border around the given image.
+
+    Parameters:
+        image (np.ndarray): The input image to which the border will be added.
+        border (int): The width of the border to be added on all sides.
+
+    Returns:
+        np.ndarray: The image with the added border.
+
+    https://github.com/ultralytics/ultralytics/issues/2783#issuecomment-1706449763
+    """
+    return cv2.copyMakeBorder(image, border, border, border, border, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+
+
+
 def box_area(xyxy):
     """Calculate the area of a bounding box given in xyxy format."""
     x_min, y_min, x_max, y_max = xyxy

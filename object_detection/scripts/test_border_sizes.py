@@ -2,7 +2,6 @@ import argparse
 import os
 from pathlib import Path
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage.io as io
@@ -10,7 +9,8 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from ultralytics.utils.ops import xywhn2xyxy
 
-from fireball_detection.detect import intersect
+from fireball_detection.detect import intersects
+from object_detection.utils import add_border
 
 
 parser = argparse.ArgumentParser(description='For a given fold, test recall of border sizes 0-32 inclusive.')
@@ -53,7 +53,7 @@ for b_size in tqdm(border_sizes, desc="evaluating each border size", position=0)
     # Run predictions on images with the current border size
     for file, image in tqdm(images.items(), desc=f"border size {b_size}", position=1):
         # Add a constant border around the image
-        bordered_image = cv2.copyMakeBorder(image, b_size, b_size, b_size, b_size, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+        bordered_image = add_border(image, b_size)
 
         fireball = file.split(".")[0]  # Extract the base filename to retrieve labels
         # Read the corresponding label file and convert xywh to xyxy format
@@ -77,7 +77,7 @@ for b_size in tqdm(border_sizes, desc="evaluating each border size", position=0)
         ack_true_positive = False  # Flag to acknowledge true positive detection
         for box in boxes:
             # Check intersection between ground truth and predicted boxes
-            if intersect(xyxy, box):
+            if intersects(xyxy, box):
                 if not ack_true_positive:  # Count only one true positive for each image
                     true_positives += 1
                     ack_true_positive = True

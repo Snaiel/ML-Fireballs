@@ -3,7 +3,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +11,7 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from ultralytics.utils.ops import xywhn2xyxy
 
-from object_detection.box_utils import iom
+from object_detection.utils import add_border, iom
 
 
 @dataclass
@@ -34,9 +33,12 @@ class Args:
 
 
 # Set up argparse to parse command-line arguments
-parser = argparse.ArgumentParser(description="Run object detection with YOLO and evaluate results.")
+parser = argparse.ArgumentParser(
+    description="Run object detection with YOLO and evaluate results.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+parser.add_argument('--fold', type=int, required=True, help='K-Fold cross-validation fold number to use')
 parser.add_argument('--border_size', type=int, default=0, help='Size of the border to add around images')
-parser.add_argument('--fold', type=int, default=0, help='K-Fold cross-validation fold number to use')
 parser.add_argument('--samples', choices=['positive', 'negative', 'both'], default='both',
                     help='Specify whether to include positive, negative, or both types of images')
 parser.add_argument('--iom', type=float, default=0.0, help='Specify the IoM threshold for evaluation')
@@ -82,13 +84,12 @@ print("negative samples:", negative_samples)
 images = {}
 
 b_size = args.border_size  # Size of border to add around images from command-line argument
-print("border size:", b_size)
 
 # Load images and add borders
 for i in tqdm(image_files, desc="loading images"):
     image = io.imread(Path(VAL_IMAGES_FOLDER, i))  # Read the image
     # Add a constant border around the image
-    image = cv2.copyMakeBorder(image, b_size, b_size, b_size, b_size, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+    image = add_border(image, b_size)
     images[i] = image  # Store the processed image
 
 # Initialize variables to count true positives, false positives, and total boxes

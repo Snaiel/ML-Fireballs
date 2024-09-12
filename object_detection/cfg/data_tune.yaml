@@ -1,6 +1,0 @@
-path: object_detection_tune
-train: images/train
-val: images/val
-
-names:
-  0: fireball
