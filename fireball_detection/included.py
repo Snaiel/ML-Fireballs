@@ -26,6 +26,17 @@ def retrieve_start_points(size, split_size, overlap=0):
 
 
 def retrieve_included_coordinates():
+    """
+    Retrieve coordinates of tiles
+
+    Returns:
+        list[tuple]: A list of tuples where each tuple represents the coordinate (x, y) of a tile
+
+    Note:
+        The positions in the `discard_overlap.csv` file use -1 to indicate the last position in that 
+        dimension.
+    """
+    
     X_points = retrieve_start_points(IMAGE_DIMENSIONS[0], SQUARE_SIZE, 0.5)
     Y_points = retrieve_start_points(IMAGE_DIMENSIONS[1], SQUARE_SIZE, 0.5)
 
@@ -51,6 +62,7 @@ def retrieve_included_coordinates():
     included_coordinates['x'], included_coordinates['y'] = included_coordinates['y'], included_coordinates['x']
 
     return list(included_coordinates.itertuples(index=False, name=None))
+
 
 
 def main():

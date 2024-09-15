@@ -239,14 +239,14 @@ def detect_fireballs(image: ndarray, model: YOLO | None = None) -> list[Fireball
 
     detected_tiles: list[Tile] = []
     for tile in tiles:
-        # results = model.predict(
-        #     add_border(tile.image, 8),
-        #     verbose=False
-        # )
         results = model.predict(
-            tile.image,
+            add_border(tile.image, 1),
             verbose=False
         )
+        # results = model.predict(
+        #     tile.image,
+        #     verbose=False
+        # )
         if len(results[0].boxes.conf) > 0:
             tile.boxes = results[0].boxes
             detected_tiles.append(tile)
@@ -327,7 +327,7 @@ def main():
     6. Displays the resulting image with plotted bounding boxes.
     """
 
-    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/03_2020-02-27_131328_K_DSC_4670.thumb.jpg"
+    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/15_2017-06-12_111729_S_DSC_2102.thumb.jpg"
 
     t0 = time.time()
     image = io.imread(Path(Path(__file__).parents[1], fireball_image))
