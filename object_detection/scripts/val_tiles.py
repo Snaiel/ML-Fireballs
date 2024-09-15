@@ -30,7 +30,7 @@ class Sample:
 @dataclass
 class Args:
     border_size: int
-    fold: int
+    split: int
     samples: str
     iom: float
     show_false_negatives: bool
@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser(
     description="Run object detection with YOLO and evaluate results.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
-parser.add_argument('--fold', type=int, required=True, help='K-Fold cross-validation fold number to use')
+parser.add_argument('--split', type=int, required=True, help='K-Fold cross-validation split number to use')
 parser.add_argument('--border_size', type=int, default=0, help='Size of the border to add around images')
 parser.add_argument('--samples', choices=['positive', 'negative', 'both'], default='both',
                     help='Specify whether to include positive, negative, or both types of images')
@@ -57,10 +57,10 @@ print()
 
 
 # Load the YOLO model from the given weights path
-model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.fold}", "weights", "best.pt"))
+model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.split}", "weights", "best.pt"))
 
-# Set the fold for K-Fold cross-validation
-KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"fold{args.fold}")
+# Set the split for K-Fold cross-validation
+KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"split{args.split}")
 VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")  # Validation images directory
 VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")  # Validation labels directory
 

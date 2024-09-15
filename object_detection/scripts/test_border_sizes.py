@@ -20,12 +20,12 @@ def main():
 
     @dataclass
     class Args:
-        fold: int
+        split: int
         metric: str
         threshold: float | None
 
-    parser = argparse.ArgumentParser(description='For a given fold, test recall of border sizes 0-32 inclusive.')
-    parser.add_argument('--fold', type=int, required=True, help='The fold number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
+    parser = argparse.ArgumentParser(description='For a given split, test recall of border sizes 0-32 inclusive.')
+    parser.add_argument('--split', type=int, required=True, help='The split number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
     parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
 
@@ -42,10 +42,10 @@ def main():
     print("args:", vars(args))
     print()
 
-    model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.fold}", "weights", "last.pt"))
+    model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.split}", "weights", "last.pt"))
 
 
-    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"fold{args.fold}")
+    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"split{args.split}")
     VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")
     VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")
 
@@ -155,7 +155,7 @@ def main():
         'precision': precisions
     })
 
-    csv_path = Path(DATA_FOLDER, f'border_sizes_fold{args.fold}.csv')
+    csv_path = Path(DATA_FOLDER, f'border_sizes_fold{args.split}.csv')
     df.to_csv(csv_path, index=False)
 
     print()

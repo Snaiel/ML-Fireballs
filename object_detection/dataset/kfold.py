@@ -34,7 +34,7 @@ def create_kfolds() -> None:
     1. Retrieves fireball images and splits.
     2. Creates k-fold splits using KFold from scikit-learn.
     3. Creates a directory structure for the k-folds.
-    4. Generates and saves images and labels for each fold in designated train and validation folders.
+    4. Generates and saves images and labels for each split in designated train and validation folders.
 
     The directory structure created will look like this:
     ```
@@ -67,39 +67,39 @@ def create_kfolds() -> None:
     os.mkdir(KFOLD_OBJECT_DETECTION_FOLDER)
 
     for i in range(5):
-        fold_folder = Path(KFOLD_OBJECT_DETECTION_FOLDER, f"fold{i}")
-        os.mkdir(fold_folder)
-        shutil.copy(DATA_YAML, fold_folder)
-        with open(Path(fold_folder, "data.yaml"), "r+") as yaml_file:
+        split_folder = Path(KFOLD_OBJECT_DETECTION_FOLDER, f"split{i}")
+        os.mkdir(split_folder)
+        shutil.copy(DATA_YAML, split_folder)
+        with open(Path(split_folder, "data.yaml"), "r+") as yaml_file:
             content = yaml_file.read()
-            content = content.replace("object_detection", f"kfold_object_detection/fold{i}")
+            content = content.replace("object_detection", f"kfold_object_detection/split{i}")
             yaml_file.seek(0)
             yaml_file.write(content)
             yaml_file.truncate()
         for folder in ("images", "labels"):
-            os.mkdir(Path(fold_folder, folder))
+            os.mkdir(Path(split_folder, folder))
             for sub_folder in ("train", "val"):
-                os.mkdir(Path(fold_folder, folder, sub_folder))
+                os.mkdir(Path(split_folder, folder, sub_folder))
     
     print("\n\nCreated folder structure in data folder:\n")
     print_tree(KFOLD_OBJECT_DETECTION_FOLDER)
 
-    def create_fold_dataset(fold: int, name: str, indexes) -> None:
-        position = fold * 2 + (1 if name == "val" else 0)
-        for i in tqdm(indexes, position=position, desc=f"fold {fold} {name}"):
+    def create_split_dataset(split: int, name: str, indexes) -> None:
+        position = split * 2 + (1 if name == "val" else 0)
+        for i in tqdm(indexes, position=position, desc=f"split {split} {name}"):
             fireball_name = fireball_images[i].split(".")[0]
             fireball = SplitTilesFireball(fireball_name)
-            fireball.save_images(Path(KFOLD_OBJECT_DETECTION_FOLDER, f"fold{fold}", "images", name))
-            fireball.save_labels(Path(KFOLD_OBJECT_DETECTION_FOLDER, f"fold{fold}", "labels", name))
+            fireball.save_images(Path(KFOLD_OBJECT_DETECTION_FOLDER, f"split{split}", "images", name))
+            fireball.save_labels(Path(KFOLD_OBJECT_DETECTION_FOLDER, f"split{split}", "labels", name))
 
-    print("\n\nCreating fold datasets...\n")
+    print("\n\nCreating split datasets...\n")
 
     procs: list[mp.Process] = []
     for i, (train_indexes, val_indexes) in splits:
-        train_proc = mp.Process(target=create_fold_dataset, args=(i, "train", train_indexes))
+        train_proc = mp.Process(target=create_split_dataset, args=(i, "train", train_indexes))
         procs.append(train_proc)
         train_proc.start()
-        val_proc = mp.Process(target=create_fold_dataset, args=(i, "val", val_indexes))
+        val_proc = mp.Process(target=create_split_dataset, args=(i, "val", val_indexes))
         procs.append(val_proc)
         val_proc.start()
     

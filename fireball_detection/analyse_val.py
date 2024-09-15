@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from fireball_detection.detect import intersects
-from fireball_detection.val_full_images import get_fold_folder
+from fireball_detection.val_full_images import get_split_folder
 from object_detection.utils import iom, iou
 
 
@@ -32,12 +32,12 @@ def diagonal_length(box) -> float:
 def main():
     @dataclass
     class Args:
-        fold: int
+        split: int
         metric: str
         threshold: float
 
     parser = argparse.ArgumentParser(description='Fireball detection analysis')
-    parser.add_argument('--fold', type=int, required=True, help='Fold number for the analysis')
+    parser.add_argument('--split', type=int, required=True, help='Fold number for the analysis')
     parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
     
@@ -52,15 +52,15 @@ def main():
         parser.error("--threshold should not be provided when --metric is 'intersects'")
     
 
-    FOLD_FOLDER = get_fold_folder(args.fold)
+    SPLIT_FOLDER = get_split_folder(args.split)
 
-    FALSE_NEGATIVES_FOLDER = Path(FOLD_FOLDER, "false_negatives")
+    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "false_negatives")
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
     SMALL_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "small")
 
-    BOXES_FOLDER = Path(FOLD_FOLDER, "boxes")
-    PP_BB_FOLDER = Path(FOLD_FOLDER, "pp_bb")
-    PREDS_FOLDER = Path(FOLD_FOLDER, "preds")
+    BOXES_FOLDER = Path(SPLIT_FOLDER, "boxes")
+    PP_BB_FOLDER = Path(SPLIT_FOLDER, "pp_bb")
+    PREDS_FOLDER = Path(SPLIT_FOLDER, "preds")
 
     total_fireballs = len(os.listdir(BOXES_FOLDER))
     fireballs_detected = 0

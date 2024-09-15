@@ -4,21 +4,21 @@ import yaml
 from pathlib import Path
 
 # Set up argument parser
-parser = argparse.ArgumentParser(description='Train YOLOv8 on a specific fold of k-fold data.')
+parser = argparse.ArgumentParser(description='Train YOLOv8 on a specific split of k-fold data.')
 parser.add_argument(
-    '--fold', 
+    '--split', 
     type=int, 
     required=True, 
-    help='Specify the fold number to train (e.g., 0, 1, 2, 3, 4).'
+    help='Specify the split number to train (e.g., 0, 1, 2, 3, 4).'
 )
 args = parser.parse_args()
 
 # Load the model
 model = YOLO("yolov8n.pt")
 
-# Construct the path using the specified fold number
-fold_number = args.fold
-data = Path(Path(__file__).parents[2], f"data/kfold_object_detection/fold{fold_number}/data.yaml")
+# Construct the path using the specified split number
+split_number = args.split
+data = Path(Path(__file__).parents[2], f"data/kfold_object_detection/split{split_number}/data.yaml")
 
 # Load additional training configurations
 kwargs = {}
