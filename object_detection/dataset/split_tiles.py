@@ -30,24 +30,20 @@ class FireballTile:
 class SplitTilesFireball:
 
     fireball_name: str
-    pp: PointPickings
-
     fireball_tiles: list[FireballTile]
     negative_tiles: list[FireballTile]
 
     def __init__(self, fireball_name: str) -> None:
         self.fireball_name = fireball_name
-        self.pp = PointPickings(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
 
         fireball_image = io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
+        points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
 
-        fireball_tiles: list[FireballTile] = []
-        negative_tiles: list[FireballTile] = []
-
+        # Check if tile contains points
         for tile_pos in included_coordinates:
             points_in_tile = []
 
-            for point in self.pp.pp.itertuples(False, None):
+            for point in points:
                 if (
                     tile_pos[0] <= point[0] and point[0] < tile_pos[0] + SQUARE_SIZE and \
                     tile_pos[1] <= point[1] and point[1] < tile_pos[1] + SQUARE_SIZE
@@ -55,16 +51,17 @@ class SplitTilesFireball:
                     points_in_tile.append(point)
             
             if len(points_in_tile) == 0:
-                negative_tiles.append(FireballTile(tile_pos))
+                self.negative_tiles.append(FireballTile(tile_pos))
             elif len(points_in_tile) >= MIN_POINTS_IN_TILE:
-                fireball_tiles.append(
+                self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
         
-        for tile in fireball_tiles:
+        # Create bounding boxes for each tile
+        for tile in self.fireball_tiles:
             pp_min_x = tile.points['x'].min()
             pp_max_x = tile.points['x'].max()
             pp_min_y = tile.points['y'].min()
@@ -96,12 +93,10 @@ class SplitTilesFireball:
 
             tile.image = fireball_image[tile.position[1] : tile.position[1] + SQUARE_SIZE, tile.position[0] : tile.position[0] + SQUARE_SIZE]
         
-        self.fireball_tiles = fireball_tiles
-
-        negative_tiles = random.sample(negative_tiles, len(fireball_tiles))
-        for tile in negative_tiles:
+        # Assign images to negative tiles
+        self.negative_tiles = random.sample(self.negative_tiles, len(self.fireball_tiles))
+        for tile in self.negative_tiles:
             tile.image = fireball_image[tile.position[1] : tile.position[1] + SQUARE_SIZE, tile.position[0] : tile.position[0] + SQUARE_SIZE]
-        self.negative_tiles = negative_tiles
 
 
     def save_images(self, folder: str) -> None:
