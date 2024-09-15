@@ -1,104 +1,178 @@
 import argparse
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import skimage.io as io
 from tqdm import tqdm
 from ultralytics import YOLO
 from ultralytics.utils.ops import xywhn2xyxy
 
 from fireball_detection.detect import intersects
-from object_detection.utils import add_border
+from object_detection.utils import add_border, iom, iou
+from object_detection.dataset import DATA_FOLDER
 
 
-parser = argparse.ArgumentParser(description='For a given fold, test recall of border sizes 0-32 inclusive.')
-parser.add_argument('--fold', type=int, required=True, help='The fold number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
-args = parser.parse_args()
+def main():
+
+    @dataclass
+    class Args:
+        fold: int
+        metric: str
+        threshold: float | None
+
+    parser = argparse.ArgumentParser(description='For a given fold, test recall of border sizes 0-32 inclusive.')
+    parser.add_argument('--fold', type=int, required=True, help='The fold number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
+    parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
+    parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+
+    args = Args(**vars(parser.parse_args()))
+
+    if args.metric in ['iom', 'iou']:
+        if args.threshold is None:
+            parser.error(f"--threshold is required when --metric is '{args.metric}'")
+        elif not (0.0 <= args.threshold <= 1.0):
+            raise ValueError('Threshold must be between 0.0 and 1.0')
+    elif args.metric == 'intersects' and args.threshold is not None:
+        parser.error("--threshold should not be provided when --metric is 'intersects'")
+
+    print("args:", vars(args))
+    print()
+
+    model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.fold}", "weights", "last.pt"))
 
 
-# Load the YOLO model from the given weights path
-model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.fold}", "weights", "best.pt"))
+    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"fold{args.fold}")
+    VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")
+    VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")
 
-# Set the fold for K-Fold cross-validation
-KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"fold{args.fold}")
-VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")  # Validation images directory
-VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")  # Validation labels directory
+    print("kfold folder:", KFOLD_FOLDER)
+    print()
 
-print("kfold folder:", KFOLD_FOLDER)
 
-# Load the list of image files from the validation folder, excluding negatives
-image_files = os.listdir(VAL_IMAGES_FOLDER)
-image_files = [i for i in image_files if not "negative" in i]
+    image_files = os.listdir(VAL_IMAGES_FOLDER)
+    total_positive_samples = sum(1 for i in image_files if not "negative" in i)
 
-# Load all images into a dictionary
-images = {}
-for i in tqdm(image_files, desc="loading images"):
-    image = io.imread(Path(VAL_IMAGES_FOLDER, i))  # Read the image
-    images[i] = image  # Store the processed image
 
-border_sizes = range(32)  # Border sizes from 0 to 32 inclusive
-recalls = []  # To store recall values for each border size
+    images = {}
+    for i in tqdm(image_files, desc="loading images"):
+        image = io.imread(Path(VAL_IMAGES_FOLDER, i))
+        images[i] = image
 
-# Process each border size
-for b_size in tqdm(border_sizes, desc="evaluating each border size", position=0):
-    # Initialize variables to count true positives, false positives, and total boxes
-    true_positives = 0
-    false_positives = 0
-    total_boxes = 0
+    border_sizes = range(33)
 
-    false_negative_files = []  # List to keep track of files with false negatives
+    boxes_list = []
+    recalls = []
+    precisions = []
 
-    # Run predictions on images with the current border size
-    for file, image in tqdm(images.items(), desc=f"border size {b_size}", position=1):
-        # Add a constant border around the image
-        bordered_image = add_border(image, b_size)
+    # Process each border size
+    for b_size in tqdm(border_sizes, desc="evaluating each border size", position=0):
+        
+        detected_fireballs = 0
+        true_positive_boxes = 0
+        total_boxes = 0
 
-        fireball = file.split(".")[0]  # Extract the base filename to retrieve labels
-        # Read the corresponding label file and convert xywh to xyxy format
-        with open(Path(VAL_LABELS_FOLDER, fireball + ".txt")) as label_file:
-            xyxy = xywhn2xyxy(
-                np.array([float(i) for i in label_file.read().split(" ")[1:]]),
-                400,
-                400
-            )
+        false_negative_files = []
 
-        # Use the model to predict bounding boxes for the bordered image
-        results = model.predict(bordered_image, verbose=False, imgsz=416)
-        boxes = results[0].boxes.xyxy.cpu()  # Extract predicted boxes
+        # Run predictions on images with the current border size
+        for file, image in tqdm(images.items(), desc=f"border size {b_size}", position=1):
+            
+            positive_sample = "negative" not in file
 
-        total_boxes += len(boxes)  # Update total number of boxes
-
-        # Check for false negatives (no predicted boxes)
-        if len(boxes) == 0:
-            false_negative_files.append(fireball)  # Add to false negatives if no boxes predicted
-
-        ack_true_positive = False  # Flag to acknowledge true positive detection
-        for box in boxes:
-            # Check intersection between ground truth and predicted boxes
-            if intersects(xyxy, box):
-                if not ack_true_positive:  # Count only one true positive for each image
-                    true_positives += 1
-                    ack_true_positive = True
+            if b_size > 0:
+                bordered_image = add_border(image, b_size)
             else:
-                false_positives += 1  # Count as false positive if no intersection
+                bordered_image = image
+            
+            fireball = file.split(".")[0]
 
-    # Calculate recall and store in recalls list
-    recall = true_positives / len(image_files) if len(image_files) > 0 else 0
-    recalls.append(recall)
-    print(f"Border size: {b_size}, Recall: {recall}")
+            # Use the model to predict bounding boxes for the bordered image
+            results = model.predict(bordered_image, verbose=False, imgsz=416)
+            boxes = results[0].boxes.xyxy.cpu()  # Extract predicted boxes
 
-print("recalls:")
-for i in recalls:
-    print(i)
+            total_boxes += len(boxes)  # Update total number of boxes
 
-# Plotting the results
-plt.figure(figsize=(10, 5))
-plt.plot(border_sizes, recalls, marker='o')
-plt.title("Recall vs Border Size")
-plt.xlabel("Border Size")
-plt.ylabel("Recall")
-plt.xticks(border_sizes)
-plt.grid()
-plt.show()
+            if not positive_sample:
+                continue
+
+            # Read the corresponding label file and convert xywh to xyxy format
+            with open(Path(VAL_LABELS_FOLDER, fireball + ".txt")) as label_file:
+                xyxy = xywhn2xyxy(
+                    np.array([float(i) for i in label_file.read().split(" ")[1:]]),
+                    400,
+                    400
+                )
+
+            # Check for false negatives (no predicted boxes)
+            if len(boxes) == 0:
+                false_negative_files.append(fireball)  # Add to false negatives if no boxes predicted
+
+            ack_true_positive = False
+            for box in boxes:
+                if (args.metric == "intersects" and intersects(xyxy, box)) or \
+                (args.metric == "iom" and iom(xyxy, box) >= args.threshold) or \
+                (args.metric == "iou" and iou(xyxy, box) >= args.threshold):
+                    true_positive_boxes += 1
+                    if not ack_true_positive:
+                        detected_fireballs += 1
+                        ack_true_positive = True
+
+
+        boxes_list.append(total_boxes)
+        
+        recall = detected_fireballs / total_positive_samples if total_positive_samples > 0 else 0
+        recalls.append(recall)
+
+        precision = true_positive_boxes / total_boxes if total_boxes > 0 else 0
+        precisions.append(precision)
+
+        print(f"Border size: {b_size}, Recall: {recall}, Precision: {precision}, Boxes: {total_boxes} ")
+
+
+    normalised_boxes = [i / boxes_list[0] for i in boxes_list]
+
+    print()
+    print("box totals:")
+    for i in zip(normalised_boxes, boxes_list):
+        print(i)
+
+    print()
+    print("recalls:")
+    for i in recalls:
+        print(i)
+
+    print()
+    print("precisions:")
+    for i in precisions:
+        print(i)
+
+    df = pd.DataFrame({
+        'box_totals': boxes_list,
+        'recall': recalls,
+        'precision': precisions
+    })
+
+    csv_path = Path(DATA_FOLDER, f'border_sizes_fold{args.fold}.csv')
+    df.to_csv(csv_path, index=False)
+
+    print()
+    print(f"statistics saved to: \"{csv_path}\"")
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(border_sizes, recalls, marker='o', label="Recall")
+    plt.plot(border_sizes, precisions, marker='x', label='Precision')
+    plt.plot(border_sizes, normalised_boxes, marker='s', label='Normalised Box Totals')
+    plt.title(f"Statistics with Different Border Sizes using {vars(args)}")
+    plt.xlabel("Border Size")
+    plt.ylabel("Percentrage")
+    plt.xticks(border_sizes)
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,7 @@
-import numpy as np
+from pathlib import Path
+
 import cv2
+import numpy as np
 
 
 def add_border(image: np.ndarray, border: int) -> np.ndarray:
@@ -106,3 +108,34 @@ def iom(box1, box2):
     # Calculate intersection over the area of the smaller box
     result = intersection_area / smaller_area
     return result
+
+
+# prefix components:
+SPACE =  '    '
+BRANCH = '│   '
+# pointers:
+TEE =    '├── '
+LAST =   '└── '
+
+def print_tree(dir_path: Path) -> None:
+    for line in tree(dir_path):
+        print(line)
+
+def tree(dir_path: Path, prefix: str=''):
+    """    
+    A recursive generator, given a directory Path object
+    will yield a visual tree structure line by line
+    with each line prefixed by the same characters
+    
+    https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
+    """    
+    
+    contents = sorted(list(dir_path.iterdir()))
+    # contents each get pointers that are ├── with a final └── :
+    pointers = [TEE] * (len(contents) - 1) + [LAST]
+    for pointer, path in zip(pointers, contents):
+        yield prefix + pointer + path.name
+        if path.is_dir(): # extend the prefix and recurse:
+            extension = BRANCH if pointer == TEE else SPACE 
+            # i.e. SPACE because LAST, └── , above so no more |
+            yield from tree(path, prefix=prefix+extension)

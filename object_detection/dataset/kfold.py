@@ -1,121 +1,62 @@
+import multiprocessing as mp
 import os
 import shutil
 from pathlib import Path
 
-from sklearn.model_selection import train_test_split, KFold
-
-from object_detection.dataset import (DATA_YAML, DATASET_FOLDER, GFO_JPEGS,
-                                      RANDOM_SEED, DATA_FOLDER)
-from object_detection.dataset.split_tiles import SplitTilesFireball
+import numpy as np
+from sklearn.model_selection import KFold
 from tqdm import tqdm
-import multiprocessing as mp
+
+from object_detection.dataset import (DATA_FOLDER, DATA_YAML, GFO_JPEGS)
+from object_detection.dataset.split_tiles import SplitTilesFireball
+from object_detection.utils import print_tree
 
 
-def get_train_val_test_split(dataset_size: int = None) -> dict:
+def retrieve_fireball_splits() -> tuple[list[str], tuple[int, tuple[np.ndarray, np.ndarray]]]:
     """
-    returns a dictionary containing "train", "val", "test"
-    lists of fireballs jpg filenames from the gfo folder.
+    Retrieves image filenames and their corresponding K-Fold splits.
+
+    Returns:
+        a tuple containing a list of fireball image files from GFO_JPEGS and
+        a enumeration of each split (i, (train indexes, test indexes))
     """
-    fireball_images = os.listdir(GFO_JPEGS)
-
-    if dataset_size is not None and dataset_size < len(fireball_images):
-        fireball_images, _ = train_test_split(fireball_images, train_size=dataset_size, random_state=RANDOM_SEED)
-
-    temp_fireballs, test_fireballs = train_test_split(fireball_images, train_size=0.8, random_state=RANDOM_SEED)
-    train_fireballs, val_fireballs = train_test_split(temp_fireballs, train_size=0.8, random_state=RANDOM_SEED)
-    # 64% train, 16% val, 20% test
-
-    print("Train Val Test")
-    print(len(train_fireballs), len(val_fireballs), len(test_fireballs))
-
-    fireball_dataset = {
-        "train": train_fireballs,
-        "val": val_fireballs,
-        "test": test_fireballs
-    }
-
-    return fireball_dataset
-
-
-def create_dataset():
-    # delete output, create new empty output folder
-    if Path(DATASET_FOLDER).exists():
-        shutil.rmtree(DATASET_FOLDER)
-    os.mkdir(DATASET_FOLDER)
-
-    ## Create folder structure
-    # dataset_folder
-    #     images
-    #         train
-    #         val
-    #         test
-    #     labels
-    #         train
-    #         val
-    #         test
-    #     data.yaml
-
-    # Copy the data.yaml file to the dataset folder
-    shutil.copy(DATA_YAML, DATASET_FOLDER)
-
-    # Create folders
-    folders = ("images", "labels")
-    sub_folders = ("train", "val")
-
-    for folder in folders:
-        os.mkdir(Path(DATASET_FOLDER, folder))
-        for sub_folder in sub_folders:
-            os.mkdir(Path(DATASET_FOLDER, folder, sub_folder))
-    
-    fireball_dataset = get_train_val_test_split()
-    for dataset, fireballs in fireball_dataset.items():
-        print(f"Creating {dataset} dataset...")
-        for fireball_filename in fireballs:
-            fireball_name = fireball_filename.split(".")[0]
-            fireball = SplitTilesFireball(fireball_name)
-            fireball.save_images(Path(DATASET_FOLDER, "images", dataset))
-            fireball.save_labels(Path(DATASET_FOLDER, "labels", dataset))
-
-
-# prefix components:
-space =  '    '
-branch = '│   '
-# pointers:
-tee =    '├── '
-last =   '└── '
-
-
-def print_tree(dir_path: Path) -> None:
-    for line in tree(dir_path):
-        print(line)
-
-
-def tree(dir_path: Path, prefix: str=''):
-    """    
-    A recursive generator, given a directory Path object
-    will yield a visual tree structure line by line
-    with each line prefixed by the same characters
-    
-    https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
-    """    
-    
-    contents = sorted(list(dir_path.iterdir()))
-    # contents each get pointers that are ├── with a final └── :
-    pointers = [tee] * (len(contents) - 1) + [last]
-    for pointer, path in zip(pointers, contents):
-        yield prefix + pointer + path.name
-        if path.is_dir(): # extend the prefix and recurse:
-            extension = branch if pointer == tee else space 
-            # i.e. space because last, └── , above so no more |
-            yield from tree(path, prefix=prefix+extension)
+    fireball_images = sorted(os.listdir(GFO_JPEGS))
+    kf = KFold(n_splits=5)
+    splits = enumerate(kf.split(fireball_images))
+    return fireball_images, splits
 
 
 def create_kfolds() -> None:
-    fireball_images = sorted(os.listdir(GFO_JPEGS))
+    """
+    Create k-fold splits for object detection datasets and prepare the associated directory structure.
+
+    This function performs the following:
+    1. Retrieves fireball images and splits.
+    2. Creates k-fold splits using KFold from scikit-learn.
+    3. Creates a directory structure for the k-folds.
+    4. Generates and saves images and labels for each fold in designated train and validation folders.
+
+    The directory structure created will look like this:
+    ```
+    kfold_object_detection
+    ├── fold0
+    │   ├── data.yaml
+    │   ├── images
+    │   │   ├── train
+    │   │   └── val
+    │   └── labels
+    │       ├── train
+    │       └── val
+    ├── fold1
+    │   ├── data.yaml
+    ... ...
+    ```
+    """
+    fireball_images, splits = retrieve_fireball_splits()
 
     kf = KFold(n_splits=5)
     
-    for i, (train_indexes, val_indexes) in enumerate(kf.split(fireball_images)):
+    for i, (train_indexes, val_indexes) in splits:
         print(f"Fold {i}:")
         print(f"  Train: index={train_indexes} length={len(train_indexes)}")
         print(f"  Test:  index={val_indexes} length={len(val_indexes)}")
@@ -153,8 +94,8 @@ def create_kfolds() -> None:
 
     print("\n\nCreating fold datasets...\n")
 
-    procs = []
-    for i, (train_indexes, val_indexes) in enumerate(kf.split(fireball_images)):
+    procs: list[mp.Process] = []
+    for i, (train_indexes, val_indexes) in splits:
         train_proc = mp.Process(target=create_fold_dataset, args=(i, "train", train_indexes))
         procs.append(train_proc)
         train_proc.start()
@@ -164,7 +105,6 @@ def create_kfolds() -> None:
     
     for proc in procs:
         proc.join()
-
 
 
 if __name__ == "__main__":

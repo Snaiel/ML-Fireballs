@@ -227,7 +227,7 @@ def detect_fireballs(image: ndarray, model: YOLO | None = None) -> list[Fireball
 
     if model is None:
         model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
-
+    
     tiles: list[Tile] = []
     for pos in INCLUDED_COORDINATES:
         tiles.append(
@@ -239,14 +239,18 @@ def detect_fireballs(image: ndarray, model: YOLO | None = None) -> list[Fireball
 
     detected_tiles: list[Tile] = []
     for tile in tiles:
+        # results = model.predict(
+        #     add_border(tile.image, 8),
+        #     verbose=False
+        # )
         results = model.predict(
-            add_border(tile.image),
+            tile.image,
             verbose=False
         )
         if len(results[0].boxes.conf) > 0:
             tile.boxes = results[0].boxes
             detected_tiles.append(tile)
-
+    
     detected_fireballs = []
     for tile in detected_tiles:
         for box, conf in zip(tile.boxes.xyxy, tile.boxes.conf):

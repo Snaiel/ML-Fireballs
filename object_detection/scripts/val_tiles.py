@@ -14,6 +14,11 @@ from ultralytics.utils.ops import xywhn2xyxy
 from object_detection.utils import add_border, iom
 
 
+discard_fireballs = {
+    "24_2015-03-18_140528_DSC_0352" # image requires two bounding boxes
+}
+
+
 @dataclass
 class Sample:
     name: str
@@ -48,6 +53,7 @@ parser.add_argument('--save_false_negatives', action='store_true', help='Save na
 args = Args(**vars(parser.parse_args()))
 
 print("args:", args)
+print()
 
 
 # Load the YOLO model from the given weights path
@@ -60,6 +66,7 @@ VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")  # Validation labels dir
 
 
 print("kfold folder:", KFOLD_FOLDER)
+print()
 
 # Load the list of image files from the validation folder
 image_files = os.listdir(VAL_IMAGES_FOLDER)
@@ -75,9 +82,10 @@ total_samples = len(image_files)
 positive_samples = sum(1 for i in image_files if "negative" not in i)
 negative_samples = sum(1 for i in image_files if "negative" in i)
 
-print("total samples:", total_samples)
-print("positive samples:", positive_samples)
-print("negative samples:", negative_samples)
+print(f"{'Total samples:':<30} {total_samples}")
+print(f"{'Positive samples:':<30} {positive_samples}")
+print(f"{'Negative samples:':<30} {negative_samples}")
+print()
 
 
 # Initialize a dictionary to store images with added borders
@@ -93,9 +101,9 @@ for i in tqdm(image_files, desc="loading images"):
     images[i] = image  # Store the processed image
 
 # Initialize variables to count true positives, false positives, and total boxes
-true_positives = 0
-false_positives = 0
+detected_samples = 0
 total_boxes = 0
+true_positives = 0
 
 
 false_negative_samples: list[Sample] = []  # List to keep track of files with false negatives
@@ -104,10 +112,21 @@ false_negative_samples: list[Sample] = []  # List to keep track of files with fa
 samples: list[Sample] = []
 
 
+fireball_names = set()
+detected_fireball_names = set()
+
+
 # Run predictions on loaded images
 for file, image in tqdm(images.items(), desc="running predictions"):
     fireball = file.split(".")[0]  # Extract the base filename to retrieve labels
     # Read the corresponding label file and convert xywh to xyxy format
+
+    fireball_name = "_".join(fireball.split("_")[:5])
+    ignore_for_total_fireball_detection = False
+    if fireball_name in discard_fireballs:
+        ignore_for_total_fireball_detection = True
+    else:
+        fireball_names.add(fireball_name)
 
     # Use the model to predict bounding boxes for the image
     results = model.predict(image, verbose=False, imgsz=416)
@@ -119,7 +138,6 @@ for file, image in tqdm(images.items(), desc="running predictions"):
 
     # Any boxes in negative tiles count as false positives
     if "negative" in fireball:
-        false_positives += len(boxes)
         samples.append(sample)
         continue
     
@@ -141,27 +159,35 @@ for file, image in tqdm(images.items(), desc="running predictions"):
     for box in boxes:
         # Check intersection between ground truth and predicted boxes
         if iom(xyxy, box) > args.iom:
+            true_positives += 1
             if not ack_true_positive:  # Count only one true positive for each image
-                true_positives += 1
+                detected_samples += 1
                 ack_true_positive = True
-        else:
-            false_positives += 1  # Count as false positive if no intersection
     
-    if not ack_true_positive:
+    if ack_true_positive:
+        if not ignore_for_total_fireball_detection:
+            detected_fireball_names.add(fireball_name)
+    else:
         false_negative_samples.append(sample)
     
     samples.append(sample)
 
 
-false_negatives = len(false_negative_samples)
+print()
+print(f"{'Detected samples:':<30} {detected_samples}")
+print(f"{'False negatives:':<30} {positive_samples - detected_samples}")
+print(f"{'Recall on individual samples:':<30} {detected_samples / positive_samples:.5f}")
+print()
+print(f"{'Total fireballs:':<30} {len(fireball_names)}")
+print(f"{'Detected fireballs:':<30} {len(detected_fireball_names)}")
+print(f"{'False negatives:':<30} {len(fireball_names) - len(detected_fireball_names)}")
+print(f"{'Recall on entire fireballs:':<30} {len(detected_fireball_names) / len(fireball_names):.5f}")
+print()
+print(f"{'Total boxes:':<30} {total_boxes}")
+print(f"{'True positives:':<30} {true_positives}")
+print(f"{'False positives:':<30} {total_boxes - true_positives}")
+print(f"{'Precision:':<30} {true_positives / total_boxes:.5f}")
 
-# Print results of the evaluation
-print("total boxes:", total_boxes)
-print("true positives:", true_positives)
-print("false positives:", false_positives)
-print("false negatives:", false_negatives)
-print("recall:", true_positives / positive_samples)
-print("precision:", true_positives / (true_positives + false_positives))
 
 
 if args.save_false_negatives:
