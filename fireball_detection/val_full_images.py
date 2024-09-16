@@ -30,7 +30,7 @@ def get_split_folder(split: int) -> Path:
     return Path(KFOLD_FIREBALL_DETECTION_FOLDER, f"split{split}")
 
 
-def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: list, split: int) -> None:
+def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: list, split: int, border_size: int) -> None:
     split_folder = get_split_folder(split)
     fireball_name = fireball_file.split(".")[0]
         
@@ -42,7 +42,7 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
 
     image = io.imread(Path(split_folder, "images", fireball_file))
     
-    fireballs = detect_fireballs(image, model)
+    fireballs = detect_fireballs(image, model, border_size)
     
     with open(Path(split_folder, "boxes", fireball_name + ".txt"), "w") as boxes_file:
         lines = []
@@ -74,14 +74,15 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
     gc.collect()
 
 
-def run_tests(queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds: list, split: int) -> None:
-    # model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
-    model_path = Path(DATA_FOLDER, "e15.pt")
+def run_tests(queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds: list, split: int, border_size: int) -> None:
+    
+    model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
     model = YOLO(model_path)
+
     try:
         while True:
             fireball_file = queue.get(False)
-            test_fireball(model, fireball_file, detected_boxes, preds, split)
+            test_fireball(model, fireball_file, detected_boxes, preds, split, border_size)
             bar_queue.put_nowait(1)
     except:
         return
@@ -94,7 +95,7 @@ def update_bar(bar_queue: mp.Queue, total: int) -> None:
         pbar.update(1)
 
 
-def test(split: int, num_processes: int) -> None:
+def test(split: int, num_processes: int, border_size: int) -> None:
     matplotlib.use("agg")
 
     print(f"testing split{split}...")
@@ -120,7 +121,7 @@ def test(split: int, num_processes: int) -> None:
     processes: list[mp.Process] = []
 
     for _ in range(num_processes):
-        process = mp.Process(target=run_tests, args=(queue, bar_queue, detected_boxes, preds, split))
+        process = mp.Process(target=run_tests, args=(queue, bar_queue, detected_boxes, preds, split, border_size))
         processes.append(process)
         process.start()
 
@@ -136,9 +137,9 @@ def test(split: int, num_processes: int) -> None:
         os.kill(os.getpid(), signal.SIGTERM)
 
 
-def test_all(processes: int) -> None:
+def test_all(processes: int, border_size: int) -> None:
     for split in range(5):
-        p = mp.Process(target=test, args=(split, processes))
+        p = mp.Process(target=test, args=(split, processes, border_size))
         p.start()
         p.join()
 
@@ -181,12 +182,14 @@ def main():
     parser_test = subparsers.add_parser('test', help="Run test")
     parser_test.add_argument('--split', type=int, required=True, help="Specify the split number")
     parser_test.add_argument('--processes', type=int, required=True, help="Number of processes to use as workers")
-    parser_test.set_defaults(func=lambda args: test(args.split, args.processes))
+    parser_test.add_argument('--border_size', type=int, required=True, help="Specify the border size")
+    parser_test.set_defaults(func=lambda args: test(args.split, args.processes, args.border_size))
 
     # Test_all subcommand
     parser_test_all = subparsers.add_parser('test_all', help="Run test on all folds")
     parser_test_all.add_argument('--processes', type=int, required=True, help="Number of processes to use as workers")
-    parser_test_all.set_defaults(func=lambda args: test_all(args.processes))
+    parser_test_all.add_argument('--border_size', type=int, required=True, help="Specify the border size")
+    parser_test_all.set_defaults(func=lambda args: test_all(args.processes, args.border_size))
 
     args = parser.parse_args()
 
@@ -195,6 +198,7 @@ def main():
         args.func(args)
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()
