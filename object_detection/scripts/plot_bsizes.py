@@ -23,18 +23,26 @@ def main() -> None:
     # Normalize each list before converting to DataFrames
     normalized_lists = [lst / lst.iloc[0] for lst in sum_box_totals]
 
-    df_box_totals = pd.concat(normalized_lists, axis=1).mean(axis=1)
+    df_box_totals = pd.concat(sum_box_totals, axis=1).mean(axis=1)
+    df_normalised_boxes = pd.concat(normalized_lists, axis=1).mean(axis=1)
     df_recalls = pd.concat(sum_recalls, axis=1).mean(axis=1)
     df_precisions = pd.concat(sum_precisions, axis=1).mean(axis=1)
 
-    # Since box totals are already normalized by the first entry, no need to normalize again
-    normalised_boxes = df_box_totals
+    # Print statements for debugging
+    print("Average Box Totals Across the 5 Splits:")
+    print(df_box_totals)
+    print("\nAverage Normalized Box Totals Across the 5 Splits:")
+    print(df_normalised_boxes)
+    print("\nAverage Recalls Across the 5 Splits:")
+    print(df_recalls)
+    print("\nAverage Precisions Across the 5 Splits:")
+    print(df_precisions)
 
     # Step 3: Plotting
     plt.figure(figsize=(10, 6), dpi=120)
-    plt.plot(normalised_boxes.index, df_recalls, marker='o', label="Recall")
-    plt.plot(normalised_boxes.index, df_precisions, marker='x', label='Precision')
-    plt.plot(normalised_boxes.index, normalised_boxes, marker='s', label='Normalised Box Totals')
+    plt.plot(df_normalised_boxes.index, df_recalls, marker='o', label="Recall")
+    plt.plot(df_normalised_boxes.index, df_precisions, marker='x', label='Precision')
+    plt.plot(df_normalised_boxes.index, df_normalised_boxes, marker='s', label='Normalised Box Totals')
 
     plt.title("Average Individual Tile Detections with Different Border Sizes using iom=0.45")
     plt.xlabel("Border Sizes")
