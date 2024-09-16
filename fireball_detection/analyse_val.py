@@ -29,30 +29,8 @@ def diagonal_length(box) -> float:
 
 
 
-def main():
-    @dataclass
-    class Args:
-        split: int
-        metric: str
-        threshold: float
-
-    parser = argparse.ArgumentParser(description='Fireball detection analysis')
-    parser.add_argument('--split', type=int, required=True, help='Fold number for the analysis')
-    parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
-    parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
-    
-    args = Args(**vars(parser.parse_args()))
-
-    if args.metric in ['iom', 'iou']:
-        if args.threshold is None:
-            parser.error(f"--threshold is required when --metric is '{args.metric}'")
-        elif not (0.0 <= args.threshold <= 1.0):
-            raise ValueError('Threshold must be between 0.0 and 1.0')
-    elif args.metric == 'intersects' and args.threshold is not None:
-        parser.error("--threshold should not be provided when --metric is 'intersects'")
-    
-
-    SPLIT_FOLDER = get_split_folder(args.split)
+def analyse_split(split: int, metric: str, threshold: float) -> dict:
+    SPLIT_FOLDER = get_split_folder(split)
 
     FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "false_negatives")
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
@@ -127,9 +105,9 @@ def main():
             else:
                 small_boxes += 1
 
-            if (args.metric == "intersects" and intersects(box[1], pp_bb)) or \
-            (args.metric == "iom" and iom(box[1], pp_bb) >= args.threshold) or \
-            (args.metric == "iou" and iou(box[1], pp_bb) >= args.threshold):
+            if (metric == "intersects" and intersects(box[1], pp_bb)) or \
+            (metric == "iom" and iom(box[1], pp_bb) >= threshold) or \
+            (metric == "iou" and iou(box[1], pp_bb) >= threshold):
                 count_as_positive = True
                 true_positive_boxes += 1
                 true_positive_box_sizes.append(box_diagonal)
@@ -155,7 +133,43 @@ def main():
             else:
                 shutil.copy(Path(PREDS_FOLDER, fireball_name + ".jpg"), SMALL_FALSE_NEGATIVES_FOLDER)
 
+    return {
+        "total_fireballs": total_fireballs,
+        "fireballs_detected": fireballs_detected,
+        "long_fireballs": long_fireballs,
+        "long_fireballs_detected": long_fireballs_detected,
+        "small_fireballs": small_fireballs,
+        "small_fireballs_detected": small_fireballs_detected,
+        "total_boxes": total_boxes,
+        "true_positive_boxes": true_positive_boxes,
+        "long_boxes": long_boxes,
+        "long_true_positive_boxes": long_true_positive_boxes,
+        "small_boxes": small_boxes,
+        "small_true_positive_boxes": small_true_positive_boxes,
+        "boxes_in_each_file": boxes_in_each_file,
+        "true_positive_box_sizes": true_positive_box_sizes,
+        "false_positive_box_sizes": false_positive_box_sizes,
+        "true_positive_conf_box_size": true_positive_conf_box_size,
+        "false_positive_conf_box_size": false_positive_conf_box_size
+    }
+    
 
+
+def print_stats(stats: dict) -> None:
+    total_fireballs = stats["total_fireballs"]
+    fireballs_detected = stats["fireballs_detected"]
+    long_fireballs = stats["long_fireballs"]
+    long_fireballs_detected = stats["long_fireballs_detected"]
+    small_fireballs = stats["small_fireballs"]
+    small_fireballs_detected = stats["small_fireballs_detected"]
+    total_boxes = stats["total_boxes"]
+    true_positive_boxes = stats["true_positive_boxes"]
+    long_boxes = stats["long_boxes"]
+    long_true_positive_boxes = stats["long_true_positive_boxes"]
+    small_boxes = stats["small_boxes"]
+    small_true_positive_boxes = stats["small_true_positive_boxes"]
+    
+    
     ## Recall
 
     # Overall
@@ -223,8 +237,28 @@ def main():
     print(f"{'Small Precision:':<25} {small_precision:.5f}")
 
 
-    ## Distribution of Boxes in Each File
+def analyse_all_splits(metric: str, threshold: float) -> dict:
+    splits_stats: list[dict] = []
+
+    for i in range(5):
+        splits_stats.append(analyse_split(i, metric, threshold))
+
+    stats = {}
+
+    for stat in splits_stats[0].keys():
+        if isinstance(splits_stats[i][stat], list):
+            continue
+        
+        total = 0
+        for i in range(5):
+            total += splits_stats[i][stat] 
+        
+        stats[stat] = total / 5
     
+    return stats
+
+
+def plot_distribution_of_boxes_in_each_file(boxes_in_each_file) -> None:
     # Create the histogram
     plt.figure(figsize=(10, 6))
     plt.hist(boxes_in_each_file, bins=range(25), alpha=0.7, color='blue')
@@ -238,6 +272,8 @@ def main():
     plt.grid(True)
     plt.show()
 
+
+def plot_distribution_of_box_sizes(true_positive_box_sizes, false_positive_box_sizes) -> None:
     # Create the histogram
     fig, axes = plt.subplots(1, 2, figsize=(20, 6))
 
@@ -259,6 +295,8 @@ def main():
     plt.tight_layout()
     plt.show()
 
+
+def plot_conf_box_sizes(true_positive_conf_box_size, false_positive_conf_box_size) -> None:
     # Unpack data
     tp_conf, tp_box_size = zip(*true_positive_conf_box_size)
     fp_conf, fp_box_size = zip(*false_positive_conf_box_size)
@@ -276,6 +314,43 @@ def main():
     # Show plot
     plt.show()
 
+
+def main():
+    @dataclass
+    class Args:
+        command: str
+        metric: str
+        threshold: float | None
+        split: int | None = None
+
+    parser = argparse.ArgumentParser(description='Fireball detection analysis')
+    subparsers = parser.add_subparsers(dest='command', required=True)
+
+    parser_split = subparsers.add_parser('analyse_split', help='Analyse a specific split')
+    parser_split.add_argument('--split', type=int, required=True, help='Fold number for the analysis')
+    parser_split.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
+    parser_split.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+
+    parser_all_splits = subparsers.add_parser('analyse_all_splits', help='Analyse all splits')
+    parser_all_splits.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
+    parser_all_splits.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+
+    args = Args(**vars(parser.parse_args()))
+
+    if args.metric in ['iom', 'iou']:
+        if args.threshold is None:
+            parser.error(f"--threshold is required when --metric is '{args.metric}'")
+        elif not (0.0 <= args.threshold <= 1.0):
+            raise ValueError('Threshold must be between 0.0 and 1.0')
+    elif args.metric == 'intersects' and args.threshold is not None:
+        parser.error("--threshold should not be provided when --metric is 'intersects'")
+
+    if args.command == 'analyse_split':
+        stats = analyse_split(args.split, args.metric, args.threshold)
+        print_stats(stats)
+    elif args.command == 'analyse_all_splits':
+        stats = analyse_all_splits(args.metric, args.threshold)
+        print_stats(stats)
 
 
 if __name__ == "__main__":
