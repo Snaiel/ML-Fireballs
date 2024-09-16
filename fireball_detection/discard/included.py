@@ -44,7 +44,7 @@ def retrieve_included_coordinates():
 
     all_coordinates = pd.DataFrame(points, columns=['y', 'x']).astype(int)
 
-    discarded = pd.read_csv(Path(Path(__file__).parent,"discard_overlap.csv"))
+    discarded = pd.read_csv(Path(Path(__file__).parent, "discard_overlap.csv"))
     discarded_coordinates = discarded.copy()
     # Turn positions into coordinates
     discarded_coordinates["y"] = discarded_coordinates["y"]\

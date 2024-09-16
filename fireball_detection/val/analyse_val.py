@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from fireball_detection.detect import intersects
-from fireball_detection.val_full_images import get_split_folder
+from fireball_detection.val.val_full_images import get_split_folder
 from object_detection.utils import iom, iou
 
 

@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 from matplotlib.animation import FuncAnimation
 
 from fireball_detection import SQUARE_SIZE
-from fireball_detection.included import retrieve_included_coordinates
+from fireball_detection.discard.included import retrieve_included_coordinates
 from skimage import io
 
 from object_detection.dataset import GFO_JPEGS

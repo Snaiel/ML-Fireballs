@@ -63,7 +63,7 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Boxes as YOLOBoxes
 
 from fireball_detection import SQUARE_SIZE
-from fireball_detection.included import retrieve_included_coordinates
+from fireball_detection.discard.included import retrieve_included_coordinates
 from object_detection.utils import add_border
 
 
