@@ -324,7 +324,7 @@ def main():
     6. Displays the resulting image with plotted bounding boxes.
     """
 
-    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/06_2016-06-13_110759_S_DSC_1428.thumb.jpg"
+    fireball_image = "data/paper_dataset/results-manual/2013/11-00/08_2013-11-04_193559_DSC_0520.NEF.thumb.jpg"
 
     t0 = time.time()
     image = io.imread(Path(Path(__file__).parents[1], fireball_image))

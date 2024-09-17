@@ -32,13 +32,13 @@ def diagonal_length(box) -> float:
 def analyse_split(split: int, metric: str, threshold: float) -> dict:
     SPLIT_FOLDER = get_split_folder(split)
 
-    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "false_negatives")
+    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "1border", "false_negatives")
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
     SMALL_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "small")
 
-    BOXES_FOLDER = Path(SPLIT_FOLDER, "boxes")
+    BOXES_FOLDER = Path(SPLIT_FOLDER, "1border", "boxes")
     PP_BB_FOLDER = Path(SPLIT_FOLDER, "pp_bb")
-    PREDS_FOLDER = Path(SPLIT_FOLDER, "preds")
+    PREDS_FOLDER = Path(SPLIT_FOLDER, "1border", "preds")
 
     total_fireballs = len(os.listdir(BOXES_FOLDER))
     fireballs_detected = 0
@@ -348,6 +348,7 @@ def main():
     if args.command == 'analyse_split':
         stats = analyse_split(args.split, args.metric, args.threshold)
         print_stats(stats)
+        plot_conf_box_sizes(stats["true_positive_conf_box_size"], stats["false_positive_conf_box_size"])
     elif args.command == 'analyse_all_splits':
         stats = analyse_all_splits(args.metric, args.threshold)
         print_stats(stats)

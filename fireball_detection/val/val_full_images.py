@@ -17,6 +17,7 @@ from fireball_detection.detect import detect_fireballs, plot_boxes
 from object_detection.dataset import DATA_FOLDER, GFO_JPEGS, GFO_PICKINGS
 from object_detection.dataset.kfold import retrieve_fireball_splits
 from object_detection.dataset.point_pickings import PointPickings
+from queue import Full, Empty
 
 
 KFOLD_FIREBALL_DETECTION_FOLDER = Path(DATA_FOLDER, "kfold_fireball_detection")
@@ -84,7 +85,8 @@ def run_tests(queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds:
             fireball_file = queue.get(False)
             test_fireball(model, fireball_file, detected_boxes, preds, split, border_size)
             bar_queue.put_nowait(1)
-    except:
+    except (Full, Empty) as e:
+        print(type(e))
         return
 
 

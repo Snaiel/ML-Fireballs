@@ -17,7 +17,7 @@ def add_border(image: np.ndarray, border: int) -> np.ndarray:
 
     https://github.com/ultralytics/ultralytics/issues/2783#issuecomment-1706449763
     """
-    border = min(0, border)
+    border = max(0, border)
     if border == 0: return image
     return cv2.copyMakeBorder(image, border, border, border, border, cv2.BORDER_CONSTANT, value=(114, 114, 114))
 
@@ -32,7 +32,8 @@ def box_area(xyxy):
 
 
 def iou(box1, box2):
-    """Calculate the intersection over union box area.
+    """
+    Calculate the intersection over union box area.
     
     Args:
         box1: A tuple of (x_min, y_min, x_max, y_max) for the first box.
