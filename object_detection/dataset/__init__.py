@@ -1,7 +1,6 @@
 from pathlib import Path
 
 RANDOM_SEED = 2024
-IMAGE_DIM = (7360, 4912)
 BB_PADDING = 0.05
 
 

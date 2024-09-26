@@ -37,7 +37,6 @@ class PointPickings:
 
         self.point_pickings_dim = (self.pp_max_x - self.pp_min_x, self.pp_max_y - self.pp_min_y)
         self.padding = PADDING
-        self.image_dim = IMAGE_DIM
 
         self.bb_min_x = self.pp_min_x - (self.point_pickings_dim[0] * self.padding)
         self.bb_max_x = self.pp_max_x + (self.point_pickings_dim[0] * self.padding)
@@ -45,11 +44,11 @@ class PointPickings:
         self.bb_min_y = self.pp_min_y - (self.point_pickings_dim[1] * self.padding)
         self.bb_max_y = self.pp_max_y + (self.point_pickings_dim[1] * self.padding)
 
-        self.bb_min_x = np.clip(self.bb_min_x, 0, self.image_dim[0])
-        self.bb_max_x = np.clip(self.bb_max_x, 0, self.image_dim[0])
+        self.bb_min_x = np.clip(self.bb_min_x, 0, IMAGE_DIM[0])
+        self.bb_max_x = np.clip(self.bb_max_x, 0, IMAGE_DIM[0])
 
-        self.bb_min_y = np.clip(self.bb_min_y, 0, self.image_dim[1])
-        self.bb_max_y = np.clip(self.bb_max_y, 0, self.image_dim[1])
+        self.bb_min_y = np.clip(self.bb_min_y, 0, IMAGE_DIM[1])
+        self.bb_max_y = np.clip(self.bb_max_y, 0, IMAGE_DIM[1])
 
         self.bounding_box_dim = (self.bb_max_x - self.bb_min_x, self.bb_max_y - self.bb_min_y)
 

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dataset import GFO_PICKINGS
 from object_detection.dataset.point_pickings import PointPickings
-from view.points import show_points
+from object_detection.misc.points import show_points
 
 
 def main():
