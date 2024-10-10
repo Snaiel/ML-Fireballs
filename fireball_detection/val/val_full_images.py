@@ -20,6 +20,8 @@ from object_detection.dataset.point_pickings import PointPickings
 from queue import Full, Empty
 
 
+SENTINEL = None
+
 KFOLD_FIREBALL_DETECTION_FOLDER = Path(DATA_FOLDER, "kfold_fireball_detection")
 
 discard_fireballs = {
@@ -75,14 +77,17 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
     gc.collect()
 
 
-def run_tests(queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds: list, split: int, border_size: int) -> None:
+def run_tests(fireball_queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds: list, split: int, border_size: int) -> None:
     
-    model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
+    # model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
+    model_path = Path(Path(__file__).parents[2], "runs", "detect", f"train25", "weights", "last.pt")
     model = YOLO(model_path)
 
     try:
         while True:
-            fireball_file = queue.get(False)
+            fireball_file = fireball_queue.get()
+            if fireball_file is SENTINEL:
+                break
             test_fireball(model, fireball_file, detected_boxes, preds, split, border_size)
             bar_queue.put_nowait(1)
     except (Full, Empty) as e:
@@ -100,9 +105,7 @@ def update_bar(bar_queue: mp.Queue, total: int) -> None:
 def test(split: int, num_processes: int, border_size: int) -> None:
     matplotlib.use("agg")
 
-    print(f"testing split{split}...")
-    model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
-    print(f"using model from path \"{model_path}\"")
+    print(f"\ntesting split{split}...")
 
     split_folder = get_split_folder(split)
 
@@ -110,9 +113,12 @@ def test(split: int, num_processes: int, border_size: int) -> None:
     preds = os.listdir(Path(split_folder, "preds"))
 
     fireball_files = os.listdir(Path(split_folder, "images"))
-    queue = mp.Queue()
+    fireball_queue = mp.Queue()
     for fireball_file in fireball_files:
-        queue.put_nowait(fireball_file)
+        fireball_queue.put_nowait(fireball_file)
+    
+    for _ in range(num_processes):
+        fireball_queue.put(SENTINEL)
     
     print("setting up processes...")
 
@@ -123,7 +129,7 @@ def test(split: int, num_processes: int, border_size: int) -> None:
     processes: list[mp.Process] = []
 
     for _ in range(num_processes):
-        process = mp.Process(target=run_tests, args=(queue, bar_queue, detected_boxes, preds, split, border_size))
+        process = mp.Process(target=run_tests, args=(fireball_queue, bar_queue, detected_boxes, preds, split, border_size))
         processes.append(process)
         process.start()
 
@@ -131,7 +137,7 @@ def test(split: int, num_processes: int, border_size: int) -> None:
         for process in processes:
             process.join()
     except KeyboardInterrupt:
-        queue.close()
+        fireball_queue.close()
         bar_queue.close()
         for process in processes:
             process.terminate()

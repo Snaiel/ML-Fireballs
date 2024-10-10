@@ -8,7 +8,30 @@ import pandas as pd
 from fireball_detection import IMAGE_DIMENSIONS, SQUARE_SIZE
 
 
-def retrieve_start_points(size, split_size, overlap=0):
+def retrieve_start_points(size: int, split_size: int, overlap: float = 0) -> list[int]:
+    """
+        https://github.com/Devyanshu/image-split-with-overlap
+
+        Calculate starting indices to split an interval into segments with possible overlap.
+
+        This function computes the starting points for slicing an interval of a given size into
+        multiple segments, where each segment has a specified size (`split_size`). The segments
+        may overlap by a specified proportion (`overlap`). 
+
+        Parameters
+        - size (int): The total size of the interval to be split.
+        - split_size (int): The size of each individual segment.
+        - overlap (float, optional): The proportion of overlap between consecutive segments, 
+        ranging from 0 (no overlap) to just under 1.
+
+        Returns
+        - list[int]: A list of starting indices for each segment.
+
+        Note
+        - If `split_size` is equal to `size`, a single segment is returned without overlap.
+        - If the overlap calculation results in a final segment that would extend beyond the end 
+        of the interval, the last segment is adjusted to fit exactly at the end of the interval.
+    """
     points = [0]
     stride = int(split_size * (1-overlap))
     counter = 1
@@ -29,10 +52,10 @@ def retrieve_included_coordinates():
     """
     Retrieve coordinates of tiles
 
-    Returns:
+    Returns
         list[tuple]: A list of tuples where each tuple represents the coordinate (x, y) of a tile
 
-    Note:
+    Note
         The positions in the `discard_overlap.csv` file use -1 to indicate the last position in that 
         dimension.
     """
@@ -81,7 +104,7 @@ def main():
     ax.axis('off')
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
     plt.tight_layout()
-    # fig.savefig("bruh.png", bbox_inches='tight', pad_inches=0, dpi=600)
+    # fig.savefig("included.png", bbox_inches='tight', pad_inches=0, dpi=600)
     plt.show()
 
 
