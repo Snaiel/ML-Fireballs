@@ -51,12 +51,15 @@ def main():
     # Parse the command-line arguments
     args = parser.parse_args()
     
-    images_folder = Path(DATA_FOLDER, "kfold_object_detection", "fold0", "images", args.dataset)
-    labels_folder = Path(DATA_FOLDER, "kfold_object_detection", "fold0", "labels", args.dataset)
+    images_folder = Path(DATA_FOLDER, "kfold_object_detection", "split0", "images", args.dataset)
+    labels_folder = Path(DATA_FOLDER, "kfold_object_detection", "split0", "labels", args.dataset)
 
     images = sorted(os.listdir(images_folder))
 
     for image_filename in images:
+        if "negative" in image_filename:
+            continue
+
         image_file = Path(images_folder, image_filename)
 
         fireball_name = image_filename.split(".")[0]

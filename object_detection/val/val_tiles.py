@@ -40,17 +40,19 @@ class Sample:
     ground_truth: list = None
 
 
-def analyse_split(args: Args) -> dict:
+def val_split(args: Args) -> dict:
     
-    model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.split}", "weights", "last.pt"))
+    model_path = Path(Path(__file__).parents[2], "runs", "detect", f"train2{5}", "weights", "last.pt")
+    print(model_path, "\n")
 
-    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"split{args.split}")
+    model = YOLO(model_path)
+
+    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "1_to_1_kfold_object_detection", f"split{args.split}")
     VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")
     VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")
 
 
-    print("kfold folder:", KFOLD_FOLDER)
-    print()
+    print("kfold folder:", KFOLD_FOLDER, "\n")
 
 
     image_files = os.listdir(VAL_IMAGES_FOLDER)
@@ -72,31 +74,21 @@ def analyse_split(args: Args) -> dict:
     print()
 
 
-    # Initialize a dictionary to store images with added borders
-    images = {}
-
-    # Load images and add borders
-    for i in tqdm(image_files, desc="loading images"):
-        image = io.imread(Path(VAL_IMAGES_FOLDER, i))
-        # Add a constant border around the image
-        image = add_border(image, args.border_size)
-        images[i] = image
-
-
     detected_samples = 0
     total_boxes = 0
     true_positives = 0
 
     false_negative_samples_list: list[Sample] = []
-    samples: list[Sample] = []
 
     fireball_names = set()
     detected_fireball_names = set()
 
 
-    # Run predictions
-    for file, image in tqdm(images.items(), desc="running predictions"):
-        fireball = file.split(".")[0]
+    for image_file in tqdm(image_files, desc="running predictions"):
+        image = io.imread(Path(VAL_IMAGES_FOLDER, image_file))
+        image = add_border(image, args.border_size)
+
+        fireball = image_file.split(".")[0]
 
         fireball_name = "_".join(fireball.split("_")[:5])
         ignore_for_total_fireball_detection = False
@@ -115,7 +107,6 @@ def analyse_split(args: Args) -> dict:
 
         # Any boxes in negative tiles count as false positives
         if "negative" in fireball:
-            samples.append(sample)
             continue
         
         with open(Path(VAL_LABELS_FOLDER, fireball + ".txt")) as label_file:
@@ -129,7 +120,6 @@ def analyse_split(args: Args) -> dict:
         # Check for false negatives (no predicted boxes)
         if len(boxes) == 0:
             false_negative_samples_list.append(sample)  # Add to false negatives if no boxes predicted
-            samples.append(sample)
             continue
 
         ack_true_positive = False
@@ -147,8 +137,6 @@ def analyse_split(args: Args) -> dict:
                 detected_fireball_names.add(fireball_name)
         else:
             false_negative_samples_list.append(sample)
-        
-        samples.append(sample)
 
 
     false_negative_samples = positive_samples - detected_samples
@@ -183,12 +171,12 @@ def analyse_split(args: Args) -> dict:
 
 
 
-def analyse_all_splits(args: Args) -> dict:
+def val_all_splits(args: Args) -> dict:
     splits_stats: list[dict] = []
 
     for i in range(5):
         args.split = i
-        splits_stats.append(analyse_split(args))
+        splits_stats.append(val_split(args))
 
     stats = {}
 
@@ -266,7 +254,6 @@ def output_stats(args: Args, stats: dict) -> None:
 
 def main():
 
-    # Set up argparse to parse command-line arguments
     parser = argparse.ArgumentParser(
         description="Run object detection with YOLO and evaluate results.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -299,13 +286,12 @@ def main():
     elif args.metric == 'intersects' and args.threshold is not None:
         parser.error("--threshold should not be provided when --metric is 'intersects'")
 
-    print("args:", vars(args))
-    print()
+    print("\nargs:", vars(args), "\n")
 
     if args.command == 'val_split':
-        output_stats(args, analyse_split(args))
+        output_stats(args, val_split(args))
     elif args.command == 'val_all_splits':
-        output_stats(args, analyse_all_splits(args))
+        output_stats(args, val_all_splits(args))
     else:
         parser.error("Invalid command")
 

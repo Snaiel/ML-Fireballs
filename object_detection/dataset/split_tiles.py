@@ -9,7 +9,6 @@ from skimage import io
 from fireball_detection.discard.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
 from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT
-from object_detection.dataset.point_pickings import PointPickings
 
 
 MIN_BB_DIM_SIZE = 20
