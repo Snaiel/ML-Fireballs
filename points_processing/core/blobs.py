@@ -201,7 +201,7 @@ def get_false_positives_based_on_blobs(image: np.ndarray, blobs: FireballBlobs, 
     brightness_moving_avg = brightness_series.rolling(window=5, center=True).mean()
     brightness_percent_difference = ((brightness_series - brightness_moving_avg) / brightness_moving_avg) * 100
 
-    size_series = pd.Series(blobs[:, 2])
+    size_series = pd.Series(blobs[:, 2])    
     size_moving_avg = size_series.rolling(window=5, center=True).mean()
     size_percent_difference = ((size_series - size_moving_avg) / size_moving_avg) * 100
 

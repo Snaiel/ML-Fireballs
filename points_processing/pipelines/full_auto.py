@@ -92,13 +92,17 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
     print(mean_percent_difference)
     print("Fireball blob indices to remove based on size and brightness:")
     print(false_positive_indices_size_brightess)
+    print()
 
     ## Distances Between Nodes                       
     distances = get_distances_between_blobs(fireball_blobs[:, :2])
     print("Distances:\n", distances, "\n")
 
-    ## Remove unusual distances             
+    ## Remove unusual distances
+    ## NOTE: THIS DOESN"T ACTUALLY WORK PROPERLY
+    ## THE DISTANCES ARE REMOVED BUT THE FIREBALL NODES STILL EXIST.
     unusual_distances = get_indices_of_unusual_distances(distances)
+    print("Unusual distances:", unusual_distances)
     distances = np.delete(
         distances,
         unusual_distances,
@@ -107,7 +111,7 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
     print("Distances with outliers based on distances removed:\n", distances)
     print("Number of distances:", len(distances), "\n")
 
-    ## Distance Groups      
+    ## Distance Groups
     distance_groups = get_distance_groups(distances)
 
     ## Initial K-Means Cluster
@@ -155,11 +159,7 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
     distance_labels = get_distance_labels_using_k_means(distance_groups)
 
     print("Final Distance Labels:\n", distance_labels, "\n")
-
-    print("Final No.\n", len(distances), len(distance_labels), len(fireball_blobs))
-    print()
-    print()
-    print()
+    print("Final No.\n", len(distances), len(distance_labels), len(fireball_blobs), "\n\n\n")
 
     ## Sequence Alignment
     alignment = get_best_alignment(distance_labels)
@@ -167,6 +167,8 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
         fireball_blobs = np.flip(fireball_blobs, 0)
         print(fireball_blobs)
         distance_labels = np.flip(distance_labels, 0)
+
+    print()
 
     ## Assign labels to blobs
     fireball_points = assign_labels_to_blobs(
@@ -275,13 +277,13 @@ def visualise_fireball(fireball: FullAutoFireball):
             break
         x1, y1, _ = fireball.fireball_blobs[i]
         x2, y2, _ = fireball.fireball_blobs[i + 1]
-        axd['left'].text(((x1 + x2) / 2), ((y1 + y2) / 2), fireball.distance_labels[i], color="white")
+        axd['left'].text(((x1 + x2) / 2) - 7, ((y1 + y2) / 2), fireball.distance_labels[i], color="white")
 
     plt.show()
 
 
 def main():
-    image_path = Path(Path(__file__).parents[2], "data", "fireball_images", "cropped", "071_2021-12-14_032259_E_DSC_0611-G_cropped.jpeg")
+    image_path = Path(Path(__file__).parents[2], "data", "fireball_highlights", "cropped", "025_2021-09-09_053629_E_DSC_0379-G_cropped.jpeg")
     fireball = retrieve_fireball(image_path)
     visualise_fireball(fireball)
 

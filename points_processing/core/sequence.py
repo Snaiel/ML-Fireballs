@@ -17,7 +17,7 @@ class FireballAlignment:
 def get_left_to_right_sequence_from_distance_labels(distance_labels: list[int]) -> str:
     """
         Creates a left-to-right sequence from the provided distance labels.
-        Applies the DFN encoding system where two 1s equal a singular 1. One zero is a zero.
+        Applies the DFN encoding system where two 1s equal a singular 1. One zero is a singular zero.
 
         ### Parameters
         | Name             | Type       | Description                                  |

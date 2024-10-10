@@ -33,11 +33,11 @@ DFN_FIREBALL_CROPPINGS = {
     "025_Elginfield": ((4900, 1150), (5600, 2800)),
     "044_Vermilion": ((1050, 3040), (2250, 3690)),
     "051_Kanandah": ((2500, 370), (3200, 500)),
-    "071_CAO_RASC": ((4950, 2220), (6300, 2430))
+    "071_CAO_RASC": ((4950, 2220), (6300, 2460))
 }
 
 
-def retrieve_comparison(fireball_name: str = "071_CAO_RASC") -> FireballPickingsComparison:
+def retrieve_comparison(fireball_name: str = "025_Elginfield") -> FireballPickingsComparison:
 
     dfn_highlights_folder = Path(Path(__file__).parents[2], "data", "dfn_highlights")
     for folder in os.listdir(dfn_highlights_folder):
@@ -159,7 +159,7 @@ def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = 
         y = (y - comparison.crop[0][1]) * SCALE_FACTOR
 
         ax.add_patch(
-            patches.Circle((x, y), 0.5, color='lime', fill=True)
+            patches.Circle((x, y), 1, color='lime', fill=True)
         )
 
         ax.text(x, y + 50, int(row['zero_or_one']), color="pink").set_clip_on(True)
@@ -179,7 +179,7 @@ def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = 
             y = comparison.fireball.image.shape[0] - y
 
         ax.add_patch(
-            patches.Circle((x, y), 0.5, color='red', fill=True)
+            patches.Circle((x, y), 1, color='red', fill=True)
         )
 
         ax.text(x, y - 30, int(row['zero_or_one']), color="white").set_clip_on(True)

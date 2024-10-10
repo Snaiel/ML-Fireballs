@@ -21,7 +21,6 @@ def get_distances_between_blobs(positions: np.ndarray[float, float]) -> np.ndarr
     
     diffs = np.diff(positions[:, :2], axis=0)
     distances = np.linalg.norm(diffs, axis=1)
-    print("Distances:\n", distances, "\n")
 
     return distances
 

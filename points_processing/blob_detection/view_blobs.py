@@ -46,6 +46,13 @@ def main():
     for image_file in os.listdir(cropped_images_folder):
 
         image = ski.io.imread(Path(cropped_images_folder, image_file))
+
+        image = ski.transform.resize(
+            image,
+            (image.shape[0] * 4, image.shape[1] * 4),
+            preserve_range=True
+        )
+
         image_gray = image
 
         height, width = image_gray.shape[:2]
@@ -54,7 +61,7 @@ def main():
             image_gray = ski.transform.rotate(image_gray, angle=90, resize=True)
 
         # Return (y-coord, x-coord, radius)
-        blobs_dog = blob_dog(image_gray, max_sigma=20, threshold=.025)
+        blobs_dog = blob_dog(image_gray, min_sigma=12, threshold=4)
         # Compute radii in the 3rd column.
         blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
 
