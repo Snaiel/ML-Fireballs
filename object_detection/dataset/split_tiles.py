@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from skimage import io
 
-from fireball_detection.discard.included import (SQUARE_SIZE,
+from fireball_detection.tiling.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
 from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT
 

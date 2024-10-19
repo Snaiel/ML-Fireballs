@@ -10,7 +10,7 @@ from skimage import io
 from ultralytics import YOLO
 
 from fireball_detection import SQUARE_SIZE, Tile, FireballBox
-from fireball_detection.discard.included import retrieve_included_coordinates
+from fireball_detection.tiling.included import retrieve_included_coordinates
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from object_detection.utils import add_border
 from fireball_detection.boxes.merge import merge_bboxes

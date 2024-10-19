@@ -137,8 +137,7 @@ def val_split(args: Args) -> dict:
                 detected_fireball_names.add(fireball_name)
         else:
             false_negative_samples_list.append(sample)
-
-
+    
     false_negative_samples = positive_samples - detected_samples
     recall_individual_samples = detected_samples / positive_samples
 
