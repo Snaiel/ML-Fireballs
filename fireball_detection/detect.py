@@ -167,7 +167,7 @@ def main():
     t0 = time.time()
     image = io.imread(Path(Path(__file__).parents[1], fireball_image))
     t1 = time.time()
-    fireballs = detect_fireballs(image)
+    fireballs = detect_fireballs(image, border_size=5)
     t2 = time.time()
 
     print(f"{'Load Time':<15} {'Detect Time':<15} {'Total Time':<15}")
