@@ -20,19 +20,19 @@ cd Automating-Fireballs/
 Create virtual environment.
 
 ```sh
-python3 -m venv .vev`
+python3 -m venv .vev
 ```
 
 Activate virtual environment.
 
 ```sh
-source .venv/bin/activate`
+source .venv/bin/activate
 ```
 
 Install dependencies.
 
 ```sh
-pip install -r requirements.txt`
+pip install -r requirements.txt
 ```
 
 ## Directories
@@ -46,7 +46,21 @@ pip install -r requirements.txt`
 
 ## Usage
 
-Everything is designed to work (hopefully) from the project directory.
+Everything is designed to work (hopefully) from the project directory. If a particular script/file is meant to be run directly, you run it as a module. For example, to run
+
+```
+point_pickings/misc/scikit_blobs.py
+```
+
+use the following command:
+
+```sh
+python3 -m point_pickings.misc.scikit_blobs
+```
+
+Notice how `.` is used for package separators and `.py` is omitted. Tab completion isn't available which does suck when typing things out...
+
+### Fireball Detection
 
 `fireball_detection.detect` has the detection system implemented as a function where you call `detect_fireballs` with an image and it returns bounding boxes and confidence of detected fireballs.
 
@@ -56,8 +70,7 @@ Running the module also shows a sample detection.
 python3 -m fireball_detection.detect
 ```
 
-<br>
-<br>
+### Fireball Point Pickings
 
 `point_pickings.process` has the automated point picking system implemented as a function where you call `retrieve_fireball` with an image (assumed to be cropped) and returns all the processed position and timing information.
 
