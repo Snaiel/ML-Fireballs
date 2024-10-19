@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 
-from core import DE_BRUIJN_SEQUENCE
-from core.sequence import FireballAlignment
-from core.blobs import FireballBlobs
-import numpy as np
+from point_pickings.core import DE_BRUIJN_SEQUENCE
+from point_pickings.core.sequence import FireballAlignment
+from point_pickings.core.blobs import FireballBlobs
 
 
 @dataclass

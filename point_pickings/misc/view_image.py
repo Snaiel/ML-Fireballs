@@ -10,6 +10,6 @@ image_path = Path(Path(__file__).parents[2], 'data', 'dfn_highlights/051_Kananda
 image = io.imread(image_path)
 
 # Plot the image using Matplotlib
-plt.imshow(image, cmap='gray', vmin=80, vmax=255)
+plt.imshow(image, cmap='gray', vmin=125, vmax=255)
 plt.axis('off')  # Turn off axis
 plt.show()

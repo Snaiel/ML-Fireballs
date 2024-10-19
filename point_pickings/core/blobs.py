@@ -2,7 +2,7 @@ from math import sqrt
 
 import numpy as np
 import pandas as pd
-from core import RANDOM_STATE
+from point_pickings.core import RANDOM_STATE
 from skimage.feature import blob_dog
 from sklearn.linear_model import RANSACRegressor
 from sklearn.pipeline import make_pipeline

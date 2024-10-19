@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from scripts.points_comparison import (FireballPickingsComparison,
-                                       retrieve_comparison, visual_comparison)
+from matplotlib.axes import Axes
+
+from point_pickings.compare import (FireballPickingsComparison,
+                                    retrieve_comparison, visual_comparison)
 
 
 def main():
@@ -16,7 +18,8 @@ def main():
     brightness_percent_difference = ((brightness_series - brightness_moving_avg) / brightness_moving_avg) * 100
 
     # Create figure and axes
-    fig2, ax2 = plt.subplots()
+    ax2: Axes
+    _, ax2 = plt.subplots()
 
     # Plot the data
     ax2.plot(blobs_x_values, comparison.fireball.brightnesses, marker='o', label="Blob Brightness")
@@ -44,7 +47,8 @@ def main():
     size_percent_difference = ((size_series - size_moving_avg) / size_moving_avg) * 100
 
     # Create figure and axes
-    fig3, ax3 = plt.subplots()
+    ax3: Axes
+    _, ax3 = plt.subplots()
 
     # Plot the data
     ax3.plot(blobs_x_values, comparison.fireball.fireball_blobs[:, 2], marker='o', label="Blob Size")
@@ -65,7 +69,8 @@ def main():
 
 
     ## Visualise mean blob size and brightness moving averages
-    fig4, ax4 = plt.subplots()
+    ax4: Axes
+    _, ax4 = plt.subplots()
 
     ax4.plot(blobs_x_values, (brightness_percent_difference + size_percent_difference) / 2, color='lime', linestyle='--', label="Combined % Difference")
     ax4.axhline(y=-20, color='red', linestyle='-', label="Threshold")

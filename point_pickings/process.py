@@ -4,20 +4,19 @@ from pathlib import Path, PosixPath
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
-from core.assign import FireballPoint, assign_labels_to_blobs
-from core.blobs import (FireballBlobs, get_blob_brightnesses,
-                        get_false_positives_based_on_blobs, get_fireball_blobs,
-                        sort_fireball_blobs)
-from core.distances import (get_distance_groups,
-                            get_distance_labels_using_k_means,
-                            get_distances_between_blobs,
-                            get_false_positives_based_on_distance,
-                            get_indices_of_unusual_distances,
-                            get_unusually_small_distances,
-                            recalculate_distances)
-from core.sequence import FireballAlignment, get_best_alignment
-from core.utils import make_image_landscape
-from scipy import signal
+from matplotlib.axes import Axes
+
+from point_pickings.core.assign import FireballPoint, assign_labels_to_blobs
+from point_pickings.core.blobs import (FireballBlobs, get_blob_brightnesses,
+                                       get_false_positives_based_on_blobs,
+                                       get_fireball_blobs, sort_fireball_blobs)
+from point_pickings.core.distances import (
+    get_distance_groups, get_distance_labels_using_k_means,
+    get_distances_between_blobs, get_false_positives_based_on_distance,
+    get_indices_of_unusual_distances, get_unusually_small_distances,
+    recalculate_distances)
+from point_pickings.core.sequence import FireballAlignment, get_best_alignment
+from point_pickings.core.utils import make_image_landscape
 
 
 @dataclass
@@ -199,9 +198,8 @@ def retrieve_fireball(image: np.ndarray | PosixPath | str, **kwargs) -> FullAuto
 def visualise_fireball(fireball: FullAutoFireball):
     """
         Visualizes the fireball using matplotlib. It plots the fireball image with
-        fireball nodes in lime color, distance groups in pink color, distances
-        between nodes as a scatter plot, a normalized frequency histogram of distances
-        between nodes, and distance labels between fireball nodes.
+        fireball nodes in lime color, distance groups in pink color, and distance
+        labels between fireball nodes.
         
         ### Parameters
         | Name          | Type               | Description                                                            |
@@ -209,81 +207,54 @@ def visualise_fireball(fireball: FullAutoFireball):
         | fireball      | FullAutoFireball   | An object containing information about the fireball to be visualized.  |
     """
     
-    ## Plot fireball image
-    gs_kw = dict(width_ratios=[1.4, 1], height_ratios=[1, 10])
-    fig, axd = plt.subplot_mosaic([['left', 'upper right'],
-                                ['left', 'lower right']],
-                                gridspec_kw=gs_kw, figsize=(5.5, 3.5),
-                                layout="constrained")
-    axd['left'].imshow(fireball.image, cmap='gray', aspect='equal')
+    ax: Axes
+    _, ax = plt.subplots()
+    ax.imshow(fireball.image, cmap='gray', aspect='equal')
 
     # Plot fireball nodes in lime
     for node in fireball.fireball_blobs:
         x, y, r = node
         c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
         d = plt.Circle((x, y), 0.5, color='lime', fill=True)
-        axd['left'].add_patch(c)
-        axd['left'].add_patch(d)
+        ax.add_patch(c)
+        ax.add_patch(d)
 
     # Plot removed blobs based on size and brightness
     for node in fireball.removed_blobs_size_brightness:
         x, y, r = node
         c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
-        axd['left'].add_patch(c)
+        ax.add_patch(c)
 
-    ## Distance Groups
+    # Distance Groups
     cumulative_node_count = 0
     for i in range(len(fireball.distance_groups)):
         node = fireball.fireball_blobs[cumulative_node_count]
         x, y, r = node
         c = plt.Circle((x, y), r, color='pink', linewidth=2, fill=False)
-        axd['left'].add_patch(c)
+        ax.add_patch(c)
 
         cumulative_node_count += len(fireball.distance_groups[i])
-
-
-    ## Plot Distances
-    # Generating y values of 0 for each number
-    scatter_y_values = [0] * len(fireball.distances)
-
-    # Plotting the scatter plot
-    axd['upper right'].scatter(fireball.distances, scatter_y_values)
-
-    # Setting up x and y axis limits
-    axd['upper right'].set_xlim(min(fireball.distances) - 1, max(fireball.distances) + 1)  # Adjusting x-axis limits for better visualization
-    axd['upper right'].set_ylim(-1, 1)  # Adjusting y-axis limits to have a single line at y=0
-
-    axd['upper right'].yaxis.set_ticks([])
-    axd['upper right'].set_title("Distances Between Nodes")
-
-
-    ## Plot the frequency graph
-    axd['lower right'].hist(fireball.distances, bins=20, align='left', edgecolor='black', density=True)
-    axd['lower right'].set_xlabel('Number')
-    axd['lower right'].set_ylabel('Frequency')
-    axd['lower right'].set_title('Distances Between Nodes Frequency Histogram')
-    axd['lower right'].grid(True)
-
 
     # Plot blobs removed from unusually small distances
     for node in fireball.removed_blobs_unusually_small_distances:
         x, y, r = node
         c = plt.Circle((x, y), r, color='orange', linewidth=2, fill=False)
-        axd['left'].add_patch(c)
+        ax.add_patch(c)
 
-    ## Plot Distance Labels
+    # Plot Distance Labels
     for i in range(len(fireball.distance_labels)):
         if i + 1 == len(fireball.fireball_blobs):
             break
         x1, y1, _ = fireball.fireball_blobs[i]
         x2, y2, _ = fireball.fireball_blobs[i + 1]
-        axd['left'].text(((x1 + x2) / 2) - 7, ((y1 + y2) / 2), fireball.distance_labels[i], color="white")
+        ax.text(((x1 + x2) / 2) - 7, ((y1 + y2) / 2), fireball.distance_labels[i], color="white")
 
     plt.show()
 
 
+
 def main():
-    image_path = Path(Path(__file__).parents[2], "data", "fireball_highlights", "cropped", "025_2021-09-09_053629_E_DSC_0379-G_cropped.jpeg")
+    image_path = Path(Path(__file__).parents[1], "data", "fireball_highlights", "cropped", "025_2021-09-09_053629_E_DSC_0379-G_cropped.jpeg")
     fireball = retrieve_fireball(image_path)
     visualise_fireball(fireball)
 

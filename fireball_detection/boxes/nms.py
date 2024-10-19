@@ -128,7 +128,7 @@ def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
 def nms_float_fast(dets, scores, thresh):
     """
     # It's different from original nms because we have float coordinates on range [0; 1]
-    :param dets: numpy array of boxes with shape: (N, 5). Order: x1, y1, x2, y2, score. All variables in range [0; 1]
+    :param dets: numpy array of boxes with shape: (N, 5). Order: x1, y1, x2, y2, spoint_pickings.core. All variables in range [0; 1]
     :param thresh: IoU value for boxes
     :return: index of boxes to keep
     """

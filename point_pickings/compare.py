@@ -1,15 +1,16 @@
 import os
 import time
-from pathlib import Path
-import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pandas as pd
-from pipelines.full_auto import FullAutoFireball, retrieve_fireball
-from skimage import io, transform
 from dataclasses import dataclass
+from pathlib import Path
+
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from matplotlib.axes import Axes
+from skimage import io, transform
+
+from point_pickings.process import FullAutoFireball, retrieve_fireball
 
 
 @dataclass
@@ -39,7 +40,7 @@ DFN_FIREBALL_CROPPINGS = {
 
 def retrieve_comparison(fireball_name: str = "025_Elginfield") -> FireballPickingsComparison:
 
-    dfn_highlights_folder = Path(Path(__file__).parents[2], "data", "dfn_highlights")
+    dfn_highlights_folder = Path(Path(__file__).parents[1], "data", "dfn_highlights")
     for folder in os.listdir(dfn_highlights_folder):
         if folder == fireball_name:
             for file in os.listdir(Path(dfn_highlights_folder, folder)):
@@ -116,15 +117,12 @@ def retrieve_comparison(fireball_name: str = "025_Elginfield") -> FireballPickin
 
 
 def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = True) -> None:
-    ## Visualise Fireball
-    # Create a figure and axis
-    fig, ax = plt.subplots()
+    ax: Axes
+    _, ax = plt.subplots()
     ax.set_title(comparison.fireball_name)
-
 
     # Plot the image
     ax.imshow(comparison.fireball.image, cmap='gray', aspect='equal')
-
 
     # Plot Blobs
     for node in comparison.fireball.fireball_blobs:
@@ -151,7 +149,7 @@ def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = 
         cumulative_node_count += len(comparison.fireball.distance_groups[i])
 
     # Plot Auto Pickings
-    for index, row in comparison.auto_df.iterrows():
+    for _, row in comparison.auto_df.iterrows():
         x = row['auto_x']
         y = row['auto_y']
 
@@ -165,9 +163,8 @@ def visual_comparison(comparison: FireballPickingsComparison, show_plot: bool = 
         ax.text(x, y + 50, int(row['zero_or_one']), color="pink").set_clip_on(True)
         ax.text(x, y + 100, int(row['de_bruijn_index']), color="pink").set_clip_on(True)
 
-
     # Plot Manual Pickings
-    for index, row in comparison.manual_df.iterrows():
+    for _, row in comparison.manual_df.iterrows():
         x = row['manual_x']
         y = row['manual_y']
 

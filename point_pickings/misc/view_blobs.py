@@ -20,7 +20,7 @@
     Usage:
         Run the script to perform blob detection and polynomial curve fitting on a predefined set of sample images and display the results.
 
-        Whilst in `points_processing/`, run:
+        Whilst in `point_pickings/`, run:
 
         python3 blob_detection/view_blobs.py
 """
@@ -33,6 +33,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
+from matplotlib.axes import Axes
 from matplotlib.widgets import CheckButtons
 from skimage.feature import blob_dog
 from sklearn.linear_model import LinearRegression, RANSACRegressor
@@ -45,13 +46,13 @@ def main():
 
     for image_file in os.listdir(cropped_images_folder):
 
-        image = ski.io.imread(Path(cropped_images_folder, image_file))
+        image = ski.io.imread(Path(cropped_images_folder, image_file), as_gray=True)
 
-        image = ski.transform.resize(
-            image,
-            (image.shape[0] * 4, image.shape[1] * 4),
-            preserve_range=True
-        )
+        # image = ski.transform.resize(
+        #     image,
+        #     (image.shape[0] * 4, image.shape[1] * 4),
+        #     preserve_range=True
+        # )
 
         image_gray = image
 
@@ -61,7 +62,7 @@ def main():
             image_gray = ski.transform.rotate(image_gray, angle=90, resize=True)
 
         # Return (y-coord, x-coord, radius)
-        blobs_dog = blob_dog(image_gray, min_sigma=12, threshold=4)
+        blobs_dog = blob_dog(image_gray, min_sigma=2, threshold=0.025)
         # Compute radii in the 3rd column.
         blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)
 
@@ -81,7 +82,8 @@ def main():
         y_values_poly = model_poly.predict(x_values.reshape(-1, 1))
 
         # Plot the original image with both fitted curves
-        fig, ax = plt.subplots(figsize=(6, 6))
+        ax: Axes
+        _, ax = plt.subplots(figsize=(6, 6))
         ax.set_title(f'{image_file}\nDifference of Gaussian, Polynomial 2 Curve')
         ax.imshow(image_gray, cmap='gray', aspect='equal')
 
@@ -111,9 +113,9 @@ def main():
 
         # Get the inlier indices
         inlier_indices = model_ransac.named_steps['ransacregressor'].inlier_mask_
-
+        
         # Plot inlier points
-        inlier_circles = []
+        inlier_circles: list[plt.Circle] = []
         for idx in np.where(inlier_indices)[0]:
             blob = blobs_dog[idx]
             y, x, r = blob
@@ -122,7 +124,7 @@ def main():
             ax.add_patch(c)
         
         # Plot outlier points
-        outlier_circles = []
+        outlier_circles: list[plt.Circle] = []
         for idx in np.where(inlier_indices == False)[0]:
             blob = blobs_dog[idx]
             y, x, r = blob
@@ -131,7 +133,7 @@ def main():
             ax.add_patch(c)
 
         # Plot blobs_dog points
-        all_blobs = []
+        all_blobs: list[plt.Circle] = []
         for blob in blobs_dog:
             y, x, r = blob
             c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)

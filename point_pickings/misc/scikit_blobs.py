@@ -19,17 +19,18 @@
     Usage:
         Run the script directly to see the blob detection results on a predefined sample image.
 
-        Whilst in `points_processing/`, run:
+        Whilst in `point_pickings/`, run:
 
         python3 blob_detection/scikit_blobs.py
 """
 
 from math import sqrt
-import skimage as ski
-from skimage.feature import blob_dog, blob_log, blob_doh
-from numpy import ndarray
 
 import matplotlib.pyplot as plt
+import skimage as ski
+from matplotlib.axes import Axes
+from numpy import ndarray
+from skimage.feature import blob_dog, blob_doh, blob_log
 
 
 def log_blob_detection(image: ndarray) -> ndarray:
@@ -77,17 +78,18 @@ def main():
     titles = ['Laplacian of Gaussian', 'Difference of Gaussian', 'Determinant of Hessian']
     sequence = zip(blobs_list, colors, titles)
 
-    fig, axes = plt.subplots(1, 3, figsize=(9, 3), sharex=True, sharey=True)
-    ax = axes.ravel()
+    ax: Axes
+    _, ax = plt.subplots(1, 3, figsize=(9, 3), sharex=True, sharey=True)
 
     for idx, (blobs, color, title) in enumerate(sequence):
-        ax[idx].set_title(title)
-        ax[idx].imshow(image, cmap='gray')
+        current_ax: Axes = ax[idx]
+        current_ax.set_title(title)
+        current_ax.imshow(image, cmap='gray')
         for blob in blobs:
             y, x, r = blob
             c = plt.Circle((x, y), r, color=color, linewidth=1, fill=False)
-            ax[idx].add_patch(c)
-        ax[idx].set_axis_off()
+            current_ax.add_patch(c)
+        current_ax.set_axis_off()
 
     plt.tight_layout()
     plt.show()

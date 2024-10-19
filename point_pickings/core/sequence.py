@@ -1,6 +1,6 @@
 import Levenshtein
 from Bio import Align
-from core import DE_BRUIJN_SEQUENCE
+from point_pickings.core import DE_BRUIJN_SEQUENCE
 import numpy as np
 from dataclasses import dataclass
 

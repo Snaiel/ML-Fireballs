@@ -1,6 +1,6 @@
 import numpy as np
-from core import RANDOM_STATE
-from core.blobs import FireballBlobs
+from point_pickings.core import RANDOM_STATE
+from point_pickings.core.blobs import FireballBlobs
 from sklearn.cluster import KMeans
 
 
