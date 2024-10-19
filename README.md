@@ -60,6 +60,8 @@ python3 -m point_pickings.misc.scikit_blobs
 
 Notice how `.` is used for package separators and `.py` is omitted. Tab completion isn't available which does suck when typing things out...
 
+<br>
+
 ### Fireball Detection
 
 `fireball_detection.detect` has the detection system implemented as a function where you call `detect_fireballs` with an image and it returns bounding boxes and confidence of detected fireballs.
@@ -69,6 +71,8 @@ Running the module also shows a sample detection.
 ```sh
 python3 -m fireball_detection.detect
 ```
+
+<br>
 
 ### Fireball Point Pickings
 
