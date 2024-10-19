@@ -39,11 +39,11 @@ def update(frame):
 
 # Create animation
 ani = FuncAnimation(fig, update, frames=len(coordinates), interval=200, blit=True, repeat=True)
-ani.save(
-    "split_tiles.gif",
-    progress_callback = lambda i, n: print(f'Saving frame {i}/{n}'),
-    savefig_kwargs={'bbox_inches': 'tight', 'pad_inches': 0}
-)
+# ani.save(
+#     "split_tiles.gif",
+#     progress_callback = lambda i, n: print(f'Saving frame {i}/{n}'),
+#     savefig_kwargs={'bbox_inches': 'tight', 'pad_inches': 0}
+# )
 
 # Show the plot
 plt.show()

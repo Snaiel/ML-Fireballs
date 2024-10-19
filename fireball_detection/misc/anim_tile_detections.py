@@ -11,7 +11,8 @@ from skimage import io
 from ultralytics import YOLO
 
 from fireball_detection import SQUARE_SIZE
-from fireball_detection.detect import FireballBox, Tile, intersects
+from fireball_detection.detect import FireballBox, Tile
+from fireball_detection.boxes.merge import intersects
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.utils import add_border
 
@@ -113,12 +114,12 @@ def is_box_in_box(box1, box2):
 
 # Sample list of rectangle coordinates (top-left corner (x, y), width, height)
 coordinates = sorted(retrieve_included_coordinates(), key=lambda x: x[1])
-coordinates = [i for i in coordinates if 3700 <= i[0] and i[0] <= 4700 and 2800 <= i[1] and i[1] <= 3900]
+coordinates = [i for i in coordinates if 3800 <= i[0] and i[0] <= 6000 and 3200 <= i[1] and i[1] <= 5000]
 
 # Load the background image
-image = io.imread(Path("data/GFO_fireball_object_detection_training_set/jpegs/15_2017-06-12_111729_S_DSC_2102.thumb.jpg"))
+image = io.imread(Path("data/GFO_fireball_object_detection_training_set/jpegs/57_2016-06-17_182058_S_DSC_1189.thumb.jpg"))
 
-model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
+model = YOLO(Path(Path(__file__).parents[2], "data", "e15.pt"))
 
 tiles: list[Tile] = []
 for pos in coordinates:
@@ -132,17 +133,17 @@ for pos in coordinates:
 detected_tiles: list[Tile] = []
 for tile in tiles:
     results = model.predict(
-        add_border(tile.image, 1),
+        add_border(tile.image, 5),
         verbose=False
     )
     if len(results[0].boxes.conf) > 0:
-        tile.boxes = results[0].boxes
+        tile.boxes = results[0].boxes.xyxy.cpu()
+        tile.confidences = results[0].boxes.conf.cpu()
         detected_tiles.append(tile)
 
 detected_fireballs = []
 for tile in detected_tiles:
-    for box, conf in zip(tile.boxes.xyxy, tile.boxes.conf):
-        box = box.cpu()
+    for box, conf in zip(tile.boxes, tile.confidences):
         detected_fireballs.append(
             (
                 tile,
@@ -153,13 +154,17 @@ for tile in detected_tiles:
                         float(tile.position[0] + box[2]),
                         float(tile.position[1] + box[3])
                     ),
-                    conf.cpu()
+                    conf
                 )
             )
         )
 
 
 fireballs = [i[1] for i in detected_fireballs]
+
+for i in fireballs:
+    print(i)
+
 merge_iterations = get_merge_bboxes_iterations(fireballs)
 
 
@@ -194,9 +199,9 @@ confidences = []
 # Update function for animation
 def update(frame):
     global confidences
-
+    
     if frame == len(coordinates):
-        initial_rect.remove()
+        initial_rect.set_visible(False)
         return stuff
 
     if frame < len(coordinates):
@@ -247,7 +252,7 @@ def update(frame):
             ):
                 try:
                     confidences = [i for i in confidences if i[0] != rect and not math.isclose(i[1].conf, merge_iterations[-1].conf)]
-                    rect.remove()
+                    rect.set_visible(False)
                     rects.remove(rect)
                 except ValueError:
                     pass
@@ -273,12 +278,12 @@ ani = FuncAnimation(
 )
 
 
-ani.save(
-    "anim_tile_detections.gif",
-    progress_callback = lambda i, n: print(f'Saving frame {i}/{n}'),
-    savefig_kwargs={'pad_inches': 0},
-    dpi=200
-)
+# ani.save(
+#     "anim_tile_detections.gif",
+#     progress_callback = lambda i, n: print(f'Saving frame {i}/{n}'),
+#     savefig_kwargs={'pad_inches': 0},
+#     dpi=200
+# )
 
 # Show the plot
-# plt.show()
+plt.show()
