@@ -1,0 +1,12 @@
+biopython
+matplotlib
+numba
+numpy
+opencv_python
+pandas
+levenshtein
+PyYAML
+scikit_learn
+scikit_image
+tqdm
+ultralytics
