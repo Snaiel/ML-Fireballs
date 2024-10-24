@@ -83,7 +83,7 @@ def main() -> None:
     fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/50_2017-02-22_172331_S_DSC_7698.thumb.jpg"
 
     image = io.imread(Path(Path(__file__).parents[2], fireball_image))
-    detected_tiles = detect_tiles(image)
+    detected_tiles = detect_tiles(image, border_size=5)
 
     absolute_fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     normalised_fireball_boxes = get_normalised_fireball_boxes(detected_tiles)

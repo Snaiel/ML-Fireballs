@@ -1,4 +1,6 @@
+import argparse
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.patches as patches
@@ -9,11 +11,11 @@ from numpy import ndarray
 from skimage import io
 from ultralytics import YOLO
 
-from fireball_detection import SQUARE_SIZE, Tile, FireballBox
-from fireball_detection.tiling.included import retrieve_included_coordinates
+from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
-from object_detection.utils import add_border
 from fireball_detection.boxes.merge import merge_bboxes
+from fireball_detection.tiling.included import retrieve_included_coordinates
+from object_detection.utils import add_border
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
@@ -162,26 +164,42 @@ def main():
     6. Displays the resulting image with plotted bounding boxes.
     """
 
-    fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/57_2016-06-17_182058_S_DSC_1189.thumb.jpg"
+    @dataclass
+    class Args:
+        image_path: str
+        verbose: bool
+        plot: bool
+
+    parser = argparse.ArgumentParser(description="Detect fireballs in an image and plot bounding boxes.")
+    parser.add_argument("-i", "--image-path", type=str, required=True, help="Path to the fireball image file.")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
+    parser.add_argument("--plot", action="store_true", help="Plot and display the bounding boxes on the image.")
+    
+    args = Args(**vars(parser.parse_args()))
+
+    # Validate that the image path is non-empty
+    if not args.image_path.strip():
+        raise ValueError("The image path must be a non-empty string.")
 
     t0 = time.time()
-    image = io.imread(Path(Path(__file__).parents[1], fireball_image))
+    image = io.imread(Path(args.image_path))
     t1 = time.time()
     fireballs = detect_fireballs(image, border_size=5)
     t2 = time.time()
 
-    print(f"{'Load Time':<15} {'Detect Time':<15} {'Total Time':<15}")
-    print(f"{(t1 - t0):<15.5f} {(t2 - t1):<15.5f} {(t2 - t0):<15.5f}")
+    if args.verbose:
+        print(f"\nImage: {args.image_path}")
 
+        print(f"\n{'Load Time':<15} {'Detect Time':<15} {'Total Time':<15}")
+        print(f"{(t1 - t0):<15.5f} {(t2 - t1):<15.5f} {(t2 - t0):<15.5f}")
 
-    print("\nFireballs:")
+    if args.verbose: print("\nFireballs:")
     for fireball in fireballs:
-        print(fireball)
+        print(repr(fireball))
 
-    fig, ax = plot_boxes(image, fireballs)
-    plt.tight_layout()
-    # fig.savefig("detect.png", bbox_inches='tight', pad_inches=0, dpi=600)
-    plt.show()
+    if args.plot:
+        plot_boxes(image, fireballs)
+        plt.show()
 
 
 if __name__ == "__main__":

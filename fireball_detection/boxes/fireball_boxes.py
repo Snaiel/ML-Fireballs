@@ -19,7 +19,7 @@ def compute_normalised_coordinates(tile: Tile, box: tuple):
     return x0, y0, x1, y1
 
 
-def create_fireball_box(tile, box, conf, compute_coordinates):
+def create_fireball_box(tile: Tile, box: list, conf: float, compute_coordinates):
     x0, y0, x1, y1 = compute_coordinates(tile, box)
     return FireballBox((x0, y0, x1, y1), conf)
 

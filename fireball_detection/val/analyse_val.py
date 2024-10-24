@@ -2,13 +2,12 @@ import argparse
 import os
 import shutil
 from dataclasses import dataclass
-from math import sqrt
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from fireball_detection.detect import intersects
+from fireball_detection.boxes.merge import intersects
 from fireball_detection.val.val_full_images import get_split_folder
 from object_detection.utils import iom, iou
 
@@ -120,7 +119,6 @@ def analyse_split(split: int, metric: str, threshold: float) -> dict:
                 false_positive_box_sizes.append(box_diagonal)
                 false_positive_conf_box_size.append((box[0], box_diagonal))
                 
-
         if count_as_positive:
             fireballs_detected += 1
             if long:
@@ -152,7 +150,6 @@ def analyse_split(split: int, metric: str, threshold: float) -> dict:
         "true_positive_conf_box_size": true_positive_conf_box_size,
         "false_positive_conf_box_size": false_positive_conf_box_size
     }
-    
 
 
 def print_stats(stats: dict) -> None:

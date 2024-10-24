@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from skimage import io
 from pathlib import Path
-from dataset import GFO_JPEGS, GFO_PICKINGS
+from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS
 
 
 def show_points(fireball_name: str) -> None:
@@ -21,15 +21,25 @@ def show_points(fireball_name: str) -> None:
     y_coords = data['y_image_thumb']
 
     # Plot a dot on the image for every row in the data
-    plt.scatter(x_coords, y_coords, c='red', s=10)  # c for color, s for size of the dots
+    plt.scatter(x_coords, y_coords, c='red', s=16)  # c for color, s for size of the dots
 
-    # Show the final plot with the image and points
+    # Calculate the bounding box
+    x_min, x_max = x_coords.min(), x_coords.max()
+    y_min, y_max = y_coords.min(), y_coords.max()
+
+    # Create a rectangle patch around the points
+    width = x_max - x_min
+    height = y_max - y_min
+    rect = plt.Rectangle((x_min - 0.05 * width, y_min - 0.1 * height), width * 1.1, height * 1.2, linewidth=3, edgecolor='red', facecolor='none')
+    plt.gca().add_patch(rect)
+
+    # Show the final plot with the image, points, and rectangle
     plt.title(fireball_name)
     plt.show()
 
 
 def main():
-    fireball_name = "064_2023-10-24_110029_E_DSC_0101"
+    fireball_name = "03_2021-02-08_093629_K_DSC_0169"
     show_points(fireball_name)
 
 

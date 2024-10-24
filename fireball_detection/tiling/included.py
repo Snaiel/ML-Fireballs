@@ -77,13 +77,14 @@ def retrieve_included_coordinates():
         .map(lambda x: IMAGE_DIMENSIONS[0] - SQUARE_SIZE if x == -1 else x * SQUARE_SIZE)\
         .astype(int)
 
+    discarded_coordinates.sort_values(by=["y", "x"], inplace=True)
+
     # Perform an outer join to include all rows
-    merged_df = pd.merge(all_coordinates, discarded_coordinates, on=['y', 'x'], how='left', indicator=True)
+    merged_df = pd.merge(all_coordinates, discarded_coordinates, on=['y', 'x'], how='left', indicator=True).drop_duplicates()
     # Remove common rows from the merged DataFrame
     included_coordinates = merged_df[merged_df['_merge'] != 'both'].drop(columns=['_merge'])
 
     included_coordinates['x'], included_coordinates['y'] = included_coordinates['y'], included_coordinates['x']
-
     return list(included_coordinates.itertuples(index=False, name=None))
 
 

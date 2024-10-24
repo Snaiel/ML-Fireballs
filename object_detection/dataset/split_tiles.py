@@ -2,6 +2,8 @@ import random
 from dataclasses import dataclass
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 import pandas as pd
 from skimage import io
@@ -127,3 +129,49 @@ class SplitTilesFireball:
                 label_file.write(" ".join(str(item) for item in label))
         for i in range(len(self.negative_tiles)):
             open(Path(folder, f"{self.fireball_name}_negative_{i}.txt"), 'x').close()
+
+
+def main():
+    fireball = SplitTilesFireball("03_2020-07-20_041559_K_DSC_9695")
+    for i, tile in enumerate(fireball.fireball_tiles):
+        plot_fireball_tile(fireball.fireball_name, i, tile)
+
+
+def plot_fireball_tile(fireball_name: str, i: int, tile: FireballTile):
+    # Unpack tile attributes
+    image = tile.image
+    points = np.array(tile.points)
+    position = tile.position
+    bb_centre = tile.bb_centre
+    bb_dim = tile.bb_dim
+
+    # Adjust points to be relative to the tile's position
+    relative_points = points - position
+
+    # Calculate bounding box corners (xyxy format)
+    bb_min_x = (bb_centre[0] - (bb_dim[0] / 2)) * SQUARE_SIZE
+    bb_min_y = (bb_centre[1] - (bb_dim[1] / 2)) * SQUARE_SIZE
+
+    bb_width = bb_dim[0] * SQUARE_SIZE
+    bb_height = bb_dim[1] * SQUARE_SIZE
+
+    # Create a plot
+    _, ax = plt.subplots(1)
+    ax.imshow(image)
+
+    # Plot the points on the image
+    if relative_points.any():
+        ax.scatter(relative_points[:, 0], relative_points[:, 1], c='red', label='Points', s=12)
+
+    # Add a rectangle for the bounding box
+    rect = patches.Rectangle((bb_min_x, bb_min_y), bb_width, bb_height, linewidth=5, edgecolor='red', facecolor='none')
+    ax.add_patch(rect)
+
+    # Add a legend and show the plot
+    ax.set_title(f"{fireball_name}_{i}.jpg")
+    ax.axis('off')
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
