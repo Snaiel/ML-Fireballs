@@ -170,7 +170,10 @@ def main():
         verbose: bool
         plot: bool
 
-    parser = argparse.ArgumentParser(description="Detect fireballs in an image and plot bounding boxes.")
+    parser = argparse.ArgumentParser(
+        description="Detect fireballs in an image and plot bounding boxes.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument("-i", "--image-path", type=str, required=True, help="Path to the fireball image file.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--plot", action="store_true", help="Plot and display the bounding boxes on the image.")

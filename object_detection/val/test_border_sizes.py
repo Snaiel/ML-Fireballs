@@ -24,7 +24,10 @@ def main():
         metric: str
         threshold: float | None
 
-    parser = argparse.ArgumentParser(description='For a given split, test recall of border sizes 0-32 inclusive.')
+    parser = argparse.ArgumentParser(
+        description='For a given split, test recall of border sizes 0-32 inclusive.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--split', type=int, required=True, help='The split number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
     parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')

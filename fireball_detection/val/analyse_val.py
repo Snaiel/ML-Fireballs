@@ -320,7 +320,10 @@ def main():
         threshold: float | None
         split: int | None = None
 
-    parser = argparse.ArgumentParser(description='Fireball detection analysis')
+    parser = argparse.ArgumentParser(
+        description='Fireball detection analysis',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
     parser_split = subparsers.add_parser('analyse_split', help='Analyse a specific split')
