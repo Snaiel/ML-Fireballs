@@ -112,6 +112,12 @@ Running the module also shows a sample detection.
 python3 -m fireball_detection.detect
 ```
 
+### Methodology
+
+Animation source: https://github.com/Snaiel/Manim-Fireball-Detection
+
+https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
+
 <br>
 
 ## Point Pickings
