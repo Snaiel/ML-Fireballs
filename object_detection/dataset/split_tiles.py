@@ -34,7 +34,7 @@ class SplitTilesFireball:
     fireball_tiles: list[FireballTile]
     negative_tiles: list[FireballTile]
 
-    def __init__(self, fireball_name: str) -> None:
+    def __init__(self, fireball_name: str, negative_ratio: int) -> None:
         self.fireball_name = fireball_name
 
         self.fireball_tiles = []
@@ -42,6 +42,7 @@ class SplitTilesFireball:
 
         fireball_image = io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
+        
         # Check if tile contains points
         for tile_pos in included_coordinates:
             points_in_tile = []
@@ -97,11 +98,11 @@ class SplitTilesFireball:
             tile.image = fireball_image[tile.position[1] : tile.position[1] + SQUARE_SIZE, tile.position[0] : tile.position[0] + SQUARE_SIZE]
         
         # Assign images to negative tiles
-        if len(self.fireball_tiles) * 10 > len(self.negative_tiles):
-            print("fireball_tiles * 10 > negative_tiles", fireball_name)
+        if len(self.fireball_tiles) * negative_ratio > len(self.negative_tiles):
+            print(f"fireball_tiles * {negative_ratio} > negative_tiles", fireball_name)
             sample_size = len(self.negative_tiles)
         else:
-            sample_size = len(self.fireball_tiles) * 10
+            sample_size = len(self.fireball_tiles) * negative_ratio
         self.negative_tiles = random.sample(self.negative_tiles, sample_size)
         for tile in self.negative_tiles:
             tile.image = fireball_image[tile.position[1] : tile.position[1] + SQUARE_SIZE, tile.position[0] : tile.position[0] + SQUARE_SIZE]
