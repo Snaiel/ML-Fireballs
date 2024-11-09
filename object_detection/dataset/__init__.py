@@ -18,3 +18,5 @@ GFO_THUMB_EXT = ".thumb.jpg"
 
 DATASET_FOLDER = Path(DATA_FOLDER, "object_detection")
 DATA_YAML = Path(Path(__file__).parents[1], "cfg", "data.yaml")
+
+DEFAULT_YOLO_MODEL_PATH = Path(DATA_FOLDER, "yolo-fireball-detector.pt")

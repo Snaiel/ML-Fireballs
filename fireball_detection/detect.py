@@ -15,13 +15,14 @@ from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
+from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
 from object_detection.utils import add_border
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 
 
-def detect_tiles(image: ndarray, model: YOLO | None = None, border_size: int = 0) -> list[Tile]:
+def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile]:
     """
     Detects and returns a list of tiles containing detected objects from an image.
 
@@ -38,9 +39,6 @@ def detect_tiles(image: ndarray, model: YOLO | None = None, border_size: int = 0
     Returns:
         list[Tile]: A list of Tile objects that contain detected objects.
     """
-
-    if model is None:
-        model = YOLO(Path(Path(__file__).parents[1], "data", "e15.pt"))
     
     tiles: list[Tile] = []
     for pos in INCLUDED_COORDINATES:
@@ -67,7 +65,7 @@ def detect_tiles(image: ndarray, model: YOLO | None = None, border_size: int = 0
     return detected_tiles
 
 
-def detect_fireballs(image: ndarray, model: YOLO | None = None, border_size: int = 0) -> list[FireballBox]:
+def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 0) -> list[FireballBox]:
     """
     Detects fireballs within an image using a YOLO model.
 
@@ -167,6 +165,8 @@ def main():
     @dataclass
     class Args:
         image_path: str
+        model_path: str
+        border_size: int
         verbose: bool
         plot: bool
 
@@ -174,26 +174,35 @@ def main():
         description="Detect fireballs in an image and plot bounding boxes.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-i", "--image-path", type=str, required=True, help="Path to the fireball image file.")
+    parser.add_argument("-i", "--image_path", type=str, required=True, help="Path to the fireball image file.")
+    parser.add_argument("-m", "--model_path", type=str, help="Path to the YOLO model file.")
+    parser.add_argument("-b", "--border_size", type=str, default=5, help="Border size.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--plot", action="store_true", help="Plot and display the bounding boxes on the image.")
     
     args = Args(**vars(parser.parse_args()))
 
-    # Validate that the image path is non-empty
-    if not args.image_path.strip():
-        raise ValueError("The image path must be a non-empty string.")
+    if args.verbose:
+        print(f"\nargs: {vars(args)}\n")
+
+    model: YOLO
+    if not args.model_path:
+        if DEFAULT_YOLO_MODEL_PATH.exists():
+            if args.verbose:
+                print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
+            model = YOLO(DEFAULT_YOLO_MODEL_PATH)
+        else:
+            print(f"No model path provided and {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)} missing.")
+            return
 
     t0 = time.time()
     image = io.imread(Path(args.image_path))
     t1 = time.time()
-    fireballs = detect_fireballs(image, border_size=5)
+    fireballs = detect_fireballs(image, model, args.border_size)
     t2 = time.time()
 
     if args.verbose:
-        print(f"\nImage: {args.image_path}")
-
-        print(f"\n{'Load Time':<15} {'Detect Time':<15} {'Total Time':<15}")
+        print(f"{'Load Time':<15} {'Detect Time':<15} {'Total Time':<15}")
         print(f"{(t1 - t0):<15.5f} {(t2 - t1):<15.5f} {(t2 - t0):<15.5f}")
 
     if args.verbose: print("\nFireballs:")
