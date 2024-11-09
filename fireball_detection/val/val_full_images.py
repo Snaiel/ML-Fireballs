@@ -4,7 +4,9 @@ import multiprocessing as mp
 import os
 import shutil
 import signal
+from dataclasses import dataclass
 from pathlib import Path
+from queue import Empty, Full
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,9 +17,9 @@ from ultralytics import YOLO
 
 from fireball_detection.detect import detect_fireballs, plot_boxes
 from object_detection.dataset import DATA_FOLDER, GFO_JPEGS, GFO_PICKINGS
-from object_detection.dataset.kfold import retrieve_fireball_splits
+from object_detection.dataset.create_kfold_dataset import \
+    retrieve_fireball_splits
 from object_detection.dataset.point_pickings import PointPickings
-from queue import Full, Empty
 
 
 SENTINEL = None
@@ -77,11 +79,17 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
     gc.collect()
 
 
-def run_tests(fireball_queue: mp.Queue, bar_queue: mp.Queue, detected_boxes: list, preds: list, split: int, border_size: int) -> None:
+def run_tests(
+        fireball_queue: mp.Queue, 
+        bar_queue: mp.Queue,
+        detected_boxes: list,
+        preds: list,
+        split: int,
+        yolo_pt_path: str,
+        border_size: int
+    ) -> None:
     
-    # model_path = Path(DATA_FOLDER, "kfold_runs", f"split{split}", "weights", "last.pt")
-    model_path = Path(Path(__file__).parents[2], "runs", "detect", f"train25", "weights", "last.pt")
-    model = YOLO(model_path)
+    model = YOLO(Path(yolo_pt_path))
 
     try:
         while True:
@@ -102,8 +110,13 @@ def update_bar(bar_queue: mp.Queue, total: int) -> None:
         pbar.update(1)
 
 
-def test(split: int, num_processes: int, border_size: int) -> None:
+def test(split: int, yolo_pt_path: str, num_processes: int, border_size: int) -> None:
     matplotlib.use("agg")
+
+    if not Path(KFOLD_FIREBALL_DETECTION_FOLDER).exists():
+        print(f"{KFOLD_FIREBALL_DETECTION_FOLDER.relative_to(DATA_FOLDER.parent)} does not exist. Run\n")
+        print(f"python3 -m fireball_detection.val.val_full_images create")
+        return
 
     print(f"\ntesting split{split}...")
 
@@ -129,7 +142,7 @@ def test(split: int, num_processes: int, border_size: int) -> None:
     processes: list[mp.Process] = []
 
     for _ in range(num_processes):
-        process = mp.Process(target=run_tests, args=(fireball_queue, bar_queue, detected_boxes, preds, split, border_size))
+        process = mp.Process(target=run_tests, args=(fireball_queue, bar_queue, detected_boxes, preds, split, yolo_pt_path, border_size))
         processes.append(process)
         process.start()
 
@@ -143,13 +156,6 @@ def test(split: int, num_processes: int, border_size: int) -> None:
             process.terminate()
             process.join()
         os.kill(os.getpid(), signal.SIGTERM)
-
-
-def test_all(processes: int, border_size: int) -> None:
-    for split in range(5):
-        p = mp.Process(target=test, args=(split, processes, border_size))
-        p.start()
-        p.join()
 
 
 def create():
@@ -176,6 +182,14 @@ def create():
 
 
 def main():
+    @dataclass
+    class Args:
+        command: str
+        split: int | None = None
+        yolo_pt_path: str | None = None
+        processes: int | None = None
+        border_size: int | None = None
+
     parser = argparse.ArgumentParser(
         description="A script to test detections on full images.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -183,27 +197,22 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     # Create subcommand
-    parser_create = subparsers.add_parser('create', help="Create the test")
-    parser_create.set_defaults(func=lambda _: create())
+    subparsers.add_parser('create', help="Create the test")
 
     # Test subcommand
     parser_test = subparsers.add_parser('test', help="Run test")
     parser_test.add_argument('--split', type=int, required=True, help="Specify the split number")
+    parser_test.add_argument('--yolo_pt_path', type=str, required=True, help='Path to the YOLO model .pt file')
     parser_test.add_argument('--processes', type=int, required=True, help="Number of processes to use as workers")
     parser_test.add_argument('--border_size', type=int, required=True, help="Specify the border size")
-    parser_test.set_defaults(func=lambda args: test(args.split, args.processes, args.border_size))
 
-    # Test_all subcommand
-    parser_test_all = subparsers.add_parser('test_all', help="Run test on all folds")
-    parser_test_all.add_argument('--processes', type=int, required=True, help="Number of processes to use as workers")
-    parser_test_all.add_argument('--border_size', type=int, required=True, help="Specify the border size")
-    parser_test_all.set_defaults(func=lambda args: test_all(args.processes, args.border_size))
-
-    args = parser.parse_args()
+    args = Args(**vars(parser.parse_args()))
 
     # Call the function associated with the command
-    if args.command:
-        args.func(args)
+    if args.command == "create":
+        create()
+    elif args.command == "test":
+        test(args.split, args.processes, args.border_size)
     else:
         parser.print_help()
 
