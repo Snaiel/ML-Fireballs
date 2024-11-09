@@ -11,7 +11,8 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from ultralytics.utils.ops import xywhn2xyxy
 
-from fireball_detection.detect import intersects
+from fireball_detection.boxes.merge import intersects
+from object_detection.dataset import DATA_FOLDER
 from object_detection.utils import add_border, iom, iou
 
 
@@ -22,9 +23,9 @@ discard_fireballs = {
 
 @dataclass
 class Args:
-    command: str
     border_size: int
-    split: int | None
+    data_yaml_path: str | None
+    yolo_pt_path: str | None
     samples: str
     metric: str
     threshold: float | None
@@ -33,7 +34,7 @@ class Args:
 
 
 @dataclass
-class Sample:
+class FireballSample:
     name: str
     image: np.ndarray
     boxes: list
@@ -42,20 +43,20 @@ class Sample:
 
 def val_split(args: Args) -> dict:
     
-    model_path = Path(Path(__file__).parents[2], "runs", "detect", f"train2{5}", "weights", "last.pt")
+    model_path = Path(args.yolo_pt_path)
     print(model_path, "\n")
 
     model = YOLO(model_path)
 
-    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "1_to_1_kfold_object_detection", f"split{args.split}")
-    VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")
-    VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")
+    data_path = Path(args.data_yaml_path)
+    val_images_folder = Path(data_path.parent, "images", "val")
+    val_labels_folder = Path(data_path.parent, "labels", "val")
 
 
-    print("kfold folder:", KFOLD_FOLDER, "\n")
+    print("kfold folder:", data_path, "\n")
 
 
-    image_files = os.listdir(VAL_IMAGES_FOLDER)
+    image_files = os.listdir(val_images_folder)
 
     # Filter image files based on the include argument
     if args.samples == 'positive':
@@ -78,14 +79,14 @@ def val_split(args: Args) -> dict:
     total_boxes = 0
     true_positives = 0
 
-    false_negative_samples_list: list[Sample] = []
+    false_negative_samples_list: list[FireballSample] = []
 
     fireball_names = set()
     detected_fireball_names = set()
 
 
     for image_file in tqdm(image_files, desc="running predictions"):
-        image = io.imread(Path(VAL_IMAGES_FOLDER, image_file))
+        image = io.imread(Path(val_images_folder, image_file))
         image = add_border(image, args.border_size)
 
         fireball = image_file.split(".")[0]
@@ -103,13 +104,13 @@ def val_split(args: Args) -> dict:
 
         total_boxes += len(boxes)  # Update total number of boxes
 
-        sample = Sample(fireball, image, boxes)
+        sample = FireballSample(fireball, image, boxes)
 
         # Any boxes in negative tiles count as false positives
         if "negative" in fireball:
             continue
         
-        with open(Path(VAL_LABELS_FOLDER, fireball + ".txt")) as label_file:
+        with open(Path(val_labels_folder, fireball + ".txt")) as label_file:
             xyxy = xywhn2xyxy(
                 np.array([float(i) for i in label_file.read().split(" ")[1:]]),  # Read and parse the label coordinates
                 400,
@@ -169,29 +170,6 @@ def val_split(args: Args) -> dict:
     }
 
 
-
-def val_all_splits(args: Args) -> dict:
-    splits_stats: list[dict] = []
-
-    for i in range(5):
-        args.split = i
-        splits_stats.append(val_split(args))
-
-    stats = {}
-
-    for stat in splits_stats[0].keys():
-        if isinstance(splits_stats[i][stat], list):
-            continue
-
-        total = 0
-        for i in range(5):
-            total += splits_stats[i][stat] 
-        
-        stats[stat] = total / 5
-    
-    return stats
-
-
 def output_stats(args: Args, stats: dict) -> None:
     detected_samples = stats["detected_samples"]
     false_negative_samples = stats["false_negative_samples"]
@@ -220,18 +198,18 @@ def output_stats(args: Args, stats: dict) -> None:
     print(f"{'False positives:':<30} {false_positives}")
     print(f"{'Precision:':<30} {precision:.5f}")
 
-    if args.command == "val_all_splits":
+    if not args.data_yaml_path:
         return
 
-    false_negative_samples_list = stats["false_negative_samples_list"]
+    false_negative_samples_list: list[FireballSample] = stats["false_negative_samples_list"]
 
     if args.save_false_negatives:
-        with open(Path(Path(__file__).parents[2], "data", "false_negatives.txt"), 'w') as file:
+        with open(Path(Path(args.data_yaml_path).parent, "false_negatives.txt"), 'w') as file:
             file.write("\n".join([i.name for i in false_negative_samples_list]))
 
     if args.show_false_negatives:
         for sample in false_negative_samples_list:
-            fig, ax = plt.subplots(1)
+            _, ax = plt.subplots(1)
             ax.imshow(sample.image)
             
             # Plot ground truth boxes in green
@@ -252,13 +230,15 @@ def output_stats(args: Args, stats: dict) -> None:
 
 
 def main():
-
+    # Initialize argument parser
     parser = argparse.ArgumentParser(
         description="Run object detection with YOLO and evaluate results.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('command', choices=['val_split', 'val_all_splits'], help="Command to execute")
-    parser.add_argument('--split', type=int, help='K-Fold cross-validation split number to use')
+    
+    # Define command-line arguments
+    parser.add_argument('--yolo_pt_path', type=str, help='Path to the YOLO model .pt file')
+    parser.add_argument('--data_yaml_path', type=str, help='Path to the data YAML file')
     parser.add_argument('--border_size', type=int, default=0, help='Size of the border to add around images')
     parser.add_argument('--samples', choices=['positive', 'negative', 'both'], default='both',
                         help='Specify whether to include positive, negative, or both types of images')
@@ -267,16 +247,10 @@ def main():
     parser.add_argument('--show_false_negatives', action='store_true', help='Show plots of false negatives')
     parser.add_argument('--save_false_negatives', action='store_true', help='Save names of false negatives')
 
+    # Parse the arguments
     args = Args(**vars(parser.parse_args()))
 
-    if args.command == 'val_split':
-        if args.split is None:
-            parser.error("--split is required when the command is 'val_split'")
-    if args.command == 'val_all_splits':
-        if args.split is not None:
-            parser.error("--split should not be provided when the command is 'val_all_splits'")
-
-
+    # Validate metric and threshold arguments
     if args.metric in ['iom', 'iou']:
         if args.threshold is None:
             parser.error(f"--threshold is required when --metric is '{args.metric}'")
@@ -285,14 +259,163 @@ def main():
     elif args.metric == 'intersects' and args.threshold is not None:
         parser.error("--threshold should not be provided when --metric is 'intersects'")
 
+    # Validate the yolo_pt_path and data_yaml_path arguments
+    if bool(args.yolo_pt_path) != bool(args.data_yaml_path):
+        parser.error("Both --yolo_pt_path and --data_yaml_path must be specified together, or neither.")
+
     print("\nargs:", vars(args), "\n")
 
-    if args.command == 'val_split':
+    # If yolo_pt_path and data_yaml_path are provided, run evaluation directly
+    if args.yolo_pt_path and args.data_yaml_path:
         output_stats(args, val_split(args))
-    elif args.command == 'val_all_splits':
-        output_stats(args, val_all_splits(args))
-    else:
-        parser.error("Invalid command")
+        return
+
+    # Dataclass to represent a dataset with optional data_yaml and yolo_model paths
+    @dataclass
+    class Dataset:
+        data_yaml: Path | None = None
+        yolo_model: Path | None = None
+
+    datasets: list[Dataset] = []
+
+    # Collect all available datasets from the DATA_FOLDER directory
+    for od_folder in sorted([i for i in os.listdir(DATA_FOLDER) if i.startswith("object_detection")]):
+        for folder in os.listdir(Path(DATA_FOLDER, od_folder)):
+            dataset = Dataset()
+            
+            # Check for the existence of a data YAML file and YOLO model in each folder
+            data_yaml_file = Path(DATA_FOLDER, od_folder, folder, "data.yaml")
+            if data_yaml_file.exists():
+                dataset.data_yaml = data_yaml_file
+                datasets.append(dataset)
+            
+            yolo_model = Path(DATA_FOLDER, od_folder, folder, "yolo.pt")
+            if yolo_model.exists():
+                dataset.yolo_model = yolo_model
+
+    # Display available dataset options
+    print("Dataset options:\n")
+
+    # NOTE: The folder "all" is used as a placeholder for when the user
+    # chooses to evaluate against all the splits, not the folder itself.
+
+    for i, dataset in enumerate(datasets):
+        if dataset.data_yaml.parent.name == "all":
+            od_folder = dataset.data_yaml.parents[1]
+            print(f"  [{i+1}] all splits in {od_folder.relative_to(DATA_FOLDER)}")
+
+            # Display information about the splits
+            splits = sorted(
+                [
+                    d for d in datasets if any(parent == od_folder for parent in d.data_yaml.parents) and
+                    d != dataset
+                ],
+                key=lambda d: str(d.data_yaml)
+            )
+
+            for split in splits:
+                if split.yolo_model:
+                    print(f"        ✅ {split.yolo_model.relative_to(od_folder)}")
+                else:
+                    print(f"        ❌ no yolo.pt model for {split.data_yaml.parent.relative_to(od_folder)}")
+
+            print()
+            continue
+
+        # Display information for datasets with individual YAML and model files
+        print(f"  [{i+1}] {dataset.data_yaml.relative_to(DATA_FOLDER)}")
+        if dataset.yolo_model:
+            print(f"        ✅ {dataset.yolo_model.relative_to(DATA_FOLDER)}")
+        else:
+            print(f"        ❌ no yolo.pt model found.")
+        print()
+
+    # Prompt the user to select a dataset for validation
+    while True:
+        try:
+            user_input = int(input("Enter which dataset to validate: "))
+
+            # Based on the user's choice, get the corresponding dataset
+            dataset = datasets[user_input-1]
+
+            if dataset.data_yaml.parent.name == "all":
+                od_folder = dataset.data_yaml.parents[1]
+
+                # Ensure all splits have the YOLO model files
+                splits = sorted(
+                    [
+                        d for d in datasets if any(parent == od_folder for parent in d.data_yaml.parents) and
+                        d != dataset
+                    ],
+                    key=lambda d: str(d.data_yaml)
+                )
+
+                all_models_present = True
+
+                for split in splits:
+                    if not split.yolo_model:
+                        print(f"All splits yolo.pt models must be present.\n")
+                        all_models_present = False
+                        break
+                
+                if not all_models_present:
+                    continue
+
+            elif not (dataset.data_yaml and dataset.yolo_model):
+                print("Both data.yaml and yolo.pt must be present.\n")
+                continue
+            
+            # Did not select all splits, set the paths in the args based on user's dataset choice
+            args.data_yaml_path = dataset.data_yaml
+            args.yolo_pt_path = dataset.yolo_model
+
+            break
+        except ValueError:
+            print("Invalid input. Please enter an integer.\n")
+
+    # If the user didn't choose all splits, evaluate and output the statistics
+    if dataset.data_yaml.parent.name != "all":
+        output_stats(args, val_split(args))
+        return
+
+    # If got to this section of code, this means the user chose to evaluate all splits
+    
+    splits = sorted(
+        [
+            d for d in datasets if any(parent == od_folder for parent in d.data_yaml.parents) and
+            d != dataset
+        ],
+        key=lambda d: str(d.data_yaml)
+    )
+
+    splits_stats: list[dict] = []
+    
+    # Collect statistics for each split
+    for d in splits:
+        args.data_yaml_path = d.data_yaml
+        args.yolo_pt_path = d.yolo_model
+        splits_stats.append(val_split(args))
+
+    # Reset paths in args for summary statistics calculation
+    args.data_yaml_path = None
+    args.yolo_pt_path = None
+
+    stats = {}
+
+    # Calculate and average statistics across all splits
+    for stat in splits_stats[0].keys():
+        if isinstance(splits_stats[0][stat], list):
+            continue
+
+        total = 0
+        for i in range(len(splits_stats)):
+            total += splits_stats[i][stat] 
+        
+        stats[stat] = total / len(splits_stats)
+    
+    # Output the averaged statistics
+    output_stats(args, stats)
+
 
 
 if __name__ == "__main__":
