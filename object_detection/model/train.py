@@ -11,7 +11,7 @@ settings.update({"wandb": False})
 
 def main():
     data_files: list[Path] = []
-    
+
     od_folders = [
         i for i in os.listdir(DATA_FOLDER)
         if i.startswith("object_detection") and Path(DATA_FOLDER, i).is_dir()
@@ -47,7 +47,8 @@ def main():
 
     while True:
         try:
-            model = YOLO(input("Enter which model to train: "))
+            model_user_input = input("Enter which model to train: ")
+            model = YOLO(model_user_input)
             break
         except FileNotFoundError:
             print("Invalid input. Enter a YOLO model e.g. yolov8n.pt yolo11x.pt")
@@ -56,11 +57,16 @@ def main():
     with open(Path(Path(__file__).parents[1], "cfg", "split_tiles.yaml"), 'r') as file:
         kwargs = yaml.safe_load(file)
 
+    run_name = str(data.parent.relative_to(DATA_FOLDER)).replace("object_detection_", "").replace("/", "-") + "-" + model_user_input
+
     model.train(
         data=data,
         epochs=100,
         imgsz=416,
         pretrained=True,
+        batch=0.8,
+        cache=False,
+        name=run_name,
         val=False if "/all/" in str(data) else True,
         **kwargs
     )
