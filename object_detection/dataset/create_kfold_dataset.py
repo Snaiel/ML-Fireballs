@@ -147,7 +147,7 @@ def main() -> None:
 
     # Create the splits
     with open(Path(all_folder, "fireballs.txt")) as fireballs_file:
-        fireball_names = sorted(fireballs_file.readlines())
+        fireball_names = sorted(line.strip() for line in fireballs_file.readlines())
     kf = KFold(n_splits=5)
     splits = list(enumerate(kf.split(fireball_names)))
 
