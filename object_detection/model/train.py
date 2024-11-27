@@ -11,7 +11,13 @@ settings.update({"wandb": False})
 
 def main():
     data_files: list[Path] = []
-    for od_folder in [i for i in os.listdir(DATA_FOLDER) if i.startswith("object_detection")]:
+    
+    od_folders = [
+        i for i in os.listdir(DATA_FOLDER)
+        if i.startswith("object_detection") and Path(DATA_FOLDER, i).is_dir()
+    ]
+
+    for od_folder in od_folders:
         for folder in os.listdir(Path(DATA_FOLDER, od_folder)):
             data_yaml_file = Path(DATA_FOLDER, od_folder, folder, "data.yaml")
             if data_yaml_file.exists():
