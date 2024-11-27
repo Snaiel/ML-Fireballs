@@ -39,7 +39,12 @@ def main():
 
     data = data_files[user_input-1]
 
-    model = YOLO("yolov8n.pt")
+    while True:
+        try:
+            model = YOLO(input("Enter which model to train: "))
+            break
+        except FileNotFoundError:
+            print("Invalid input. Enter a YOLO model e.g. yolov8n.pt yolo11x.pt")
 
     kwargs = {}
     with open(Path(Path(__file__).parents[1], "cfg", "split_tiles.yaml"), 'r') as file:

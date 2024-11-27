@@ -7,4 +7,4 @@ levenshtein==0.26.1
 scikit_learn==1.4.1.post1
 scikit_image==0.22.0
 tqdm==4.66.1
-ultralytics==8.2.32
+ultralytics==8.3.38
