@@ -42,7 +42,7 @@ def _update_bar(bar_queue: mp.Queue, total: int) -> None:
 
 def _create_split_dataset(
         bar_queue: mp.Queue,
-        fireball_images: list[str], 
+        fireball_names: list[str], 
         split: int,
         name: str,
         indexes,
@@ -55,7 +55,7 @@ def _create_split_dataset(
     specific split of a K-Fold cross-validation.
 
     Args:
-        fireball_images (list[str]): List of fireball image filenames.
+        fireball_images (list[str]): List of fireball names.
         split (int): Index of the current split.
         name (str): The type of dataset split (either 'train' or 'val').
         indexes: List of indices indicating which images to include in this split.
@@ -65,8 +65,7 @@ def _create_split_dataset(
     """
     
     for i in indexes:
-        # Get base fireball name without extension.
-        fireball_name = fireball_images[i].split(".")[0]
+        fireball_name = fireball_names[i]
         
         # Get all image files corresponding to this fireball.
         fireball_tile_images = [file for file in os.listdir(all_images_folder) if fireball_name in file]
@@ -146,8 +145,11 @@ def main() -> None:
             print("\ninclude --overwrite option to overwrite folders.")
             return
 
-    # Retrieve the images and their respective splits.
-    fireball_images, splits = retrieve_fireball_splits()
+    # Create the splits
+    with open(Path(all_folder, "fireballs.txt")) as fireballs_file:
+        fireball_names = sorted(fireballs_file.readlines())
+    kf = KFold(n_splits=5)
+    splits = list(enumerate(kf.split(fireball_names)))
 
     # Create directories for each split and copy base YAML config files.
     print("\nsetting up folders...")
@@ -179,7 +181,7 @@ def main() -> None:
 
     bar_queue = mp.Queue()
     # Process for updating the progress bar
-    bar_process = mp.Process(target=_update_bar, args=(bar_queue, len(fireball_images) * len(splits)), daemon=True)
+    bar_process = mp.Process(target=_update_bar, args=(bar_queue, len(fireball_names) * len(splits)), daemon=True)
     bar_process.start()
 
     print()
@@ -192,7 +194,7 @@ def main() -> None:
             name=f"proc-split{i}-train",
             args=(
                 bar_queue,
-                fireball_images,
+                fireball_names,
                 i,
                 "train",
                 train_indexes,
@@ -211,7 +213,7 @@ def main() -> None:
             name=f"proc-split{i}-val",
             args=(
                 bar_queue,
-                fireball_images,
+                fireball_names,
                 i,
                 "val",
                 val_indexes,

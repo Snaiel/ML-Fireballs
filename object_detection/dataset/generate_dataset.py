@@ -166,6 +166,11 @@ def main():
         yaml_file.write(content)
         yaml_file.truncate()
 
+    with open(Path(all_folder, "fireballs.txt"), "w") as fireballs_file:
+        fireballs_file.write(
+            "\n".join(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(GFO_JPEGS))))
+        )
+
     _create_tiles(args.num_processes, args.negative_ratio, all_images_folder, all_labels_folder)
 
 
