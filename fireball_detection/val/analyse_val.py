@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import shutil
 from dataclasses import dataclass
@@ -31,13 +32,13 @@ def diagonal_length(box) -> float:
 def analyse_split(split: int, metric: str, threshold: float) -> dict:
     SPLIT_FOLDER = get_split_folder(split)
 
-    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "1border", "false_negatives")
+    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "false_negatives")
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
     SMALL_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "small")
 
-    BOXES_FOLDER = Path(SPLIT_FOLDER, "1border", "boxes")
+    BOXES_FOLDER = Path(SPLIT_FOLDER, "boxes")
     PP_BB_FOLDER = Path(SPLIT_FOLDER, "pp_bb")
-    PREDS_FOLDER = Path(SPLIT_FOLDER, "1border", "preds")
+    PREDS_FOLDER = Path(SPLIT_FOLDER, "preds")
 
     total_fireballs = len(os.listdir(BOXES_FOLDER))
     fireballs_detected = 0
@@ -319,6 +320,7 @@ def main():
         metric: str
         threshold: float | None
         split: int | None = None
+        plot_analysis: bool = False
 
     parser = argparse.ArgumentParser(
         description='Fireball detection analysis',
@@ -330,12 +332,16 @@ def main():
     parser_split.add_argument('--split', type=int, required=True, help='Fold number for the analysis')
     parser_split.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser_split.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+    parser_split.add_argument('--plot_analysis', action='store_true', help='Plot the analysis')
+
 
     parser_all_splits = subparsers.add_parser('analyse_all_splits', help='Analyse all splits')
     parser_all_splits.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser_all_splits.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
 
     args = Args(**vars(parser.parse_args()))
+    
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
     if args.metric in ['iom', 'iou']:
         if args.threshold is None:
@@ -348,7 +354,8 @@ def main():
     if args.command == 'analyse_split':
         stats = analyse_split(args.split, args.metric, args.threshold)
         print_stats(stats)
-        plot_conf_box_sizes(stats["true_positive_conf_box_size"], stats["false_positive_conf_box_size"])
+        if args.plot_analysis:
+            plot_conf_box_sizes(stats["true_positive_conf_box_size"], stats["false_positive_conf_box_size"])
     elif args.command == 'analyse_all_splits':
         stats = analyse_all_splits(args.metric, args.threshold)
         print_stats(stats)

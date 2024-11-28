@@ -1,5 +1,6 @@
 import argparse
 import gc
+import json
 import multiprocessing as mp
 import os
 import shutil
@@ -208,11 +209,13 @@ def main():
 
     args = Args(**vars(parser.parse_args()))
 
+    print("args:", json.dumps(vars(args), indent=4), "\n")
+
     # Call the function associated with the command
     if args.command == "create":
         create()
     elif args.command == "test":
-        test(args.split, args.processes, args.border_size)
+        test(args.split, args.yolo_pt_path, args.processes, args.border_size)
     else:
         parser.print_help()
 

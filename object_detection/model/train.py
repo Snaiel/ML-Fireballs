@@ -1,4 +1,7 @@
+import argparse
+import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -6,10 +9,25 @@ from ultralytics import YOLO, settings
 
 from object_detection.dataset import DATA_FOLDER
 
+
 settings.update({"wandb": False})
 
 
 def main():
+    @dataclass
+    class Args:
+        data_yaml_path: str = ""
+        yolo_model: str = ""
+
+    parser = argparse.ArgumentParser(description='Train a YOLO model on a specified dataset.')
+    parser.add_argument('--data_yaml_path', type=str, help='Path to the data.yaml file')
+    parser.add_argument('--yolo_model', type=str, help='YOLO model to use e.g. yolov8n.pt')
+
+    args = Args(**vars(parser.parse_args()))
+
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+
+
     data_files: list[Path] = []
 
     od_folders = [
@@ -22,7 +40,7 @@ def main():
             data_yaml_file = Path(DATA_FOLDER, od_folder, folder, "data.yaml")
             if data_yaml_file.exists():
                 data_files.append(data_yaml_file)
-
+    
     if len(data_files) == 0:
         print("No datasets found. Consider running")
         print("  python3 -m object_detection.dataset.generate_dataset")
@@ -31,27 +49,38 @@ def main():
 
     data_files = sorted(data_files)
 
-    print("Datasets found:")
+    if args.data_yaml_path:
+        data = Path(args.data_yaml_path).resolve()
+        if data not in data_files:
+            print(f"Specified yaml path {args.data_yaml_path} not found in available datasets.")
+            return
+    else:
+        print("Datasets found:")
+        for i in range(len(data_files)):
+            print(f"  [{i+1}] {data_files[i].relative_to(DATA_FOLDER)}")
+        
+        while True:
+            try:
+                user_input = int(input("Enter which dataset to use: "))
+                data = data_files[user_input-1]
+                break
+            except (ValueError, IndexError):
+                print("Invalid input. Please enter a valid integer.")
 
-    for i in range(len(data_files)):
-        print(f"  [{i+1}] {data_files[i].relative_to(DATA_FOLDER)}")
-
-    while True:
+    if args.yolo_model:
+        model_user_input = args.yolo_model
         try:
-            user_input = int(input("Enter which dataset to use: "))
-            break
-        except ValueError:
-            print("Invalid input. Please enter an integer.")
-
-    data = data_files[user_input-1]
-
-    while True:
-        try:
-            model_user_input = input("Enter which model to train: ")
             model = YOLO(model_user_input)
-            break
         except FileNotFoundError:
             print("Invalid input. Enter a YOLO model e.g. yolov8n.pt yolo11x.pt")
+            return
+    else:
+        while True:
+            try:
+                model_user_input = input("Enter which model to train: ")
+                model = YOLO(model_user_input)
+            except FileNotFoundError:
+                print("Invalid input. Enter a YOLO model e.g. yolov8n.pt yolo11x.pt")
 
     kwargs = {}
     with open(Path(Path(__file__).parents[1], "cfg", "split_tiles.yaml"), 'r') as file:

@@ -1,4 +1,5 @@
 import argparse
+import json
 import multiprocessing as mp
 import os
 import shutil
@@ -11,7 +12,6 @@ from tqdm import tqdm
 
 from object_detection.dataset import DATA_FOLDER, DATA_YAML, GFO_JPEGS
 from object_detection.dataset.split_tiles import SplitTilesFireball
-
 
 # Sentinel value to indicate the end of the queue processing
 _SENTINEL = None
@@ -135,7 +135,8 @@ def main():
 
 
     args = Args(**vars(parser.parse_args()))
-    print(f"\nArgs: {vars(args)}")
+
+    print("args:", json.dumps(vars(args), indent=4), "\n")
 
     object_detection_folder_name = f"object_detection_1_to_{args.negative_ratio}"
     object_detection_folder = Path(DATA_FOLDER, object_detection_folder_name)

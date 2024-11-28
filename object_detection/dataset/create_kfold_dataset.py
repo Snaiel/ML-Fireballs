@@ -1,4 +1,5 @@
 import argparse
+import json
 import multiprocessing as mp
 import os
 import shutil
@@ -112,7 +113,8 @@ def main() -> None:
                         help='Overwrite the output directory if it exists.')
 
     args = Args(**vars(parser.parse_args()))
-    print(f"\nArgs: {vars(args)}")
+    
+    print("args:", json.dumps(vars(args), indent=4), "\n")
 
     # Define paths for the root and specific folders for images and labels.
     object_detection_folder_name = f"object_detection_1_to_{args.negative_ratio}"
