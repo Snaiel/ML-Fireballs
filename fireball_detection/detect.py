@@ -128,17 +128,17 @@ def plot_boxes(image: ndarray, fireballs: list[FireballBox]) -> tuple[Figure, Ax
                 (fireball.box[0], fireball.box[1]),
                 fireball.box[2] - fireball.box[0],
                 fireball.box[3] - fireball.box[1],
-                linewidth=4,
+                linewidth=1,
                 edgecolor='r',
                 facecolor='none'
             )
         )
         ax.text(
             fireball.box[0],
-            fireball.box[1] - 10 if fireball.box[1] > 20 else fireball.box[3] + 25,
+            fireball.box[1] - 10 if fireball.box[1] > 50 else fireball.box[3] + 25,
             f"{fireball.conf:.2f}",
             color='r',
-            fontsize=24,
+            fontsize=18,
             va='bottom' if fireball.box[1] > 20 else 'top'
         )
 

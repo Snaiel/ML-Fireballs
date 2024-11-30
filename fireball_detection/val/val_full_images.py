@@ -59,12 +59,14 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
 
     fig, ax = plot_boxes(image, fireballs)
 
-    pp = PointPickings(Path(GFO_PICKINGS, fireball_name + ".csv"))
+    with open(Path(split_folder, "pp_bb", fireball_name + ".txt")) as file:
+        pp_bb = [float(x) for x in file.readline().split(" ")]
+
     ax.add_patch(
         Rectangle(
-            (pp.bb_min_x, pp.bb_min_y),
-            pp.bb_max_x - pp.bb_min_x,
-            pp.bb_max_y - pp.bb_min_y,
+            (pp_bb[0], pp_bb[1]),
+            pp_bb[2] - pp_bb[0],
+            pp_bb[3] - pp_bb[1],
             linewidth=1,
             edgecolor='lime',
             facecolor='none'
@@ -76,7 +78,7 @@ def test_fireball(model: YOLO, fireball_file: str, detected_boxes: list, preds: 
     plt.cla()
     plt.clf()
     plt.close('all')
-    del fig, ax, pp, image, fireballs
+    del fig, ax, image, fireballs
     gc.collect()
 
 
@@ -209,7 +211,7 @@ def main():
 
     args = Args(**vars(parser.parse_args()))
 
-    print("args:", json.dumps(vars(args), indent=4), "\n")
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
     # Call the function associated with the command
     if args.command == "create":

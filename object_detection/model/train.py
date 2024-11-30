@@ -79,6 +79,7 @@ def main():
             try:
                 model_user_input = input("Enter which model to train: ")
                 model = YOLO(model_user_input)
+                break
             except FileNotFoundError:
                 print("Invalid input. Enter a YOLO model e.g. yolov8n.pt yolo11x.pt")
 

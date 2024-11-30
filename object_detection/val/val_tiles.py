@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -239,7 +240,7 @@ def main():
     # Define command-line arguments
     parser.add_argument('--yolo_pt_path', type=str, help='Path to the YOLO model .pt file')
     parser.add_argument('--data_yaml_path', type=str, help='Path to the data YAML file')
-    parser.add_argument('--border_size', type=int, default=0, help='Size of the border to add around images')
+    parser.add_argument('--border_size', type=int, default=5, help='Size of the border to add around images')
     parser.add_argument('--samples', choices=['positive', 'negative', 'both'], default='both',
                         help='Specify whether to include positive, negative, or both types of images')
     parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
@@ -263,7 +264,7 @@ def main():
     if bool(args.yolo_pt_path) != bool(args.data_yaml_path):
         parser.error("Both --yolo_pt_path and --data_yaml_path must be specified together, or neither.")
 
-    print("\nargs:", vars(args), "\n")
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
     # If yolo_pt_path and data_yaml_path are provided, run evaluation directly
     if args.yolo_pt_path and args.data_yaml_path:
