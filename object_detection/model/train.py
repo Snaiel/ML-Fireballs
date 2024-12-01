@@ -18,10 +18,12 @@ def main():
     class Args:
         data_yaml_path: str = ""
         yolo_model: str = ""
+        batch_size: int = 16
 
     parser = argparse.ArgumentParser(description='Train a YOLO model on a specified dataset.')
     parser.add_argument('--data_yaml_path', type=str, help='Path to the data.yaml file')
     parser.add_argument('--yolo_model', type=str, help='YOLO model to use e.g. yolov8n.pt')
+    parser.add_argument('--batch_size', type=int, help='How many samples to consider during a pass')
 
     args = Args(**vars(parser.parse_args()))
 
@@ -94,7 +96,7 @@ def main():
         epochs=100,
         imgsz=416,
         pretrained=True,
-        batch=0.8,
+        batch=args.batch_size,
         cache=False,
         name=run_name,
         val=False if "/all/" in str(data) else True,
