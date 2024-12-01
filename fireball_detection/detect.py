@@ -1,4 +1,5 @@
 import argparse
+import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -183,17 +184,22 @@ def main():
     args = Args(**vars(parser.parse_args()))
 
     if args.verbose:
-        print(f"\nargs: {vars(args)}\n")
+        print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
-    model: YOLO
-    if not args.model_path:
-        if DEFAULT_YOLO_MODEL_PATH.exists():
-            if args.verbose:
-                print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
-            model = YOLO(DEFAULT_YOLO_MODEL_PATH)
-        else:
+
+    model_path = args.model_path or DEFAULT_YOLO_MODEL_PATH
+
+    if args.verbose and not args.model_path:
+        print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
+
+    try:
+        model = YOLO(model_path)
+    except FileNotFoundError as e:
+        print(f"Model file not found: {e}")
+        if not args.model_path:
             print(f"No model path provided and {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)} missing.")
-            return
+        return
+
 
     t0 = time.time()
     image = io.imread(Path(args.image_path))
