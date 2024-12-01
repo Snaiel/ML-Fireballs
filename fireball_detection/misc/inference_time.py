@@ -18,10 +18,12 @@ def load_model(yolo_pt_path: str) -> YOLO:
         return None
 
 
-def process_image(image_path: Path, model: YOLO):
+def process_image(image_path: Path, model: YOLO) -> float:
     image = io.imread(image_path)
-    fireballs = detect_fireballs(image, model, 5)
-    return fireballs
+    t0 = time.time()
+    detect_fireballs(image, model, 5)
+    t1 = time.time()
+    return t1 - t0
 
 
 def main():
@@ -54,11 +56,7 @@ def main():
 
     total_time = 0
     for image_path in images[:args.number]:
-        t0 = time.time()
-        _ = process_image(image_path, model)
-        t1 = time.time()
-
-        inference_time = t1 - t0
+        inference_time = process_image(image_path, model)
         total_time += inference_time
 
         print(f"Inference time for {image_path}: {inference_time:.5f} seconds")
