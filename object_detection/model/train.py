@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train a YOLO model on a specified dataset.')
     parser.add_argument('--data_yaml_path', type=str, help='Path to the data.yaml file')
     parser.add_argument('--yolo_model', type=str, help='YOLO model to use e.g. yolov8n.pt')
-    parser.add_argument('--batch_size', type=int, help='How many samples to consider during a pass')
+    parser.add_argument('--batch_size', type=int, default=16, help='How many samples to consider during a pass')
 
     args = Args(**vars(parser.parse_args()))
 
@@ -38,6 +38,10 @@ def main():
     ]
 
     for od_folder in od_folders:
+        data_yaml_file = Path(DATA_FOLDER, od_folder, "data.yaml")
+        if data_yaml_file.exists():
+            data_files.append(data_yaml_file)
+        
         for folder in os.listdir(Path(DATA_FOLDER, od_folder)):
             data_yaml_file = Path(DATA_FOLDER, od_folder, folder, "data.yaml")
             if data_yaml_file.exists():

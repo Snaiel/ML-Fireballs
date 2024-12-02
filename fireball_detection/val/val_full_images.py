@@ -188,10 +188,10 @@ def main():
     @dataclass
     class Args:
         command: str
-        split: int | None = None
-        yolo_pt_path: str | None = None
-        processes: int | None = None
-        border_size: int | None = None
+        split: int
+        yolo_pt_path: str
+        processes: int 
+        border_size: int 
 
     parser = argparse.ArgumentParser(
         description="A script to test detections on full images.",
@@ -206,8 +206,8 @@ def main():
     parser_test = subparsers.add_parser('test', help="Run test")
     parser_test.add_argument('--split', type=int, required=True, help="Specify the split number")
     parser_test.add_argument('--yolo_pt_path', type=str, required=True, help='Path to the YOLO model .pt file')
-    parser_test.add_argument('--processes', type=int, required=True, help="Number of processes to use as workers")
-    parser_test.add_argument('--border_size', type=int, required=True, help="Specify the border size")
+    parser_test.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
+    parser_test.add_argument('--border_size', type=int, default=5, help="Specify the border size")
 
     args = Args(**vars(parser.parse_args()))
 

@@ -2,6 +2,7 @@ import argparse
 import json
 import multiprocessing as mp
 import os
+import re
 import shutil
 import signal
 from dataclasses import dataclass
@@ -13,8 +14,20 @@ from tqdm import tqdm
 from object_detection.dataset import DATA_FOLDER, DATA_YAML, GFO_JPEGS
 from object_detection.dataset.split_tiles import SplitTilesFireball
 
+
 # Sentinel value to indicate the end of the queue processing
 _SENTINEL = None
+
+
+@dataclass
+class Args:
+    """
+    Data class to store command-line arguments.
+    """
+    negative_ratio: int = 1
+    overwrite: bool = False
+    num_processes: int = 8
+    source: str = "all"
 
 
 def _generate_tiles(fireball_name: str, negative_ratio: int, images_folder: Path, labels_folder: Path) -> None:
@@ -52,9 +65,9 @@ def _run_generate_tiles(names_queue: mp.Queue, bar_queue: mp.Queue, negative_rat
         return
 
 
-def _update_bar(bar_queue: mp.Queue, total: int) -> None:
+def _tiles_progress_bar(bar_queue: mp.Queue, total: int) -> None:
     """
-    Update a tqdm progress bar based on signals from the queue.
+    Create progress bar and update a based on signals from the queue.
 
     Parameters:
     - bar_queue (mp.Queue): A queue to receive progress signals.
@@ -66,17 +79,16 @@ def _update_bar(bar_queue: mp.Queue, total: int) -> None:
         pbar.update(1)
 
 
-def _create_tiles(num_processes: int, negative_ratio: int, images_folder: Path, labels_folder: Path) -> None:
+def _create_tiles(num_processes: int, negative_ratio: int, fireballs: list[str], images_folder: Path, labels_folder: Path) -> None:
     """
     Organize multiprocessing to generate tiles for fireball images.
 
     Parameters are used to control the ratio and destination paths for images and labels.
     """
-    fireball_images = sorted(os.listdir(GFO_JPEGS))
 
     names_queue = mp.Queue()
-    for fireball_image in fireball_images:
-        names_queue.put_nowait(fireball_image.split(".")[0])
+    for fireball in fireballs:
+        names_queue.put_nowait(fireball)
     
     # Adding sentinel values to signal the processes they can stop
     for _ in range(num_processes):
@@ -84,10 +96,8 @@ def _create_tiles(num_processes: int, negative_ratio: int, images_folder: Path, 
 
     bar_queue = mp.Queue()
     # Process for updating the progress bar
-    bar_process = mp.Process(target=_update_bar, args=(bar_queue, len(fireball_images)), daemon=True)
+    bar_process = mp.Process(target=_tiles_progress_bar, args=(bar_queue, len(fireballs)), daemon=True)
     bar_process.start()
-
-    print()
 
     processes: list[mp.Process] = []
     # Starting worker processes
@@ -109,35 +119,7 @@ def _create_tiles(num_processes: int, negative_ratio: int, images_folder: Path, 
         os.kill(os.getpid(), signal.SIGTERM)
 
 
-def main():
-    """
-    Main function to parse arguments and initiate the dataset generation process.
-    """
-    @dataclass
-    class Args:
-        """
-        Data class to store command-line arguments.
-        """
-        negative_ratio: int = 1
-        overwrite: bool = False
-        num_processes: int = 8
-
-    parser = argparse.ArgumentParser(
-        description="Generate dataset for object detection.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument('--negative_ratio', type=int, default=1, required=True, 
-                        help='Ratio of negative examples to positive examples.')
-    parser.add_argument('--overwrite', action='store_true', 
-                        help='Overwrite the output directory if it exists.')
-    parser.add_argument('--num_processes', type=int, default=8,
-                        help='Number of processes to use for multiprocessing.')
-
-
-    args = Args(**vars(parser.parse_args()))
-
-    print("args:", json.dumps(vars(args), indent=4), "\n")
-
+def generate_dataset_all(args: Args) -> None:
     object_detection_folder_name = f"object_detection_1_to_{args.negative_ratio}"
     object_detection_folder = Path(DATA_FOLDER, object_detection_folder_name)
     all_folder = Path(object_detection_folder, "all")
@@ -167,12 +149,105 @@ def main():
         yaml_file.write(content)
         yaml_file.truncate()
 
+    fireballs = map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(GFO_JPEGS)))
+
     with open(Path(all_folder, "fireballs.txt"), "w") as fireballs_file:
         fireballs_file.write(
-            "\n".join(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(GFO_JPEGS))))
+            "\n".join(fireballs)
         )
 
-    _create_tiles(args.num_processes, args.negative_ratio, all_images_folder, all_labels_folder)
+    _create_tiles(args.num_processes, args.negative_ratio, fireballs, all_images_folder, all_labels_folder)
+
+
+def generate_dataset_2015_removed(args: Args) -> None:
+
+    fireballs = list(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(GFO_JPEGS))))
+    pattern = r"_2015-\d{2}-\d{2}_"
+    
+    train_fireballs = []
+    val_fireballs = []
+
+    for fireball in fireballs:
+        if re.search(pattern, fireball):
+            val_fireballs.append(fireball)
+        else:
+            train_fireballs.append(fireball)
+
+    print("{:<16} {:<30} {:<30}".format("All Fireballs", "2015 Removed (For Training)", "2015 Fireballs (For Validation)"))
+    print("{:<16} {:<30} {:<30}".format(len(fireballs), len(train_fireballs), len(val_fireballs)))
+
+    object_detection_folder_name = f"object_detection_1_to_{args.negative_ratio}_2015_removed"
+    object_detection_folder = Path(DATA_FOLDER, object_detection_folder_name)
+
+    if Path(object_detection_folder).exists():
+        if args.overwrite:
+            print("\nremoving existing folder...")
+            shutil.rmtree(object_detection_folder)
+        else:
+            print(f"\"{object_detection_folder}\" already exists. include --overwrite option to overwrite folders.")
+            return
+    
+    os.mkdir(object_detection_folder)
+    for folder in ("images", "labels"):
+        os.mkdir(Path(object_detection_folder, folder))
+        for sub_folder in ("train", "val"):
+            os.mkdir(Path(object_detection_folder, folder, sub_folder))
+
+    shutil.copy(DATA_YAML, object_detection_folder)
+    with open(Path(object_detection_folder, "data.yaml"), "r+") as yaml_file:
+        content = yaml_file.read()
+        content = content.replace("object_detection", f"{object_detection_folder_name}")
+        yaml_file.seek(0)
+        yaml_file.write(content)
+        yaml_file.truncate()
+
+    print("\nTrain Set (2015 Fireballs Removed)")
+    _create_tiles(
+        args.num_processes,
+        args.negative_ratio,
+        train_fireballs,
+        Path(object_detection_folder, "images", "train"),
+        Path(object_detection_folder, "labels", "train")
+    )
+
+    print("\n\nValidation Set (2015 Fireballs)")
+    _create_tiles(
+        args.num_processes,
+        args.negative_ratio,
+        val_fireballs,
+        Path(object_detection_folder, "images", "val"),
+        Path(object_detection_folder, "labels", "val")
+    )
+
+
+def main():
+    """
+    Main function to parse arguments and initiate the dataset generation process.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Generate dataset for object detection.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument('--negative_ratio', type=int, default=1, 
+                        help='Ratio of negative examples to positive examples.')
+    parser.add_argument('--overwrite', action='store_true', 
+                        help='Overwrite the output directory if it exists.')
+    parser.add_argument('--num_processes', type=int, default=8,
+                        help='Number of processes to use for multiprocessing.')
+    parser.add_argument('--source', type=str, choices=['all', '2015_removed'], default='all',
+                        help='Source of the dataset, either "all" or "2015_removed".')
+
+    args = Args(**vars(parser.parse_args()))
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+
+    source_options = {
+        "all": generate_dataset_all,
+        "2015_removed": generate_dataset_2015_removed
+    }
+
+    source_options[args.source](args)
 
 
 if __name__ == "__main__":
