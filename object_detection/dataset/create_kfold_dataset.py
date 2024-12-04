@@ -21,10 +21,10 @@ def retrieve_fireball_splits() -> tuple[list[str], tuple[int, tuple[np.ndarray, 
         a tuple containing a list of fireball image files from GFO_JPEGS and
         a list of each split (i, (train indexes, test indexes))
     """
-    fireball_images = sorted(os.listdir(GFO_JPEGS))
+    fireballs = list(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(GFO_JPEGS))))
     kf = KFold(n_splits=5)
-    splits = list(enumerate(kf.split(fireball_images)))
-    return fireball_images, splits
+    splits = list(enumerate(kf.split(fireballs)))
+    return fireballs, splits
 
 
 def _update_bar(bar_queue: mp.Queue, total: int) -> None:
@@ -126,7 +126,7 @@ def main() -> None:
     # Check if k-fold dataset directory exists; else inform to generate the dataset first.
     if not Path.exists(object_detection_folder):
         print(f"\"{object_detection_folder}\" does not exist. generate dataset first with\n")
-        print(f"python3 -m object_detection.dataset.generate_dataset --negative_ratio {args.negative_ratio}")
+        print(f"python3 -m object_detection.dataset.generate.all --negative_ratio {args.negative_ratio}")
         return
 
     # Check for existing split directories and handle them based on 'overwrite' argument.

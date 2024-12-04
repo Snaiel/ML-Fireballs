@@ -3,13 +3,15 @@ import json
 import os
 import shutil
 from dataclasses import dataclass
+from math import sqrt
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
 
 from fireball_detection.boxes.merge import intersects
-from fireball_detection.val.val_full_images import get_split_folder
+from fireball_detection.val.validate import VAL_FIREBALL_DETECTION_FOLDER
 from object_detection.utils import iom, iou
 
 
@@ -24,21 +26,20 @@ def diagonal_length(box) -> float:
     Returns:
         float: The length of the diagonal of the box.
     """
-    from math import sqrt
     return sqrt((box[2] - box[0])**2 + (box[3] - box[1])**2)
 
 
 
-def analyse_split(split: int, metric: str, threshold: float) -> dict:
-    SPLIT_FOLDER = get_split_folder(split)
+def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
+    VAL_FOLDER = Path(VAL_FIREBALL_DETECTION_FOLDER, val_folder_name)
 
-    FALSE_NEGATIVES_FOLDER = Path(SPLIT_FOLDER, "false_negatives")
+    FALSE_NEGATIVES_FOLDER = Path(VAL_FOLDER, "false_negatives")
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
     SMALL_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "small")
 
-    BOXES_FOLDER = Path(SPLIT_FOLDER, "boxes")
-    PP_BB_FOLDER = Path(SPLIT_FOLDER, "pp_bb")
-    PREDS_FOLDER = Path(SPLIT_FOLDER, "preds")
+    BOXES_FOLDER = Path(VAL_FOLDER, "boxes")
+    PP_BB_FOLDER = Path(VAL_FOLDER, "pp_bb")
+    PREDS_FOLDER = Path(VAL_FOLDER, "preds")
 
     total_fireballs = len(os.listdir(BOXES_FOLDER))
     fireballs_detected = 0
@@ -239,7 +240,7 @@ def analyse_all_splits(metric: str, threshold: float) -> dict:
     splits_stats: list[dict] = []
 
     for i in range(5):
-        splits_stats.append(analyse_split(i, metric, threshold))
+        splits_stats.append(analyse_folder(f"split{i}", metric, threshold))
 
     stats = {}
 
@@ -272,8 +273,10 @@ def plot_distribution_of_boxes_in_each_file(boxes_in_each_file) -> None:
 
 
 def plot_distribution_of_box_sizes(true_positive_box_sizes, false_positive_box_sizes) -> None:
+    
+    axes: list[Axes]
     # Create the histogram
-    fig, axes = plt.subplots(1, 2, figsize=(20, 6))
+    _, axes = plt.subplots(1, 2, figsize=(20, 6))
 
     # Plot the histogram for true positive box sizes
     axes[0].hist(true_positive_box_sizes, bins=np.linspace(0, 1000, 51), alpha=0.7, color='blue')
@@ -319,7 +322,7 @@ def main():
         command: str
         metric: str
         threshold: float | None
-        split: int | None = None
+        val_folder_name: str | None = None
         plot_analysis: bool = False
 
     parser = argparse.ArgumentParser(
@@ -328,12 +331,11 @@ def main():
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    parser_split = subparsers.add_parser('analyse_split', help='Analyse a specific split')
-    parser_split.add_argument('--split', type=int, required=True, help='Fold number for the analysis')
+    parser_split = subparsers.add_parser('analyse_folder', help='Analyse a specific split')
+    parser_split.add_argument('--val_folder_name', type=str, required=True, help='Folder to analyse.')
     parser_split.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser_split.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
     parser_split.add_argument('--plot_analysis', action='store_true', help='Plot the analysis')
-
 
     parser_all_splits = subparsers.add_parser('analyse_all_splits', help='Analyse all splits')
     parser_all_splits.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
@@ -351,8 +353,8 @@ def main():
     elif args.metric == 'intersects' and args.threshold is not None:
         parser.error("--threshold should not be provided when --metric is 'intersects'")
 
-    if args.command == 'analyse_split':
-        stats = analyse_split(args.split, args.metric, args.threshold)
+    if args.command == 'analyse_folder':
+        stats = analyse_folder(args.val_folder_name, args.metric, args.threshold)
         print_stats(stats)
         if args.plot_analysis:
             plot_conf_box_sizes(stats["true_positive_conf_box_size"], stats["false_positive_conf_box_size"])
