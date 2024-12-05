@@ -55,7 +55,8 @@ def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile
         input_image = tile.image if border_size == 0 else add_border(tile.image, border_size)
         results = model.predict(
             input_image,
-            verbose=False
+            verbose=False,
+            imgsz=416
         )
         result = results[0]
         if len(result.boxes.conf) > 0:

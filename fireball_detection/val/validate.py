@@ -76,7 +76,7 @@ def run_tests(
         border_size: int
     ) -> None:
     
-    model = YOLO(Path(yolo_pt_path))
+    model = YOLO(Path(yolo_pt_path), task="detect")
 
     detected_boxes = os.listdir(Path(val_folder, "boxes"))
     preds = os.listdir(Path(val_folder, "preds"))

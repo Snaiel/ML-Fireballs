@@ -113,6 +113,30 @@ def iom(box1, box2):
     return result
 
 
+def xywh2xyxy(x):
+    """
+    Convert bounding box (x, y, w, h) to bounding box (x1, y1, x2, y2)
+    """
+    y = np.copy(x)
+    y[..., 0] = x[..., 0] - x[..., 2] / 2
+    y[..., 1] = x[..., 1] - x[..., 3] / 2
+    y[..., 2] = x[..., 0] + x[..., 2] / 2
+    y[..., 3] = x[..., 1] + x[..., 3] / 2
+    return y
+
+
+def xywhn2xyxy(x, w, h):
+    """
+    Convert normalized bounding box coordinates to pixel coordinates.
+    """
+    y = np.copy(x)
+    y[..., 0] = w * (x[..., 0] - x[..., 2] / 2)
+    y[..., 1] = h * (x[..., 1] - x[..., 3] / 2)
+    y[..., 2] = w * (x[..., 0] + x[..., 2] / 2)
+    y[..., 3] = h * (x[..., 1] + x[..., 3] / 2)
+    return y
+
+
 # prefix components:
 SPACE =  '    '
 BRANCH = '│   '
