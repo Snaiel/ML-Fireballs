@@ -46,22 +46,21 @@ def main():
     if len(images) < args.number:
         print(f"Not enough images in the folder. ({len(images)} < {args.number})")
 
+    # Perform a warmup inference - this time will be reported separately
+    warmup_time = process_image(images[0], model)
+    print(f"Warmup inference time for {images[0]}: {warmup_time:.5f} seconds")
+
     inference_times = []
+    # Perform actual inferences and store their times
     for image_path in images[:args.number]:
         inference_time = process_image(image_path, model)
         inference_times.append(inference_time)
-
         print(f"Inference time for {image_path}: {inference_time:.5f} seconds")
 
-    if args.number == 1:
-        average_time = inference_times[0]
-        average_time_excluding_first = "N/A"
-    else:
-        average_time = sum(inference_times) / args.number
-        average_time_excluding_first = sum(inference_times[1:]) / (args.number - 1)
+    average_time_excluding_warmup = sum(inference_times) / args.number
 
-    print(f"\n{'Time for first':<20}{'Average time all':<20}{'Average time excluding first':<30}")
-    print(f"{inference_times[0]:<20}{average_time:<20}{average_time_excluding_first:<30}")
+    print(f"\n{'Time for warmup':<20}{'Average time excluding warmup':<30}")
+    print(f"{warmup_time:<20.5f}{average_time_excluding_warmup:<30.5f}")
 
 
 if __name__ == "__main__":
