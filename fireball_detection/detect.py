@@ -194,13 +194,12 @@ def main():
         print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
 
     try:
-        model = YOLO(model_path)
+        model = YOLO(model_path, task="detect")
     except FileNotFoundError as e:
         print(f"Model file not found: {e}")
         if not args.model_path:
             print(f"No model path provided and {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)} missing.")
         return
-
 
     t0 = time.time()
     image = io.imread(Path(args.image_path))

@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage.io as io
 from tqdm import tqdm
+from ultralytics import YOLO
 
 from fireball_detection.boxes.merge import intersects
 from object_detection.dataset import DATA_FOLDER
 from object_detection.utils import add_border, iom, iou, xywhn2xyxy
-from object_detection.detectors.ultralytics import UltralyticsDetector
 
 
 discard_fireballs = {
@@ -46,7 +46,7 @@ def val_split(args: Args) -> dict:
     model_path = Path(args.yolo_pt_path)
     print(model_path, "\n")
 
-    detector = UltralyticsDetector(model_path)
+    model = YOLO(model_path)
 
     data_path = Path(args.data_yaml_path)
     val_images_folder = Path(data_path.parent, "images", "val")
@@ -99,7 +99,8 @@ def val_split(args: Args) -> dict:
             fireball_names.add(fireball_name)
 
         # Use the model to predict bounding boxes for the image
-        boxes, _, _ = detector.detect(image)
+        results = model.predict(image, verbose=False, imgsz=416)
+        boxes = results[0].boxes.xyxy.cpu()
 
         total_boxes += len(boxes)  # Update total number of boxes
 
