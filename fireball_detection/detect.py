@@ -176,9 +176,9 @@ def main():
         description="Detect fireballs in an image and plot bounding boxes.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-i", "--image_path", type=str, required=True, help="Path to the fireball image file.")
-    parser.add_argument("-m", "--model_path", type=str, help="Path to the YOLO model file.")
-    parser.add_argument("-b", "--border_size", type=str, default=5, help="Border size.")
+    parser.add_argument("--image_path", type=str, required=True, help="Path to the fireball image file.")
+    parser.add_argument("--model_path", type=str, help="Path to the YOLO model file.")
+    parser.add_argument("--border_size", type=str, default=5, help="Border size.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument("--plot", action="store_true", help="Plot and display the bounding boxes on the image.")
     

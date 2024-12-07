@@ -37,11 +37,13 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
     LONG_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "long")
     SMALL_FALSE_NEGATIVES_FOLDER = Path(FALSE_NEGATIVES_FOLDER, "small")
 
+    IMAGES_FOLDER = Path(VAL_FOLDER, "images")
     BOXES_FOLDER = Path(VAL_FOLDER, "boxes")
     PP_BB_FOLDER = Path(VAL_FOLDER, "pp_bb")
     PREDS_FOLDER = Path(VAL_FOLDER, "preds")
 
-    total_fireballs = len(os.listdir(BOXES_FOLDER))
+    total_images = len(os.listdir(IMAGES_FOLDER))
+    total_fireballs = 0
     fireballs_detected = 0
     long_fireballs = 0
     long_fireballs_detected = 0
@@ -79,22 +81,42 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
             lines = file.readlines()
             for line in lines:
                 line = [float(x) for x in line.split(" ")]
+                if diagonal_length(line[1:]) < 100:
+                    continue
                 boxes.append((line[0], tuple(line[1:])))
         
+        boxes_in_each_file.append(len(boxes))
+        total_boxes += len(boxes)
+
+        pp_bb_path = Path(PP_BB_FOLDER, fireball_file)
+
+        if not pp_bb_path.exists():
+            for box in boxes:
+                box_diagonal = diagonal_length(box[1])
+
+                long_box = box_diagonal >= 400
+                if long_box:
+                    long_boxes += 1
+                else:
+                    small_boxes += 1
+                
+                false_positive_box_sizes.append(box_diagonal)
+                false_positive_conf_box_size.append((box[0], box_diagonal))
+            
+            continue
+
+
         pp_bb = []
-        with open(Path(PP_BB_FOLDER, fireball_file)) as file:
+        with open(pp_bb_path) as file:
             pp_bb = [float(x) for x in file.readline().split(" ")]
             if diagonal_length(pp_bb) >= 400:
                 long = True
+            total_fireballs += 1
         
-        boxes_in_each_file.append(len(boxes))
-
         if long:
             long_fireballs += 1
         else:
             small_fireballs += 1
-
-        total_boxes += len(boxes)
 
         count_as_positive = False
         for box in boxes:
@@ -134,6 +156,7 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
                 shutil.copy(Path(PREDS_FOLDER, fireball_name + ".jpg"), SMALL_FALSE_NEGATIVES_FOLDER)
 
     return {
+        "total_images": total_images,
         "total_fireballs": total_fireballs,
         "fireballs_detected": fireballs_detected,
         "long_fireballs": long_fireballs,
@@ -155,6 +178,7 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
 
 
 def print_stats(stats: dict) -> None:
+    total_images = stats["total_images"]
     total_fireballs = stats["total_fireballs"]
     fireballs_detected = stats["fireballs_detected"]
     long_fireballs = stats["long_fireballs"]
@@ -169,6 +193,9 @@ def print_stats(stats: dict) -> None:
     small_true_positive_boxes = stats["small_true_positive_boxes"]
     
     
+    print(f"{'Total images:':<25} {total_images}")
+    print()
+
     ## Recall
 
     # Overall
@@ -213,7 +240,7 @@ def print_stats(stats: dict) -> None:
     false_positives = total_boxes - true_positive_boxes
     print(f"{'False positives:':<25} {false_positives}")
     box_precision = true_positive_boxes / total_boxes if total_boxes > 0 else 0
-    print(f"{'Overall Precision:':<25} {box_precision:.6f}")
+    print(f"{'Overall Precision:':<25} {box_precision:.5f}")
     
     print()
 
@@ -333,13 +360,13 @@ def main():
 
     parser_split = subparsers.add_parser('analyse_folder', help='Analyse a specific split')
     parser_split.add_argument('--val_folder_name', type=str, required=True, help='Folder to analyse.')
-    parser_split.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
-    parser_split.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+    parser_split.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], default="iom", help='Metric to be used')
+    parser_split.add_argument('--threshold', type=float, default=0.5, help='Threshold value between 0.0 and 1.0')
     parser_split.add_argument('--plot_analysis', action='store_true', help='Plot the analysis')
 
     parser_all_splits = subparsers.add_parser('analyse_all_splits', help='Analyse all splits')
-    parser_all_splits.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
-    parser_all_splits.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+    parser_all_splits.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], default="iom", help='Metric to be used')
+    parser_all_splits.add_argument('--threshold', type=float, default=0.5, help='Threshold value between 0.0 and 1.0')
 
     args = Args(**vars(parser.parse_args()))
     
