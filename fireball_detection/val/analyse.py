@@ -81,8 +81,8 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
             lines = file.readlines()
             for line in lines:
                 line = [float(x) for x in line.split(" ")]
-                if diagonal_length(line[1:]) < 100:
-                    continue
+                # if diagonal_length(line[1:]) < 100:
+                #     continue
                 boxes.append((line[0], tuple(line[1:])))
         
         boxes_in_each_file.append(len(boxes))
@@ -179,6 +179,7 @@ def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
 
 def print_stats(stats: dict) -> None:
     total_images = stats["total_images"]
+    boxes_in_each_file = stats["boxes_in_each_file"]
     total_fireballs = stats["total_fireballs"]
     fireballs_detected = stats["fireballs_detected"]
     long_fireballs = stats["long_fireballs"]
@@ -261,6 +262,17 @@ def print_stats(stats: dict) -> None:
     print(f"{'Small false positives:':<25} {small_false_positives}")
     small_precision = small_true_positive_boxes / small_boxes if small_boxes > 0 else 0
     print(f"{'Small Precision:':<25} {small_precision:.5f}")
+
+    print()
+    print()
+    
+    ## Precision (Image)
+    print("Based on Full Images")
+    print(f"{'Fireballs detected:':<25} {fireballs_detected}")
+    images_with_detections = sum(1 for element in boxes_in_each_file if element > 0)
+    print(f"{'Images with detections:':<25} {images_with_detections}")
+    print(f"{'Precision on images:':<25} {fireballs_detected / images_with_detections:.5f}")
+
 
 
 def analyse_all_splits(metric: str, threshold: float) -> dict:

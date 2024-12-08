@@ -60,14 +60,14 @@ def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile
         )
         result = results[0]
         if len(result.boxes.conf) > 0:
-            tile.boxes = list(result.boxes.xyxy.cpu())
-            tile.confidences = list(result.boxes.conf.cpu())
+            tile.boxes = result.boxes.xyxy.cpu().tolist()
+            tile.confidences = result.boxes.conf.cpu().tolist()
             detected_tiles.append(tile)
     
     return detected_tiles
 
 
-def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 0) -> list[FireballBox]:
+def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[FireballBox]:
     """
     Detects fireballs within an image using a YOLO model.
 

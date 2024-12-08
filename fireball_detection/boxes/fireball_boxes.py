@@ -34,7 +34,7 @@ def get_absolute_fireball_boxes(tiles: list[Tile]) -> list[FireballBox]:
 
 def get_normalised_fireball_boxes(tiles: list[Tile]) -> list[FireballBox]:
     return [
-        create_fireball_box(tile, box, conf.cpu(), compute_normalised_coordinates)
+        create_fireball_box(tile, box, conf, compute_normalised_coordinates)
         for tile in tiles
         for box, conf in zip(tile.boxes, tile.confidences)
     ]
