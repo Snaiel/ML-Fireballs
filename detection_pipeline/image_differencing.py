@@ -1,6 +1,7 @@
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 # Load the images
 image1_path = "data/val_fireball_detection/2013-10-28/images/08_2013-10-28_173929_DSC_0836.NEF.thumb.jpg"
@@ -36,10 +37,10 @@ blurred_aligned_image1 = cv2.GaussianBlur(aligned_image1, (31, 21), 0)
 blurred_image2 = cv2.GaussianBlur(image2, (31, 21), 0)
 
 # Step 7: Compute the original difference
-original_difference = cv2.absdiff(blurred_image2, blurred_image1)
+original_difference = cv2.subtract(blurred_image2, blurred_image1)
 
 # Step 8: Compute the difference between blurred images
-blurred_difference = cv2.absdiff(blurred_image2, blurred_aligned_image1)
+blurred_difference = cv2.subtract(blurred_image2, blurred_aligned_image1)
 
 # Plot points1 and points2
 fig_points, axs_points = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
@@ -85,7 +86,7 @@ axs[1, 2].set_title("Blurred Image 2")
 axs[1, 2].axis("off")
 
 axs[2, 0].imshow(original_difference, cmap='gray')
-axs[2, 0].set_title("Original Blurred Difference")
+axs[2, 0].set_title("Unaligned Blurred Difference")
 axs[2, 0].axis("off")
 
 axs[2, 1].imshow(blurred_difference, cmap='gray')
@@ -101,7 +102,7 @@ plt.show()
 fig_diff, axs_diff = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
 
 axs_diff[0].imshow(original_difference, cmap='gray')
-axs_diff[0].set_title("Original Blurred Difference")
+axs_diff[0].set_title("Unaligned Blurred Difference")
 axs_diff[0].axis("off")
 
 axs_diff[1].imshow(blurred_difference, cmap='gray')
