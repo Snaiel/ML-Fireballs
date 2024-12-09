@@ -13,6 +13,24 @@ from tqdm import tqdm
 from ultralytics import YOLO
 
 from fireball_detection.detect import detect_fireballs
+import structlog
+
+
+structlog.configure(
+    processors=[
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso", utc=True),
+        structlog.processors.CallsiteParameterAdder(parameters=[
+            structlog.processors.CallsiteParameter.FUNC_NAME,
+            structlog.processors.CallsiteParameter.MODULE
+        ]),
+        structlog.processors.JSONRenderer(),
+
+    ]
+)
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+logger.info("test")
 
 
 @dataclass
@@ -28,6 +46,7 @@ SENTINEL = None
 
 
 def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: str) -> None:
+
     fireball_name = fireball_file.split(".")[0]
     image_path = Path(folder_path, fireball_file)
     image = io.imread(image_path)
@@ -52,9 +71,6 @@ def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: s
     output_data = {"detections": detections}
 
     output_json = json.dumps(output_data, indent=4)
-
-    print(fireball_name)
-    print(output_json)
 
     with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
         json_file.write(output_json)
@@ -155,4 +171,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    pass
+    # main()
