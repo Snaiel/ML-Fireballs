@@ -27,9 +27,9 @@ class Args:
 SENTINEL = None
 
 
-def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_image: str) -> None:
-    fireball_name = fireball_image.split(".")[0]
-    image_path = Path(folder_path, fireball_image)
+def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: str) -> None:
+    fireball_name = fireball_file.split(".")[0]
+    image_path = Path(folder_path, fireball_file)
     image = io.imread(image_path)
     fireballs = detect_fireballs(image, model)
 
@@ -42,8 +42,11 @@ def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_image: 
     shutil.copy(image_path, fireball_folder)
 
     for f in fireballs:
-        print(type(f.box), f.box)
-        print(type(f.conf), f.conf)
+        coords = list(map(int, f.box))
+        x1, y1, x2, y2 = coords
+        cropped_image = image[y1:y2, x1:x2]
+        thumb_path = Path(fireball_folder, f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}.jpg")
+        io.imsave(thumb_path, cropped_image)
 
     detections = [vars(fireball) for fireball in fireballs]
     output_data = {"detections": detections}
