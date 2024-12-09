@@ -85,29 +85,36 @@ axs[1, 2].imshow(blurred_image2, cmap='gray')
 axs[1, 2].set_title("Blurred Image 2")
 axs[1, 2].axis("off")
 
-axs[2, 0].imshow(original_difference, cmap='gray')
-axs[2, 0].set_title("Unaligned Blurred Difference")
+axs[2, 0].imshow(image2, cmap='gray')
+axs[2, 0].set_title("Original Image 2")
 axs[2, 0].axis("off")
 
-axs[2, 1].imshow(blurred_difference, cmap='gray')
-axs[2, 1].set_title("Aligned Blurred Difference")
+axs[2, 1].imshow(original_difference, cmap='gray')
+axs[2, 1].set_title("Unaligned Blurred Difference")
 axs[2, 1].axis("off")
 
-fig.delaxes(axs[2, 2])
+axs[2, 2].imshow(blurred_difference, cmap='gray')
+axs[2, 2].set_title("Aligned Blurred Difference")
+axs[2, 2].axis("off")
+
 
 plt.tight_layout()
 plt.show()
 
 # Compare Differenced Images
-fig_diff, axs_diff = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
+fig_diff, axs_diff = plt.subplots(1, 3, figsize=(8, 4), sharex=True, sharey=True)
 
-axs_diff[0].imshow(original_difference, cmap='gray')
-axs_diff[0].set_title("Unaligned Blurred Difference")
+axs_diff[0].imshow(image2, cmap='gray')
+axs_diff[0].set_title("Original Image 2")
 axs_diff[0].axis("off")
 
-axs_diff[1].imshow(blurred_difference, cmap='gray')
-axs_diff[1].set_title("Aligned Blurred Difference")
+axs_diff[1].imshow(original_difference, cmap='gray')
+axs_diff[1].set_title("Unaligned Blurred Difference")
 axs_diff[1].axis("off")
+
+axs_diff[2].imshow(blurred_difference, cmap='gray')
+axs_diff[2].set_title("Aligned Blurred Difference")
+axs_diff[2].axis("off")
 
 plt.tight_layout()
 plt.show()
