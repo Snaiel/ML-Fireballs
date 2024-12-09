@@ -32,9 +32,9 @@ height, width = image1.shape
 aligned_image1 = cv2.warpAffine(image1, matrix, (width, height))
 
 # Step 6: Blur images 
-blurred_image1 = cv2.GaussianBlur(image1, (31, 21), 0)
-blurred_aligned_image1 = cv2.GaussianBlur(aligned_image1, (31, 21), 0)
-blurred_image2 = cv2.GaussianBlur(image2, (31, 21), 0)
+blurred_image1 = cv2.GaussianBlur(image1, (11, 11), 0)
+blurred_aligned_image1 = cv2.GaussianBlur(aligned_image1, (11, 11), 0)
+blurred_image2 = cv2.GaussianBlur(image2, (11, 11), 0)
 
 # Step 7: Compute the original difference
 original_difference = cv2.subtract(blurred_image2, blurred_image1)
