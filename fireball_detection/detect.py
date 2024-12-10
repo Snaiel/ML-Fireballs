@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import structlog
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy import ndarray
@@ -18,6 +19,9 @@ from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
 from object_detection.utils import add_border
+
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
@@ -63,6 +67,7 @@ def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile
             tile.boxes = result.boxes.xyxy.cpu().tolist()
             tile.confidences = result.boxes.conf.cpu().tolist()
             detected_tiles.append(tile)
+            logger.info("tile_detections", tile_position=tile.position, detections=tile.get_detections())
     
     return detected_tiles
 
@@ -100,6 +105,8 @@ def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[
     detected_tiles = detect_tiles(image, model, border_size)
     fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     detected_fireballs = merge_bboxes(fireball_boxes)
+
+    logger.info("detected_fireballs", detections=[vars(f) for f in detected_fireballs])
 
     return detected_fireballs
 

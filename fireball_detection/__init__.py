@@ -13,6 +13,12 @@ class Tile:
     boxes: list[tuple[float, float, float, float]] = field(default_factory=list)
     confidences: list[float] = field(default_factory=list)
 
+    def get_detections(self) -> list[dict]:
+        detections = []
+        for b, c in zip(self.boxes, self.confidences):
+            detections.append({"box": b, "confidence": c})
+        return detections
+
 
 @dataclass
 class FireballBox:

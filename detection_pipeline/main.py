@@ -16,20 +16,35 @@ from fireball_detection.detect import detect_fireballs
 import structlog
 
 
+version = "1.0.0"
+
+
+def module_processor(logger, log_method, event_dict):
+    path = event_dict.pop("pathname")
+    module_path = str(Path(path).relative_to(Path(__file__).parents[1]))
+    module = module_path.replace("/", ".").replace(".py", "")
+    event_dict["module"] = module
+    return event_dict
+
+
 structlog.configure(
     processors=[
+        structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.CallsiteParameterAdder(parameters=[
             structlog.processors.CallsiteParameter.FUNC_NAME,
-            structlog.processors.CallsiteParameter.MODULE
+            structlog.processors.CallsiteParameter.PATHNAME
         ]),
+        module_processor,
         structlog.processors.JSONRenderer(),
 
     ]
 )
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+structlog.contextvars.bind_contextvars(version=version)
+
 logger.info("test")
 
 
@@ -46,6 +61,8 @@ SENTINEL = None
 
 
 def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: str) -> None:
+
+    structlog.contextvars.bind_contextvars(image=fireball_file)
 
     fireball_name = fireball_file.split(".")[0]
     image_path = Path(folder_path, fireball_file)
@@ -74,6 +91,8 @@ def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: s
 
     with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
         json_file.write(output_json)
+    
+    structlog.contextvars.unbind_contextvars("image")
 
 
 def run_detections(
@@ -171,5 +190,4 @@ def main():
 
 
 if __name__ == "__main__":
-    pass
-    # main()
+    main()
