@@ -1,4 +1,4 @@
-# Automating Fireballs
+# ML-Fireballs
 
 Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) research. Contains code for automated point pickings and YOLO fireball detection.
 
