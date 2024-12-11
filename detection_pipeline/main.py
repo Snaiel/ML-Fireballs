@@ -53,8 +53,6 @@ class Args:
     folder_path: str
     model_path: str
     processes: int
-    verbose: bool
-    plot: bool
 
 
 SENTINEL = None
@@ -129,11 +127,9 @@ def main():
         description="Detect fireballs from images in a folder.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--folder_path", type=str, required=True, help="Path to the fireball image file.")
-    parser.add_argument("--model_path", type=str, help="Path to the YOLO model file.")
+    parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing images")
+    parser.add_argument("--model_path", type=str, help="Path to the YOLO model file")
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
-    parser.add_argument("--plot", action="store_true", help="Plot and display the bounding boxes on the image.")
     
     args = Args(**vars(parser.parse_args()))
 
