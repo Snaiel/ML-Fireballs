@@ -64,8 +64,8 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
 def main() -> None:
 
     # Load the images
-    image1_path = "data/2015_before_after/31_2015-08-15_134958_DSC_0089.thumb.jpg"
-    image2_path = "data/2015_before_after/31_2015-08-15_135028_DSC_0090.thumb.jpg"
+    image1_path = "data/2015_before_after/16_2015-10-05_184659_DSC_0921.thumb.jpg"
+    image2_path = "data/2015_before_after/16_2015-10-05_184729_DSC_0922.thumb.jpg"
 
     image1 = cv2.imread(image1_path, cv2.IMREAD_GRAYSCALE)
     image2 = cv2.imread(image2_path, cv2.IMREAD_GRAYSCALE)
