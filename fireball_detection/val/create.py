@@ -10,11 +10,11 @@ from tqdm import tqdm
 from fireball_detection.val import (VAL_FIREBALL_DETECTION_FOLDER,
                                     discard_fireballs)
 from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS
-from object_detection.dataset.create_kfold_dataset import \
-    retrieve_fireball_splits
-from object_detection.dataset.generate.exclude_2015 import \
-    get_2015_removed_dataset
 from object_detection.dataset.point_pickings import PointPickings
+from object_detection.dataset.standalone.create_2015_excluded_dataset import \
+    get_2015_removed_dataset
+from object_detection.dataset.standalone.create_kfold_dataset_from_all_tiles import \
+    retrieve_fireball_splits
 
 
 def create_splits() -> None:

@@ -1,12 +1,12 @@
+import json
 import os
 import re
 import shutil
 from pathlib import Path
 
 from object_detection.dataset import DATA_FOLDER, DATA_YAML, GFO_JPEGS
-from object_detection.dataset.generate import GenerateDatasetArgs, get_args
-from object_detection.dataset.generate.utils import create_tiles
-import json
+from object_detection.dataset.standalone import GenerateDatasetArgs, get_args
+from object_detection.dataset.utils import create_tiles
 
 
 def get_2015_removed_dataset() -> tuple[list]:
