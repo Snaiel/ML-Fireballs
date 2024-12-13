@@ -1,5 +1,4 @@
 import random
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -11,6 +10,7 @@ from skimage import io
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
 from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT
+from object_detection.dataset.fireball_tile import FireballTile
 
 
 MIN_BB_DIM_SIZE = 20
@@ -19,16 +19,7 @@ MIN_POINTS_IN_TILE = 3
 included_coordinates = retrieve_included_coordinates()
 
 
-@dataclass
-class FireballTile:
-    position: pd.DataFrame
-    points: list[float] = None
-    bb_centre: tuple[float] = tuple()
-    bb_dim: tuple[int] = tuple()
-    image: np.ndarray = None
-
-
-class SplitTilesFireball:
+class StandaloneTiles:
 
     fireball_name: str
     fireball_tiles: list[FireballTile]
@@ -133,7 +124,7 @@ class SplitTilesFireball:
 
 
 def main():
-    fireball = SplitTilesFireball("03_2020-07-20_041559_K_DSC_9695")
+    fireball = StandaloneTiles("03_2020-07-20_041559_K_DSC_9695")
     for i, tile in enumerate(fireball.fireball_tiles):
         plot_fireball_tile(fireball.fireball_name, i, tile)
 

@@ -6,7 +6,7 @@ from queue import Empty, Full
 
 from tqdm import tqdm
 
-from object_detection.dataset.split_tiles import SplitTilesFireball
+from object_detection.dataset.standalone.standalone_tiles import StandaloneTiles
 
 
 # Sentinel value to indicate the end of the queue processing
@@ -23,7 +23,7 @@ def _generate_tiles(fireball_name: str, negative_ratio: int, images_folder: Path
     - images_folder (Path): Path to save the generated images.
     - labels_folder (Path): Path to save the generated labels.
     """
-    fireball = SplitTilesFireball(fireball_name, negative_ratio)
+    fireball = StandaloneTiles(fireball_name, negative_ratio)
     fireball.save_images(images_folder)
     fireball.save_labels(labels_folder)
 
