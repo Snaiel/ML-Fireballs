@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from skimage import io
 
 from fireball_detection.tiling.included import SQUARE_SIZE
 from object_detection.dataset import MIN_BB_DIM_SIZE
@@ -18,37 +20,77 @@ class FireballTile:
     bb_dim: tuple[int] = tuple()
 
 
-def assign_tile_bounding_box(tile: FireballTile) -> None:
-    pp_min_x = tile.points['x'].min()
-    pp_max_x = tile.points['x'].max()
-    pp_min_y = tile.points['y'].min()
-    pp_max_y = tile.points['y'].max()
+class DatasetTiles:
 
-    points_dim = (pp_max_x - pp_min_x, pp_max_y - pp_min_y)
-    padding = 0.05
+    fireball_name: str
+    fireball_tiles: list[FireballTile]
+    negative_tiles: list[FireballTile]
 
-    bb_min_x = max(pp_min_x - (points_dim[0] * padding), tile.position[0])
-    bb_max_x = min(pp_max_x + (points_dim[0] * padding), tile.position[0] + SQUARE_SIZE)
 
-    bb_min_y = max(pp_min_y - (points_dim[1] * padding), tile.position[1])
-    bb_max_y = min(pp_max_y + (points_dim[1] * padding), tile.position[1] + SQUARE_SIZE)
+    def __init__(self, fireball_name: str):
+        self.fireball_name = fireball_name
+        self.fireball_tiles = []
+        self.negative_tiles = []
 
-    bb_centre_x = (bb_min_x + bb_max_x) / 2
-    bb_centre_y = (bb_min_y + bb_max_y) / 2
 
-    bb_width = max(bb_max_x - bb_min_x, MIN_BB_DIM_SIZE)
-    bb_height = max(bb_max_y - bb_min_y, MIN_BB_DIM_SIZE)
+    def assign_tile_bounding_boxes(self) -> None:
+        for tile in self.fireball_tiles:
+            self._assign_tile_bounding_box(tile)
 
-    norm_bb_centre_x = min((bb_centre_x - tile.position[0]) / SQUARE_SIZE, 1.0)
-    norm_bb_centre_y = min((bb_centre_y - tile.position[1]) / SQUARE_SIZE, 1.0)
 
-    norm_bb_width = min(bb_width / SQUARE_SIZE, 1.0)
-    norm_bb_height = min(bb_height / SQUARE_SIZE, 1.0)
+    def _assign_tile_bounding_box(self, tile: FireballTile) -> None:
+        pp_min_x = tile.points['x'].min()
+        pp_max_x = tile.points['x'].max()
+        pp_min_y = tile.points['y'].min()
+        pp_max_y = tile.points['y'].max()
 
-    tile.bb_centre = (norm_bb_centre_x, norm_bb_centre_y)
-    tile.bb_dim = (norm_bb_width, norm_bb_height)
+        points_dim = (pp_max_x - pp_min_x, pp_max_y - pp_min_y)
+        padding = 0.05
+
+        bb_min_x = max(pp_min_x - (points_dim[0] * padding), tile.position[0])
+        bb_max_x = min(pp_max_x + (points_dim[0] * padding), tile.position[0] + SQUARE_SIZE)
+
+        bb_min_y = max(pp_min_y - (points_dim[1] * padding), tile.position[1])
+        bb_max_y = min(pp_max_y + (points_dim[1] * padding), tile.position[1] + SQUARE_SIZE)
+
+        bb_centre_x = (bb_min_x + bb_max_x) / 2
+        bb_centre_y = (bb_min_y + bb_max_y) / 2
+
+        bb_width = max(bb_max_x - bb_min_x, MIN_BB_DIM_SIZE)
+        bb_height = max(bb_max_y - bb_min_y, MIN_BB_DIM_SIZE)
+
+        norm_bb_centre_x = min((bb_centre_x - tile.position[0]) / SQUARE_SIZE, 1.0)
+        norm_bb_centre_y = min((bb_centre_y - tile.position[1]) / SQUARE_SIZE, 1.0)
+
+        norm_bb_width = min(bb_width / SQUARE_SIZE, 1.0)
+        norm_bb_height = min(bb_height / SQUARE_SIZE, 1.0)
+
+        tile.bb_centre = (norm_bb_centre_x, norm_bb_centre_y)
+        tile.bb_dim = (norm_bb_width, norm_bb_height)
+
+
+    def save_tiles(self, images_folder: str, labels_folder: str) -> None:
+
+        for i, tile in enumerate(self.fireball_tiles):
+            io.imsave(
+                Path(images_folder, f"{self.fireball_name}_{i}.jpg"),
+                tile.image,
+                check_contrast=False
+            )
+
+            label = (0, tile.bb_centre[0], tile.bb_centre[1], tile.bb_dim[0], tile.bb_dim[1])
+            with open(Path(labels_folder, f"{self.fireball_name}_{i}.txt"), 'x') as label_file:
+                label_file.write(" ".join(str(item) for item in label))
         
+        for i, tile in enumerate(self.negative_tiles):
+            io.imsave(
+                Path(images_folder, f"{self.fireball_name}_negative_{i}.jpg"),
+                tile.image,
+                check_contrast=False
+            )
 
+            open(Path(labels_folder, f"{self.fireball_name}_negative_{i}.txt"), 'x').close()
+    
 
 def plot_fireball_tile(fireball_name: str, i: int, tile: FireballTile) -> None:
     # Unpack tile attributes
