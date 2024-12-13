@@ -1,34 +1,39 @@
-import random
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from skimage import io
 
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
-from object_detection.dataset import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
-                                      MIN_BB_DIM_SIZE, MIN_POINTS_IN_TILE)
+from object_detection.dataset import GFO_PICKINGS, MIN_POINTS_IN_TILE
 from object_detection.dataset.fireball_tile import (FireballTile,
                                                     assign_tile_bounding_box,
                                                     plot_fireball_tile)
 
 
+PIXEL_BRIGHTNESS_THRESHOLD = 10
+PIXEL_TOTAL_THRESHOLD = 200
+
+
 included_coordinates = retrieve_included_coordinates()
 
 
-class StandaloneTiles:
+class DifferencedTiles:
 
     fireball_name: str
     fireball_tiles: list[FireballTile]
     negative_tiles: list[FireballTile]
 
-    def __init__(self, fireball_name: str, negative_ratio: int) -> None:
-        self.fireball_name = fireball_name
+    def __init__(self, differenced_image_path: str) -> None:
+        image_path = Path(differenced_image_path)
+        self.fireball_name = image_path.name.split(".")[0]
 
         self.fireball_tiles = []
         self.negative_tiles = []
 
-        fireball_image = io.imread(Path(GFO_JPEGS, fireball_name + GFO_THUMB_EXT))
+        fireball_image = io.imread(image_path)
+
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
         
         # Check if tile contains points
@@ -45,14 +50,7 @@ class StandaloneTiles:
                 ):
                     points_in_tile.append(point)
             
-            if len(points_in_tile) == 0:
-                self.negative_tiles.append(
-                    FireballTile(
-                        tile_pos,
-                        tile_image
-                    )
-                )
-            elif len(points_in_tile) >= MIN_POINTS_IN_TILE:
+            if len(points_in_tile) >= MIN_POINTS_IN_TILE:
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
@@ -60,29 +58,38 @@ class StandaloneTiles:
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
+
+            if len(points_in_tile) != 0:
+                continue
+            
+            pixels_over_threshold = np.sum(tile_image > PIXEL_BRIGHTNESS_THRESHOLD)
+            if pixels_over_threshold < PIXEL_TOTAL_THRESHOLD: continue
+
+            self.negative_tiles.append(
+                FireballTile(
+                    tile_pos,
+                    tile_image
+                )
+            )
+
         
         # Create bounding boxes for each tile
         for tile in self.fireball_tiles:
             assign_tile_bounding_box(tile)
-
-        
-        # Assign images to negative tiles
-        if len(self.fireball_tiles) * negative_ratio > len(self.negative_tiles):
-            print(f"fireball_tiles * {negative_ratio} > negative_tiles", fireball_name)
-            sample_size = len(self.negative_tiles)
-        else:
-            sample_size = len(self.fireball_tiles) * negative_ratio
-        self.negative_tiles = random.sample(self.negative_tiles, sample_size)
-
+            
 
     def save_images(self, folder: str) -> None:
         for i, tile in enumerate(self.fireball_tiles):
+            if len(tile.image.shape) == 2:
+                tile.image = np.stack([tile.image] * 3, axis=-1)
             io.imsave(
                 Path(folder, f"{self.fireball_name}_{i}.jpg"),
                 tile.image,
                 check_contrast=False
             )
         for i, tile in enumerate(self.negative_tiles):
+            if len(tile.image.shape) == 2:
+                tile.image = np.stack([tile.image] * 3, axis=-1)
             io.imsave(
                 Path(folder, f"{self.fireball_name}_negative_{i}.jpg"),
                 tile.image,
@@ -100,9 +107,13 @@ class StandaloneTiles:
 
 
 def main():
-    fireball = StandaloneTiles("03_2020-07-20_041559_K_DSC_9695")
+    fireball = DifferencedTiles("data/2015_before_after/differenced_images/15_2015-12-19_122158_S_DSC_0829.thumb.jpg")
+    print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):
+        print(np.sum(tile.image > PIXEL_BRIGHTNESS_THRESHOLD))
         plot_fireball_tile(fireball.fireball_name, i, tile)
+    for i, tile in enumerate(fireball.negative_tiles):
+        plot_fireball_tile(fireball.fireball_name + "_negative", i, tile)
 
 
 if __name__ == "__main__":

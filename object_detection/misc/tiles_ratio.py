@@ -9,7 +9,7 @@ from tqdm import tqdm
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                          retrieve_included_coordinates)
 from object_detection.dataset import GFO_PICKINGS
-from object_detection.dataset.split_tiles import MIN_POINTS_IN_TILE
+from object_detection.dataset.standalone.standalone_tiles import MIN_POINTS_IN_TILE
 
 
 included_coordinates = retrieve_included_coordinates()

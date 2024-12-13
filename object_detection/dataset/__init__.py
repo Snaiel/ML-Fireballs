@@ -3,6 +3,8 @@ from pathlib import Path
 RANDOM_SEED = 2024
 BB_PADDING = 0.05
 
+MIN_BB_DIM_SIZE = 20
+MIN_POINTS_IN_TILE = 3
 
 DATA_FOLDER = Path(Path(__file__).parents[2], "data")
 
