@@ -8,7 +8,7 @@ from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
 from object_detection.dataset import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
                                       MIN_POINTS_IN_TILE)
-from object_detection.dataset.fireball_tile import (DatasetTiles, FireballTile,
+from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
 
 
@@ -18,7 +18,7 @@ included_coordinates = retrieve_included_coordinates()
 class StandaloneTiles(DatasetTiles):
 
     def __init__(self, fireball_name: str, negative_ratio: int) -> None:
-        super(fireball_name)
+        super().__init__(fireball_name)
 
         fireball_image = io.imread(Path(GFO_JPEGS, self.fireball_name + GFO_THUMB_EXT))
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
