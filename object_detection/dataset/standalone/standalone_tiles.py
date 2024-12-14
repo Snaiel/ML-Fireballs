@@ -56,7 +56,6 @@ class StandaloneTiles(DatasetTiles):
 
         # Assign images to negative tiles
         if len(self.fireball_tiles) * negative_ratio > len(self.negative_tiles):
-            print(f"fireball_tiles * {negative_ratio} > negative_tiles", fireball_name)
             sample_size = len(self.negative_tiles)
         else:
             sample_size = len(self.fireball_tiles) * negative_ratio

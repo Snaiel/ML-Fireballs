@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 
 import numpy as np
@@ -62,7 +63,7 @@ class DifferencedTiles(DatasetTiles):
                 )
             )
         
-        self.assign_tile_bounding_boxes()        
+        self.assign_tile_bounding_boxes()
 
 
 def main():
