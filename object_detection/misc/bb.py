@@ -1,13 +1,13 @@
 import argparse
+import json
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle
 from skimage import io
-
-from object_detection.dataset import DATA_FOLDER
 
 
 def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = None) -> None:
@@ -42,17 +42,26 @@ def plot_fireball_bb(image: np.ndarray, label: list, image_dimensions: tuple = N
 
 
 def main():
-    # Create argument parser
-    parser = argparse.ArgumentParser(description='View image and bounding box of fireball')
 
-    # Add positional arguments
-    parser.add_argument('dataset', type=str, help='Which dataset to view: train, val')
+    @dataclass
+    class Args:
+        data_yaml_path: str
+        split: str
 
-    # Parse the command-line arguments
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description="View bounding boxes of tiles.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument('--data_yaml_path', type=str, help='path to data.yaml')
+    parser.add_argument('--split', type=str, help='train or val')
+
+    args = Args(**vars(parser.parse_args()))
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+
     
-    images_folder = Path(DATA_FOLDER, "kfold_object_detection", "split0", "images", args.dataset)
-    labels_folder = Path(DATA_FOLDER, "kfold_object_detection", "split0", "labels", args.dataset)
+    images_folder = Path(Path(args.data_yaml_path).parent, "images", args.split)
+    labels_folder = Path(Path(args.data_yaml_path).parent, "labels", args.split)
 
     images = sorted(os.listdir(images_folder))
 
