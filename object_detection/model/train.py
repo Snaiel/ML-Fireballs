@@ -16,13 +16,13 @@ settings.update({"wandb": False})
 def main():
     @dataclass
     class Args:
-        data_yaml_path: str = ""
-        yolo_model: str = ""
+        data_yaml_path: str
+        yolo_model: str
         batch_size: float
 
     parser = argparse.ArgumentParser(description='Train a YOLO model on a specified dataset.')
-    parser.add_argument('--data_yaml_path', type=str, help='Path to the data.yaml file')
-    parser.add_argument('--yolo_model', type=str, help='YOLO model to use e.g. yolov8n.pt')
+    parser.add_argument('--data_yaml_path', type=str, required=True, help='Path to the data.yaml file')
+    parser.add_argument('--yolo_model', type=str, required=True, help='YOLO model to use e.g. yolov8n.pt')
     parser.add_argument('--batch_size', type=float, default=0.8, help='How many samples to consider during a pass')
 
     args = Args(**vars(parser.parse_args()))
