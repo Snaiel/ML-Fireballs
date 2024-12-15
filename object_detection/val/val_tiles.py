@@ -87,6 +87,8 @@ def val_split(args: Args) -> dict:
 
     for image_file in tqdm(image_files, desc="running predictions"):
         image = io.imread(Path(val_images_folder, image_file))
+        if image.ndim == 2:
+            image = np.stack((image,) * 3, axis=-1)
         image = add_border(image, args.border_size)
 
         fireball = image_file.split(".")[0]
@@ -242,8 +244,8 @@ def main():
     parser.add_argument('--border_size', type=int, default=5, help='Size of the border to add around images')
     parser.add_argument('--samples', choices=['positive', 'negative', 'both'], default='both',
                         help='Specify whether to include positive, negative, or both types of images')
-    parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
-    parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
+    parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], default='iom', help='Metric to be used')
+    parser.add_argument('--threshold', type=float, default=0.5, help='Threshold value between 0.0 and 1.0')
     parser.add_argument('--show_false_negatives', action='store_true', help='Show plots of false negatives')
     parser.add_argument('--save_false_negatives', action='store_true', help='Save names of false negatives')
 
