@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train a YOLO model on a specified dataset.')
     parser.add_argument('--data_yaml_path', type=str, help='Path to the data.yaml file')
     parser.add_argument('--yolo_model', type=str, help='YOLO model to use e.g. yolov8n.pt')
-    parser.add_argument('--batch_size', type=int, default=0.8, help='How many samples to consider during a pass')
+    parser.add_argument('--batch_size', type=float, default=0.8, help='How many samples to consider during a pass')
 
     args = Args(**vars(parser.parse_args()))
 
