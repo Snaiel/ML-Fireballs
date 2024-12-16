@@ -13,13 +13,14 @@ from matplotlib.figure import Figure
 from skimage import io
 from ultralytics import YOLO
 
-from detection_pipeline import check_tile_threshold
+from detection_pipeline import MIN_DIAGONAL_LENGTH, check_tile_threshold
 from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
-from object_detection.utils import add_border
+from object_detection.utils import add_border, diagonal_length
+
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
@@ -39,7 +40,6 @@ def detect_tiles_common(model: YOLO, border_size: int, tiles: list[Tile]) -> lis
     Returns:
         list[Tile]: A list of Tile objects that contain detected objects.
     """
-    print(len(tiles))
     
     detected_tiles: list[Tile] = []
     for tile in tiles:
@@ -54,7 +54,7 @@ def detect_tiles_common(model: YOLO, border_size: int, tiles: list[Tile]) -> lis
             tile.boxes = result.boxes.xyxy.cpu().tolist()
             tile.confidences = result.boxes.conf.cpu().tolist()
             detected_tiles.append(tile)
-            logger.info("tile_detections", tile_position=tile.position, detections=tile.get_detections())
+            # logger.info("tile_detections", tile_position=tile.position, detections=tile.get_detections())
     
     return detected_tiles
 
@@ -113,9 +113,11 @@ def detect_fireballs(image: np.ndarray, model: YOLO, border_size: int = 5) -> li
         detected_tiles = detect_standalone_tiles(image, model, border_size)
     
     fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
+    
     detected_fireballs = merge_bboxes(fireball_boxes)
+    detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 
-    logger.info("detected_fireballs", detections=[vars(f) for f in detected_fireballs])
+    # logger.info("detected_fireballs", detections=[vars(f) for f in detected_fireballs])
 
     return detected_fireballs
 

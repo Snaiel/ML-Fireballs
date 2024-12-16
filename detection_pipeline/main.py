@@ -2,50 +2,23 @@ import argparse
 import json
 import multiprocessing as mp
 import os
+import re
 import shutil
 import signal
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from queue import Empty, Full
-
+from multiprocessing import Pool
+import numpy as np
+import structlog
 from skimage import io
 from tqdm import tqdm
 from ultralytics import YOLO
 
+from detection_pipeline import MAX_TIME_DIFFERENCE
+from detection_pipeline.image_differencing import difference_images
 from fireball_detection.detect import detect_fireballs
-import structlog
-
-
-version = "1.0.0"
-
-
-def module_processor(logger, log_method, event_dict):
-    path = event_dict.pop("pathname")
-    module_path = str(Path(path).relative_to(Path(__file__).parents[1]))
-    module = module_path.replace("/", ".").replace(".py", "")
-    event_dict["module"] = module
-    return event_dict
-
-
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso", utc=True),
-        structlog.processors.CallsiteParameterAdder(parameters=[
-            structlog.processors.CallsiteParameter.FUNC_NAME,
-            structlog.processors.CallsiteParameter.PATHNAME
-        ]),
-        module_processor,
-        structlog.processors.JSONRenderer(),
-
-    ]
-)
-
-logger: structlog.stdlib.BoundLogger = structlog.get_logger()
-structlog.contextvars.bind_contextvars(version=version)
-
-logger.info("test")
 
 
 @dataclass
@@ -54,33 +27,72 @@ class Args:
     model_path: str
     processes: int
 
+@dataclass
+class ProcessTripleArgs:
+    folder_path: Path
+    output_folder: Path
+    model_path: Path
+    before: str | None
+    current: str
+    after: str | None
 
-SENTINEL = None
+
+def get_time_seconds(fireball_label: str) -> int:
+    pattern = r"\d{4}-\d{2}-\d{2}_\d{6}"
+    datetime_str = re.search(pattern, fireball_label).group(0)
+    dt = datetime.strptime(datetime_str, "%Y-%m-%d_%H%M%S")
+    time_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
+    return time_seconds
 
 
-def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: str) -> None:
+def process_triple(args: ProcessTripleArgs) -> None:
+    model = YOLO(args.model_path)
+    
+    image_current = io.imread(Path(args.folder_path, args.current))
 
-    structlog.contextvars.bind_contextvars(image=fireball_file)
+    if args.before and args.after:
+        image_before = io.imread(Path(args.folder_path, args.before))
+        image_after = io.imread(Path(args.folder_path, args.after))
 
-    fireball_name = fireball_file.split(".")[0]
-    image_path = Path(folder_path, fireball_file)
-    image = io.imread(image_path)
-    fireballs = detect_fireballs(image, model)
+        differenced_image_pair1 = difference_images(image_current, image_before)
+        differenced_image_pair2 = difference_images(image_current, image_after)
+
+        brightness_image_pair1 = np.mean(differenced_image_pair1)
+        brightness_image_pair2 = np.mean(differenced_image_pair2)
+
+        differenced_image = differenced_image_pair1 if brightness_image_pair1 < brightness_image_pair2 else differenced_image_pair2
+
+    else:
+        differenced_image = difference_images(
+            image_current,
+            io.imread(Path(args.folder_path, args.before)) if args.before else io.imread(Path(args.folder_path, args.after))
+        )
+    
+    fireball_name = args.current.split(".")[0]
+    fireballs = detect_fireballs(differenced_image, model)
 
     if not fireballs:
         return
 
-    fireball_folder = Path(output_folder, fireball_name)
+    fireball_folder = Path(args.output_folder, fireball_name)
     os.mkdir(fireball_folder)
 
-    shutil.copy(image_path, fireball_folder)
+    shutil.copy(Path(args.folder_path, args.current), fireball_folder)
 
     for f in fireballs:
         coords = list(map(int, f.box))
         x1, y1, x2, y2 = coords
-        cropped_image = image[y1:y2, x1:x2]
-        thumb_path = Path(fireball_folder, f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}.jpg")
-        io.imsave(thumb_path, cropped_image)
+        tile_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
+        io.imsave(
+            Path(fireball_folder, tile_name + ".jpg"), image_current[y1:y2, x1:x2],
+            check_contrast=False,
+            quality=100                                                 
+        )
+        io.imsave(
+            Path(fireball_folder, tile_name + "_differenced.jpg"), differenced_image[y1:y2, x1:x2],
+            check_contrast=False,
+            quality=100
+        )
 
     detections = [vars(fireball) for fireball in fireballs]
     output_data = {"detections": detections}
@@ -89,46 +101,15 @@ def detect(model: YOLO, folder_path: Path, output_folder: Path, fireball_file: s
 
     with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
         json_file.write(output_json)
-    
-    structlog.contextvars.unbind_contextvars("image")
 
 
-def run_detections(
-        fireball_queue: mp.Queue, 
-        bar_queue: mp.Queue,
-        model_path: Path,
-        folder_path: Path,
-        output_folder: Path
-    ) -> None:
-    
-    model = YOLO(Path(model_path), task="detect")
-
-    try:
-        while True:
-            fireball_file = fireball_queue.get()
-            if fireball_file is SENTINEL:
-                break
-            detect(model, folder_path, output_folder, fireball_file)
-            bar_queue.put_nowait(1)
-    except (Full, Empty) as e:
-        print(type(e))
-        return
-
-
-def update_bar(bar_queue: mp.Queue, total: int) -> None:
-    pbar = tqdm(total=total, desc="testing on full images")
-    while True:
-        bar_queue.get(True)
-        pbar.update(1)
-
-
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Detect fireballs from images in a folder.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing images")
-    parser.add_argument("--model_path", type=str, help="Path to the YOLO model file")
+    parser.add_argument("--model_path", type=str, required=True, help="Path to the YOLO model file")
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
     
     args = Args(**vars(parser.parse_args()))
@@ -144,45 +125,43 @@ def main():
     if not output_folder.exists():
         os.mkdir(output_folder)
 
-    fireball_images = [f for f in os.listdir(folder_path) if f.endswith(".jpg")]
+    model_path = Path(args.model_path)
 
-    fireball_queue = mp.Queue()
-    for fireball_image in fireball_images:
-        fireball_queue.put_nowait(fireball_image)
-    
-    for _ in range(args.processes):
-        fireball_queue.put(SENTINEL)
+    images = [i for i in sorted(os.listdir(folder_path)) if i.endswith(".jpg")]
 
-    bar_queue = mp.Queue()
-    bar_process = mp.Process(target=update_bar, args=(bar_queue, len(fireball_images)), daemon=True)
-    bar_process.start()
+    args_list = []
 
-    processes: list[mp.Process] = []
+    for i in range(len(images)):
+        
+        current: str = images[i]
+        time_current: int = get_time_seconds(current)
 
-    for _ in range(args.processes):
-        process = mp.Process(
-            target=run_detections, 
-            args=(
-                fireball_queue,
-                bar_queue,
-                Path(args.model_path),
+        before: str | None = None
+        after: str | None = None
+
+        if i > 0 and time_current - get_time_seconds(images[i-1]) <= MAX_TIME_DIFFERENCE:
+            before = images[i-1]
+
+        if i < len(images) - 1 and get_time_seconds(images[i+1]) - time_current <= MAX_TIME_DIFFERENCE:
+            after = images[i+1]
+
+        if not (before or after):
+            continue
+        
+        args_list.append(
+            ProcessTripleArgs(
                 folder_path,
-                output_folder
+                output_folder,
+                model_path,
+                before,
+                current,
+                after
             )
         )
-        processes.append(process)
-        process.start()
-
-    try:
-        for process in processes:
-            process.join()
-    except KeyboardInterrupt:
-        fireball_queue.close()
-        bar_queue.close()
-        for process in processes:
-            process.terminate()
-            process.join()
-        os.kill(os.getpid(), signal.SIGTERM)
+    
+    with Pool(args.processes) as pool:
+        list(tqdm(pool.imap(process_triple, args_list), total=len(args_list)))
+        
 
 
 if __name__ == "__main__":

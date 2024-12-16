@@ -37,26 +37,28 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
 
     output_image = unaligned_difference
 
-    if transformation_magnitude < 10:
-        # Apply the transformation to align the images
-        height, width = image1.shape
-        aligned_image2 = cv2.warpAffine(image2, matrix, (width, height))
+    if transformation_magnitude > 10:
+        return output_image
+    
+    # Apply the transformation to align the images
+    height, width = image1.shape
+    aligned_image2 = cv2.warpAffine(image2, matrix, (width, height))
 
-        blurred_aligned_image2 = cv2.GaussianBlur(aligned_image2, (11, 11), 0)
-        aligned_difference = cv2.subtract(blurred_image1, blurred_aligned_image2)
+    blurred_aligned_image2 = cv2.GaussianBlur(aligned_image2, (11, 11), 0)
+    aligned_difference = cv2.subtract(blurred_image1, blurred_aligned_image2)
 
-        # Convert images to float32 for safe computation
-        unaligned_difference = unaligned_difference.astype(np.float32)
-        aligned_difference = aligned_difference.astype(np.float32)
+    # Convert images to float32 for safe computation
+    unaligned_difference = unaligned_difference.astype(np.float32)
+    aligned_difference = aligned_difference.astype(np.float32)
 
-        # Calculate weighted average with more weight for the lower value
-        output_image = np.where(unaligned_difference < aligned_difference,
-            unaligned_difference, # use pixel from unaligned_difference since lower brightness
-            aligned_difference # use pixel from aligned_difference since lower brightness
-        )  
+    # Calculate weighted average with more weight for the lower value
+    output_image = np.where(unaligned_difference < aligned_difference,
+        unaligned_difference, # use pixel from unaligned_difference since lower brightness
+        aligned_difference # use pixel from aligned_difference since lower brightness
+    )  
 
-        # Convert back to uint8
-        output_image = np.clip(output_image, 0, 255).astype(np.uint8)
+    # Convert back to uint8
+    output_image = np.clip(output_image, 0, 255).astype(np.uint8)
 
     return output_image
 
@@ -64,8 +66,8 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
 def main() -> None:
 
     # Load the images
-    image1_path = "data/2015_before_after/16_2015-10-05_184659_DSC_0921.thumb.jpg"
-    image2_path = "data/2015_before_after/16_2015-10-05_184729_DSC_0922.thumb.jpg"
+    image1_path = "data/DFNSMALL08/08_2013-10-28_162759_DSC_0693.NEF.thumb.jpg"
+    image2_path = "data/DFNSMALL08/08_2013-10-28_162729_DSC_0692.NEF.thumb.jpg"
 
     image1 = cv2.imread(image1_path, cv2.IMREAD_GRAYSCALE)
     image2 = cv2.imread(image2_path, cv2.IMREAD_GRAYSCALE)

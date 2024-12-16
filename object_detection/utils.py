@@ -1,3 +1,4 @@
+from math import sqrt
 from pathlib import Path
 
 import cv2
@@ -135,6 +136,20 @@ def xywhn2xyxy(x, w, h):
     y[..., 2] = w * (x[..., 0] + x[..., 2] / 2)
     y[..., 3] = h * (x[..., 1] + x[..., 3] / 2)
     return y
+
+
+def diagonal_length(box) -> float:
+    """
+    Calculate the diagonal length of a rectangular box.
+
+    Args:
+        box (tuple): A tuple of four elements representing the coordinates of the box 
+                     in the format (x1, y1, x2, y2).
+
+    Returns:
+        float: The length of the diagonal of the box.
+    """
+    return sqrt((box[2] - box[0])**2 + (box[3] - box[1])**2)
 
 
 # prefix components:

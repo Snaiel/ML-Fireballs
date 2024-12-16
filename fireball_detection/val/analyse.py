@@ -3,7 +3,6 @@ import json
 import os
 import shutil
 from dataclasses import dataclass
-from math import sqrt
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,22 +11,7 @@ from matplotlib.axes import Axes
 
 from fireball_detection.boxes.merge import intersects
 from fireball_detection.val.validate import VAL_FIREBALL_DETECTION_FOLDER
-from object_detection.utils import iom, iou
-
-
-def diagonal_length(box) -> float:
-    """
-    Calculate the diagonal length of a rectangular box.
-
-    Args:
-        box (tuple): A tuple of four elements representing the coordinates of the box 
-                     in the format (x1, y1, x2, y2).
-
-    Returns:
-        float: The length of the diagonal of the box.
-    """
-    return sqrt((box[2] - box[0])**2 + (box[3] - box[1])**2)
-
+from object_detection.utils import diagonal_length, iom, iou
 
 
 def analyse_folder(val_folder_name: str, metric: str, threshold: float) -> dict:
