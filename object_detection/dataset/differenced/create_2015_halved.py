@@ -10,7 +10,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from object_detection.dataset import DATA_FOLDER, DATA_YAML
+from object_detection.dataset import DATA_FOLDER, DATA_YAML, RANDOM_SEED
 
 
 @dataclass
@@ -109,7 +109,8 @@ def main() -> None:
             sample_size = len(negative_tiles)
         else:
             sample_size = len(fireball_tiles) * negative_ratio
-        negative_tiles = random.sample(negative_tiles, sample_size)
+        negative_tiles = random.Random(RANDOM_SEED).sample(negative_tiles, sample_size)
+        
 
         return fireball_tiles, negative_tiles
 
