@@ -5,15 +5,12 @@ import numpy as np
 import pandas as pd
 from skimage import io
 
+from detection_pipeline import check_tile_threshold
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
 from object_detection.dataset import GFO_PICKINGS, MIN_POINTS_IN_TILE
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
-
-
-PIXEL_BRIGHTNESS_THRESHOLD = 10
-PIXEL_TOTAL_THRESHOLD = 200
 
 
 included_coordinates = retrieve_included_coordinates()
@@ -53,8 +50,7 @@ class DifferencedTiles(DatasetTiles):
 
             if len(points_in_tile) != 0: continue
 
-            pixels_over_threshold = np.sum(tile_image > PIXEL_BRIGHTNESS_THRESHOLD)
-            if pixels_over_threshold < PIXEL_TOTAL_THRESHOLD: continue
+            if not check_tile_threshold(tile_image): continue
 
             self.negative_tiles.append(
                 FireballTile(
@@ -70,7 +66,6 @@ def main():
     fireball = DifferencedTiles("data/2015_before_after/differenced_images/16_2015-04-18_123858_DSC_0237.thumb.jpg")
     print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):
-        print(np.sum(tile.image > PIXEL_BRIGHTNESS_THRESHOLD))
         plot_fireball_tile(fireball.fireball_name, i, tile)
     for i, tile in enumerate(fireball.negative_tiles):
         plot_fireball_tile(fireball.fireball_name + "_negative", i, tile)

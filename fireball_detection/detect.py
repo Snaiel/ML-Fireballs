@@ -6,13 +6,14 @@ from pathlib import Path
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import numpy as np
 import structlog
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from numpy import ndarray
 from skimage import io
 from ultralytics import YOLO
 
+from detection_pipeline import check_tile_threshold
 from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
@@ -20,40 +21,26 @@ from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
 from object_detection.utils import add_border
 
-
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 
 
-def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile]:
+def detect_tiles_common(model: YOLO, border_size: int, tiles: list[Tile]) -> list[Tile]:
     """
-    Detects and returns a list of tiles containing detected objects from an image.
-
-    This function tiles an input image and runs YOLO model on them. Detected tiles 
-    contain bounding boxes and confidence scores for each detected fireball.
+    Common function to detect objects on tiles of an image.
 
     Args:
-        image (ndarray): The input image to process.
-        model (YOLO | None, optional): A pre-trained YOLO model used for detection. 
-            If None, a default model is loaded from "data/e15.pt".
-        border_size (int, optional): The width of the border to add around each tile
-            before detection. Defaults to 0, meaning no border is added.
+        image (np.ndarray): The input image to process.
+        model (YOLO): A pre-trained YOLO model used for detection.
+        border_size (int): The width of the border to add around each tile before detection.
 
     Returns:
         list[Tile]: A list of Tile objects that contain detected objects.
     """
+    print(len(tiles))
     
-    tiles: list[Tile] = []
-    for pos in INCLUDED_COORDINATES:
-        tiles.append(
-            Tile(
-                pos,
-                image[pos[1] : pos[1] + SQUARE_SIZE, pos[0] : pos[0] + SQUARE_SIZE]
-            )
-        )
-
     detected_tiles: list[Tile] = []
     for tile in tiles:
         input_image = tile.image if border_size == 0 else add_border(tile.image, border_size)
@@ -71,8 +58,26 @@ def detect_tiles(image: ndarray, model: YOLO, border_size: int = 0) -> list[Tile
     
     return detected_tiles
 
+    
+def detect_standalone_tiles(image: np.ndarray, model: YOLO, border_size: int) -> list[Tile]:
+    tiles: list[Tile] = [
+        Tile(pos, image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE])
+        for pos in INCLUDED_COORDINATES
+    ]
+    return detect_tiles_common(model, border_size, tiles)
 
-def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[FireballBox]:
+
+def detect_differenced_tiles(image: np.ndarray, model: YOLO, border_size: int) -> list[Tile]:
+    tiles: list[Tile] = [
+        Tile(pos, np.stack((tile_image,) * 3, axis=-1))
+        for pos in INCLUDED_COORDINATES
+        if (tile_image := image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE]).any()
+        and check_tile_threshold(tile_image)
+    ]
+    return detect_tiles_common(model, border_size, tiles)
+
+
+def detect_fireballs(image: np.ndarray, model: YOLO, border_size: int = 5) -> list[FireballBox]:
     """
     Detects fireballs within an image using a YOLO model.
 
@@ -81,7 +86,7 @@ def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[
     bounding boxes are then merged and returned.
 
     Parameters:
-        image : ndarray
+        image : np.ndarray
             The input image in which to detect fireballs.
         model : YOLO, optional
             A trained YOLO model to use for detection. If not provided, a default model located at 
@@ -102,7 +107,11 @@ def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[
     ```
     """
 
-    detected_tiles = detect_tiles(image, model, border_size)
+    if len(image.shape) == 2:
+        detected_tiles = detect_differenced_tiles(image, model, border_size)
+    else:
+        detected_tiles = detect_standalone_tiles(image, model, border_size)
+    
     fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     detected_fireballs = merge_bboxes(fireball_boxes)
 
@@ -111,12 +120,12 @@ def detect_fireballs(image: ndarray, model: YOLO, border_size: int = 5) -> list[
     return detected_fireballs
 
 
-def plot_boxes(image: ndarray, fireballs: list[FireballBox]) -> tuple[Figure, Axes]:
+def plot_boxes(image: np.ndarray, fireballs: list[FireballBox]) -> tuple[Figure, Axes]:
     """
     Plots detected fireball bounding boxes on an image.
 
     Args:
-        image (ndarray): The input image as a NumPy array on which fireball boxes will be plotted.
+        image (np.ndarray): The input image as a NumPy array on which fireball boxes will be plotted.
         fireballs (list[FireballBox]): A list of FireballBox objects, where each object contains
                                        the bounding box (as a tuple of coordinates) and confidence score.
 
