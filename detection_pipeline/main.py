@@ -17,21 +17,10 @@ import detection_pipeline.standalone
 from detection_pipeline import MAX_TIME_DIFFERENCE
 from detection_pipeline.image_differencing import difference_images
 from fireball_detection.detect import detect_fireballs
-from object_detection.detectors import Detector, get_detector
+from object_detection.detectors import DetectorSingleton
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
-
-
-class DetectorSingleton:
-    _detector: Detector = None
-
-    @staticmethod
-    def get_detector(detector: str, model_path: str) -> Detector:
-        if DetectorSingleton._detector is None:
-            print("LOADING NEW MODEL INSTANCE")
-            DetectorSingleton._detector = get_detector(detector, model_path)
-        return DetectorSingleton._detector
 
 
 @dataclass

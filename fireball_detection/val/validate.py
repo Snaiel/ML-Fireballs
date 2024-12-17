@@ -1,61 +1,65 @@
 import argparse
 import gc
 import json
-import multiprocessing as mp
 import os
-import signal
 from dataclasses import dataclass
+from multiprocessing import Pool
 from pathlib import Path
-from queue import Empty, Full
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from skimage import io
 from tqdm import tqdm
-from ultralytics import YOLO
 
 from fireball_detection.detect import detect_fireballs, plot_boxes
 from fireball_detection.val import VAL_FIREBALL_DETECTION_FOLDER
 from object_detection.dataset import DATA_FOLDER
+from object_detection.detectors import DetectorSingleton
 
 
 @dataclass
 class Args:
-    val_folder_name: str = None
-    model_path: str = None
-    processes: int = None
-    border_size: int = None
-    num_samples: int | float = None
+    val_folder_name: str
+    model_path: str
+    detector: str
+    processes: int
+    border_size: int
+    num_samples: int | float
 
 
-SENTINEL = None
+@dataclass
+class TestFireballArgs:
+    val_folder: Path
+    model_path: Path
+    detector: str
+    fireball_file: str
+    detected_boxes: list[str]
+    preds: list[str]
+    border_size: int
 
 
-def test_fireball(val_folder: Path, model: YOLO, fireball_file: str, detected_boxes: list, preds: list, border_size: int) -> None:
-    fireball_name = fireball_file.split(".")[0]
+def test_fireball(args: TestFireballArgs) -> None:
+    detector = DetectorSingleton.get_detector(args.detector, args.model_path)
+
+    fireball_name = args.fireball_file.split(".")[0]
         
-    if fireball_name + ".txt" in detected_boxes and fireball_name + ".jpg" in preds:
-        # print(f"{fireball_name} already detected")
+    if fireball_name + ".txt" in args.detected_boxes and fireball_name + ".jpg" in args.preds:
         return
 
-    # print(f"detecting {fireball_name}")
-
-    image = io.imread(Path(val_folder, "images", fireball_file))
+    image = io.imread(Path(args.val_folder, "images", args.fireball_file))
     
-    fireballs = detect_fireballs(image, model, border_size)
+    fireballs = detect_fireballs(image, detector, args.border_size)
     
-    with open(Path(val_folder, "boxes", fireball_name + ".txt"), "w") as boxes_file:
+    with open(Path(args.val_folder, "boxes", fireball_name + ".txt"), "w") as boxes_file:
         lines = []
         for fireball in fireballs:
-            # print(fireball_name, fireball)
             lines.append(repr(fireball))
         boxes_file.write("\n".join(lines))
 
     fig, ax = plot_boxes(image, fireballs)
 
-
-    pp_bb_path = Path(val_folder, "pp_bb", fireball_name + ".txt")
+    pp_bb_path = Path(args.val_folder, "pp_bb", fireball_name + ".txt")
     
     if pp_bb_path.exists():
         with open(pp_bb_path) as file:
@@ -72,46 +76,13 @@ def test_fireball(val_folder: Path, model: YOLO, fireball_file: str, detected_bo
             )
         )
 
-
-    fig.savefig(Path(val_folder, "preds", fireball_name + ".jpg"), bbox_inches='tight', pad_inches=0, dpi=600)
+    fig.savefig(Path(args.val_folder, "preds", fireball_name + ".jpg"), bbox_inches='tight', pad_inches=0, dpi=600)
     
     plt.cla()
     plt.clf()
     plt.close('all')
     del fig, ax, image, fireballs
     gc.collect()
-
-
-def run_tests(
-        fireball_queue: mp.Queue, 
-        bar_queue: mp.Queue,
-        val_folder: Path,
-        model_path: str,
-        border_size: int
-    ) -> None:
-    
-    model = YOLO(Path(model_path), task="detect")
-
-    detected_boxes = os.listdir(Path(val_folder, "boxes"))
-    preds = os.listdir(Path(val_folder, "preds"))
-
-    try:
-        while True:
-            fireball_file = fireball_queue.get()
-            if fireball_file is SENTINEL:
-                break
-            test_fireball(val_folder, model, fireball_file, detected_boxes, preds, border_size)
-            bar_queue.put_nowait(1)
-    except (Full, Empty) as e:
-        print(type(e))
-        return
-
-
-def update_bar(bar_queue: mp.Queue, total: int) -> None:
-    pbar = tqdm(total=total, desc="testing on full images")
-    while True:
-        bar_queue.get(True)
-        pbar.update(1)
 
 
 def test(args: Args) -> None:
@@ -128,59 +99,38 @@ def test(args: Args) -> None:
 
     full_fireball_files = os.listdir(Path(val_folder, "images"))
 
-
     num_samples = args.num_samples
     if isinstance(num_samples, float):
-        # Calculate number of samples based on proportion
         num_samples = max(1, int(len(full_fireball_files) * num_samples))
 
-    # Ensure the number of samples does not exceed available files
     num_samples = min(num_samples, len(full_fireball_files))
-
-    # Select the subset of fireball files
     fireball_files = full_fireball_files[:num_samples]
 
+    detected_boxes = os.listdir(Path(val_folder, "boxes"))
+    preds = os.listdir(Path(val_folder, "preds"))
 
-    fireball_queue = mp.Queue()
-    for fireball_file in fireball_files:
-        fireball_queue.put_nowait(fireball_file)
+    args_list = [TestFireballArgs(
+            val_folder,
+            args.model_path,
+            args.detector,
+            fireball_file,
+            detected_boxes,
+            preds,
+            args.border_size
+        ) for fireball_file in fireball_files]
     
-    for _ in range(args.processes):
-        fireball_queue.put(SENTINEL)
-
-    bar_queue = mp.Queue()
-    bar_process = mp.Process(target=update_bar, args=(bar_queue, len(fireball_files)), daemon=True)
-    bar_process.start()
-
-    processes: list[mp.Process] = []
-
-    for _ in range(args.processes):
-        process = mp.Process(target=run_tests, args=(fireball_queue, bar_queue, val_folder, args.model_path, args.border_size))
-        processes.append(process)
-        process.start()
-
-    try:
-        for process in processes:
-            process.join()
-    except KeyboardInterrupt:
-        fireball_queue.close()
-        bar_queue.close()
-        for process in processes:
-            process.terminate()
-            process.join()
-        os.kill(os.getpid(), signal.SIGTERM)
+    with Pool(args.processes) as pool:
+        list(tqdm(pool.imap(test_fireball, args_list), total=len(args_list)))
 
 
 def _parse_num_samples(value):
     try:
-        # Try to interpret as an integer
         ivalue = int(value)
         if ivalue < 0:
             raise argparse.ArgumentTypeError(f"'{value}' must be non-negative.")
         return ivalue
     except ValueError:
         try:
-            # Try to interpret as a float
             fvalue = float(value)
             if not (0.0 < fvalue <= 1.0):
                 raise argparse.ArgumentTypeError(f"'{value}' must be a positive float between 0 and 1 if it is a proportion.")
@@ -198,6 +148,7 @@ def main() -> None:
 
     parser.add_argument('--val_folder_name', type=str, choices=os.listdir(VAL_FIREBALL_DETECTION_FOLDER), required=True, help="Specify folder to run on.")
     parser.add_argument('--model_path', type=str, required=True, help='Path to the YOLO model (.pt .onnx .engine) file')
+    parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
     parser.add_argument('--border_size', type=int, default=5, help="Specify the border size")
     parser.add_argument('--num_samples', type=_parse_num_samples, default=1.0, help="Specify the number of samples to verify. Integer for number, float (0-1] for proportion.")
