@@ -8,23 +8,39 @@ from dataclasses import dataclass
 from pathlib import Path
 from queue import Empty, Full
 
+import structlog
 from skimage import io
+from structlog.typing import WrappedLogger
 from tqdm import tqdm
 from ultralytics import YOLO
 
 from fireball_detection.detect import detect_fireballs
-import structlog
 
 
 version = "1.0.0"
 
 
-def module_processor(logger, log_method, event_dict: dict):
+def module_processor(logger: WrappedLogger, log_method: str, event_dict):
     path = event_dict.pop("pathname")
     module_path = str(Path(path).relative_to(Path(__file__).parents[1]))
     module = module_path.replace("/", ".").replace(".py", "")
     event_dict["module"] = module
     return event_dict
+
+
+def reorder_event_dict(logger: WrappedLogger, log_method: str, event_dict: dict) -> dict:
+    reordered_dict = {}
+    reordered_dict["version"] = event_dict.pop("version")
+    reordered_dict["timestamp"] = event_dict.pop("timestamp")
+    reordered_dict["module"] = event_dict.pop("module")
+    reordered_dict["function"] = event_dict.pop("func_name")
+    reordered_dict["level"] = event_dict.pop("level")
+    reordered_dict["event"] = event_dict.pop("event")
+
+    for key in sorted(event_dict.keys()):
+        reordered_dict[key] = event_dict[key]
+    
+    return reordered_dict
 
 
 structlog.configure(
@@ -37,8 +53,8 @@ structlog.configure(
             structlog.processors.CallsiteParameter.PATHNAME
         ]),
         module_processor,
-        structlog.processors.JSONRenderer(),
-
+        reorder_event_dict,
+        structlog.processors.JSONRenderer(indent=4),
     ]
 )
 
