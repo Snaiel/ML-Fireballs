@@ -1,40 +1,37 @@
 import argparse
 import json
-import multiprocessing as mp
 import os
 import re
 import shutil
-import signal
 from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
-from queue import Empty, Full
 
 import numpy as np
 import structlog
 from skimage import io
 from tqdm import tqdm
-from ultralytics import YOLO
 
 import detection_pipeline.standalone
 from detection_pipeline import MAX_TIME_DIFFERENCE
 from detection_pipeline.image_differencing import difference_images
 from fireball_detection.detect import detect_fireballs
+from object_detection.detectors import Detector, get_detector
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
 
-class ModelSingleton:
-    _model = None
+class DetectorSingleton:
+    _detector: Detector = None
 
     @staticmethod
-    def get_model(model_path: str) -> YOLO:
-        if ModelSingleton._model is None:
+    def get_detector(detector: str, model_path: str) -> Detector:
+        if DetectorSingleton._detector is None:
             print("LOADING NEW MODEL INSTANCE")
-            ModelSingleton._model = YOLO(model_path, task="detect")
-        return ModelSingleton._model
+            DetectorSingleton._detector = get_detector(detector, model_path)
+        return DetectorSingleton._detector
 
 
 @dataclass
@@ -42,12 +39,15 @@ class Args:
     folder_path: str
     model_path: str
     processes: int
+    detector: str
+
 
 @dataclass
 class ProcessTripleArgs:
     folder_path: Path
     output_folder: Path
     model_path: Path
+    detector: str
     before: str | None
     current: str
     after: str | None
@@ -62,7 +62,7 @@ def get_time_seconds(fireball_label: str) -> int:
 
 
 def process_triple(args: ProcessTripleArgs) -> None:
-    model = ModelSingleton.get_model(args.model_path)
+    detector = DetectorSingleton.get_detector(args.detector, args.model_path)
     
     image_current = io.imread(Path(args.folder_path, args.current))
 
@@ -85,7 +85,7 @@ def process_triple(args: ProcessTripleArgs) -> None:
         )
     
     fireball_name = args.current.split(".")[0]
-    fireballs = detect_fireballs(differenced_image, model)
+    fireballs = detect_fireballs(differenced_image, detector)
 
     if not fireballs:
         return
@@ -129,6 +129,7 @@ def main() -> None:
     parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing images")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the YOLO model file")
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
+    parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
     
     args = Args(**vars(parser.parse_args()))
 
@@ -171,6 +172,7 @@ def main() -> None:
                 folder_path,
                 output_folder,
                 model_path,
+                args.detector,
                 before,
                 current,
                 after

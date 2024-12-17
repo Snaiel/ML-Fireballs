@@ -26,7 +26,7 @@ class ONNXDetector(Detector):
 
     def _initialize_model(self, path):
         session_options = ort.SessionOptions()
-        session_options.intra_op_num_threads = 4
+        session_options.intra_op_num_threads = 2
         session_options.inter_op_num_threads = 1
         session_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         self.session = ort.InferenceSession(
@@ -63,7 +63,12 @@ class ONNXDetector(Detector):
         class_ids = np.argmax(predictions[:, 4:], axis=1)
         boxes = self._extract_boxes(predictions)
         indices = self._multiclass_nms(boxes, scores, class_ids, self.iou_threshold)
-        return boxes[indices], scores[indices], class_ids[indices]
+
+        boxes = boxes[indices].tolist()
+        scores = scores[indices].astype(float).tolist()
+        class_ids = class_ids[indices].astype(int).tolist()
+
+        return boxes, scores, class_ids
 
 
     def _extract_boxes(self, predictions):
