@@ -7,18 +7,34 @@ import shutil
 import signal
 from dataclasses import dataclass
 from datetime import datetime
+from multiprocessing import Pool
 from pathlib import Path
 from queue import Empty, Full
-from multiprocessing import Pool
+
 import numpy as np
 import structlog
 from skimage import io
 from tqdm import tqdm
 from ultralytics import YOLO
 
+import detection_pipeline.standalone
 from detection_pipeline import MAX_TIME_DIFFERENCE
 from detection_pipeline.image_differencing import difference_images
 from fireball_detection.detect import detect_fireballs
+
+
+logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+
+
+class ModelSingleton:
+    _model = None
+
+    @staticmethod
+    def get_model(model_path: str) -> YOLO:
+        if ModelSingleton._model is None:
+            print("LOADING NEW MODEL INSTANCE")
+            ModelSingleton._model = YOLO(model_path, task="detect")
+        return ModelSingleton._model
 
 
 @dataclass
@@ -46,7 +62,7 @@ def get_time_seconds(fireball_label: str) -> int:
 
 
 def process_triple(args: ProcessTripleArgs) -> None:
-    model = YOLO(args.model_path)
+    model = ModelSingleton.get_model(args.model_path)
     
     image_current = io.imread(Path(args.folder_path, args.current))
 
@@ -101,6 +117,8 @@ def process_triple(args: ProcessTripleArgs) -> None:
 
     with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
         json_file.write(output_json)
+    
+    # logger.info("fireball detection", detections=detections)
 
 
 def main() -> None:

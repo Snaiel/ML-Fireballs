@@ -20,6 +20,9 @@ from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
 from object_detection.utils import add_border, diagonal_length
+from object_detection.detectors import Detector
+from object_detection.detectors.ultralytics import UltralyticsDetector
+from typing import Type
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
@@ -28,7 +31,7 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 
 
-def detect_tiles_common(model: YOLO, border_size: int, tiles: list[Tile]) -> list[Tile]:
+def detect_tiles_common(detector: Detector, border_size: int, tiles: list[Tile]) -> list[Tile]:
     """
     Common function to detect objects on tiles of an image.
 
@@ -43,41 +46,36 @@ def detect_tiles_common(model: YOLO, border_size: int, tiles: list[Tile]) -> lis
     
     detected_tiles: list[Tile] = []
     for tile in tiles:
-        input_image = tile.image if border_size == 0 else add_border(tile.image, border_size)
-        results = model.predict(
-            input_image,
-            verbose=False,
-            imgsz=416
-        )
-        result = results[0]
-        if len(result.boxes.conf) > 0:
-            tile.boxes = result.boxes.xyxy.cpu().tolist()
-            tile.confidences = result.boxes.conf.cpu().tolist()
+        input_image = add_border(tile.image, border_size)
+        boxes, confidences, labels = detector.detect(input_image)
+        if len(boxes) > 0:
+            tile.boxes = boxes
+            tile.confidences = confidences
             detected_tiles.append(tile)
             # logger.info("tile_detections", tile_position=tile.position, detections=tile.get_detections())
     
     return detected_tiles
 
     
-def detect_standalone_tiles(image: np.ndarray, model: YOLO, border_size: int) -> list[Tile]:
+def detect_standalone_tiles(image: np.ndarray, detector: Detector, border_size: int) -> list[Tile]:
     tiles: list[Tile] = [
         Tile(pos, image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE])
         for pos in INCLUDED_COORDINATES
     ]
-    return detect_tiles_common(model, border_size, tiles)
+    return detect_tiles_common(detector, border_size, tiles)
 
 
-def detect_differenced_tiles(image: np.ndarray, model: YOLO, border_size: int) -> list[Tile]:
+def detect_differenced_tiles(image: np.ndarray, detector: Detector, border_size: int) -> list[Tile]:
     tiles: list[Tile] = [
         Tile(pos, np.stack((tile_image,) * 3, axis=-1))
         for pos in INCLUDED_COORDINATES
         if (tile_image := image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE]).any()
         and check_tile_threshold(tile_image)
     ]
-    return detect_tiles_common(model, border_size, tiles)
+    return detect_tiles_common(detector, border_size, tiles)
 
 
-def detect_fireballs(image: np.ndarray, model: YOLO, border_size: int = 5) -> list[FireballBox]:
+def detect_fireballs(image: np.ndarray, detector: Detector, border_size: int = 5) -> list[FireballBox]:
     """
     Detects fireballs within an image using a YOLO model.
 
@@ -108,9 +106,9 @@ def detect_fireballs(image: np.ndarray, model: YOLO, border_size: int = 5) -> li
     """
 
     if len(image.shape) == 2:
-        detected_tiles = detect_differenced_tiles(image, model, border_size)
+        detected_tiles = detect_differenced_tiles(image, detector, border_size)
     else:
-        detected_tiles = detect_standalone_tiles(image, model, border_size)
+        detected_tiles = detect_standalone_tiles(image, detector, border_size)
     
     fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     
@@ -169,7 +167,7 @@ def plot_boxes(image: np.ndarray, fireballs: list[FireballBox]) -> tuple[Figure,
     return fig, ax
 
 
-def main():
+def main(detector_class: Type[Detector]):
     """
     Main function for loading an image, detecting fireballs, and plotting bounding boxes.
 
@@ -212,7 +210,7 @@ def main():
         print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
 
     try:
-        model = YOLO(model_path, task="detect")
+        detector = detector_class(model_path)
     except FileNotFoundError as e:
         print(f"Model file not found: {e}")
         if not args.model_path:
@@ -222,7 +220,7 @@ def main():
     t0 = time.time()
     image = io.imread(Path(args.image_path))
     t1 = time.time()
-    fireballs = detect_fireballs(image, model, args.border_size)
+    fireballs = detect_fireballs(image, detector, args.border_size)
     t2 = time.time()
 
     if args.verbose:
@@ -239,4 +237,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(UltralyticsDetector)

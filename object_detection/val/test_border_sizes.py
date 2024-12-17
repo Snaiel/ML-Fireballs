@@ -9,11 +9,10 @@ import pandas as pd
 import skimage.io as io
 from tqdm import tqdm
 from ultralytics import YOLO
-from ultralytics.utils.ops import xywhn2xyxy
 
 from fireball_detection.detect import intersects
-from object_detection.utils import add_border, iom, iou
 from object_detection.dataset import DATA_FOLDER
+from object_detection.utils import add_border, iom, iou, xywhn2xyxy
 
 
 def main():

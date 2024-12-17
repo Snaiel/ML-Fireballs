@@ -9,7 +9,8 @@ import skimage.io as io
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from tqdm import tqdm
-from ultralytics.utils.ops import xywhn2xyxy
+
+from object_detection.utils import xywhn2xyxy
 
 
 with open(Path(Path(__file__).parents[2], "data", "false_negatives.txt")) as file:
