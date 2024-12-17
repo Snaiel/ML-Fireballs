@@ -11,18 +11,14 @@ import structlog
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from skimage import io
-from ultralytics import YOLO
 
 from detection_pipeline import MIN_DIAGONAL_LENGTH, check_tile_threshold
 from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
-from object_detection.dataset import DATA_FOLDER, DEFAULT_YOLO_MODEL_PATH
 from object_detection.utils import add_border, diagonal_length
-from object_detection.detectors import Detector
-from object_detection.detectors.ultralytics import UltralyticsDetector
-from typing import Type
+from object_detection.detectors import Detector, get_detector
 
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger()
@@ -167,7 +163,7 @@ def plot_boxes(image: np.ndarray, fireballs: list[FireballBox]) -> tuple[Figure,
     return fig, ax
 
 
-def main(detector_class: Type[Detector]):
+def main():
     """
     Main function for loading an image, detecting fireballs, and plotting bounding boxes.
 
@@ -184,6 +180,7 @@ def main(detector_class: Type[Detector]):
     class Args:
         image_path: str
         model_path: str
+        detector: str
         border_size: int
         verbose: bool
         plot: bool
@@ -193,6 +190,7 @@ def main(detector_class: Type[Detector]):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--image_path", type=str, required=True, help="Path to the fireball image file.")
+    parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
     parser.add_argument("--model_path", type=str, help="Path to the YOLO model file.")
     parser.add_argument("--border_size", type=str, default=5, help="Border size.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
@@ -203,19 +201,8 @@ def main(detector_class: Type[Detector]):
     if args.verbose:
         print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
-
-    model_path = args.model_path or DEFAULT_YOLO_MODEL_PATH
-
-    if args.verbose and not args.model_path:
-        print(f"No model path provided. Using model: {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)}\n")
-
-    try:
-        detector = detector_class(model_path)
-    except FileNotFoundError as e:
-        print(f"Model file not found: {e}")
-        if not args.model_path:
-            print(f"No model path provided and {DEFAULT_YOLO_MODEL_PATH.relative_to(DATA_FOLDER.parent)} missing.")
-        return
+    detector = get_detector(args.detector, args.model_path)
+    if not detector: return
 
     t0 = time.time()
     image = io.imread(Path(args.image_path))
@@ -237,4 +224,4 @@ def main(detector_class: Type[Detector]):
 
 
 if __name__ == "__main__":
-    main(UltralyticsDetector)
+    main()

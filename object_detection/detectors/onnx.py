@@ -7,8 +7,7 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-from object_detection.detectors import Detector
-from fireball_detection.detect import main
+from object_detection.detectors.detector import Detector
 
 
 class ONNXDetector(Detector):
@@ -27,9 +26,9 @@ class ONNXDetector(Detector):
 
     def _initialize_model(self, path):
         session_options = ort.SessionOptions()
-        session_options.intra_op_num_threads = 2
+        session_options.intra_op_num_threads = 4
         session_options.inter_op_num_threads = 1
-        session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
+        session_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         self.session = ort.InferenceSession(
             path,
             providers=["CPUExecutionProvider"],
@@ -158,7 +157,3 @@ class ONNXDetector(Detector):
     def _get_output_details(self):
         model_outputs = self.session.get_outputs()
         self.output_names = [model_outputs[i].name for i in range(len(model_outputs))]
-
-
-if __name__ == "__main__":
-    main(ONNXDetector)

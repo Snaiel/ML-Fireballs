@@ -1,14 +1,14 @@
-from abc import ABC, abstractmethod
-import numpy as np
+from object_detection.detectors.detector import Detector
+from object_detection.detectors.onnx import ONNXDetector
+from object_detection.detectors.ultralytics import UltralyticsDetector
 
 
-class Detector(ABC):
-
-    @abstractmethod
-    def detect(self, image: np.ndarray) -> tuple:
-        """
-        input image numpy array and output
-
-        xyxy, conf, cls
-        """
-        pass
+def get_detector(name: str, path: str) -> Detector:
+    detector = None
+    if name == 'Ultralytics':
+        detector = UltralyticsDetector(path)
+    elif name == 'ONNX':
+        detector = ONNXDetector(path)
+    else:
+        print(f"Unsupported detector type: {name}")
+    return detector

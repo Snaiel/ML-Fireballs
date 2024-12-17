@@ -1,6 +1,7 @@
-from object_detection.detectors import Detector
-from ultralytics import YOLO
 import numpy as np
+from ultralytics import YOLO
+
+from object_detection.detectors.detector import Detector
 
 
 class UltralyticsDetector(Detector):
