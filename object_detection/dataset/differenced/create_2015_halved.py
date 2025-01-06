@@ -20,27 +20,6 @@ class Args:
     overwrite: bool
 
 
-def get_2015_halved_dataset(all_folder_path: str) -> tuple[list]:
-    fireballs = list(
-        map(
-            lambda x: x.replace(".jpg", ""),
-            sorted(os.listdir(Path(all_folder_path, "images")))
-        )
-    )
-    pattern_train = r"_2015-(07|08|09|10|11|12)-\d{2}_"
-    
-    train_fireballs = []
-    val_fireballs = []
-
-    for fireball in fireballs:
-        if re.search(pattern_train, fireball):
-            train_fireballs.append(fireball)
-        else:
-            val_fireballs.append(fireball)
-
-    return fireballs, train_fireballs, val_fireballs
-
-
 def main() -> None:
 
     parser = argparse.ArgumentParser(
@@ -59,12 +38,13 @@ def main() -> None:
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
     all_folder = Path(args.all_folder_path)
+    # maintain all generated negative tiles if -1
     folder_name = "halved" if args.negative_ratio == -1 else f"halved_1_to_{args.negative_ratio}"
     object_detection_folder = Path(DATA_FOLDER, "object_detection", "2015_differenced", folder_name)
 
     if Path(object_detection_folder).exists():
         if args.overwrite:
-            print("removing existing folder...")
+            print("removing existing folder...\n")
             shutil.rmtree(object_detection_folder)
         else:
             print(f"\"{object_detection_folder}\" already exists. include --overwrite option to overwrite folders.")
@@ -85,14 +65,31 @@ def main() -> None:
         yaml_file.truncate()
 
 
-    fireballs, train_fireballs, val_fireballs = get_2015_halved_dataset(args.all_folder_path)
+    # assumes dates in this folder is from 2015
+    tiles_in_all_folder = list(
+        map(
+            lambda x: x.replace(".jpg", ""),
+            sorted(os.listdir(Path(args.all_folder_path, "images")))
+        )
+    )
 
-    print()
-    print("{:<17} {:<25} {}".format("All Fireballs", "Jan-June (Validation)", "Jul-Dec (Training)"))
-    print("{:<17} {:<25} {}".format(len(fireballs), len(val_fireballs), len(train_fireballs)))
-    print()
+    pattern_train = r"_2015-(07|08|09|10|11|12)-\d{2}_"
 
-    def filter_and_sample_fireballs(fireballs, negative_ratio):
+    # split tiles into train (jul-dec) and val (jan-june)
+
+    train_tiles = []
+    val_tiles = []
+
+    for tile in tiles_in_all_folder:
+        if re.search(pattern_train, tile):
+            train_tiles.append(tile)
+        else:
+            val_tiles.append(tile)
+
+    print("Tiles in all folder:", len(tiles_in_all_folder), "\n")
+
+    # ensures the ratio is correct
+    def filter_and_sample_tiles(fireballs, negative_ratio):
         fireball_tiles = []
         negative_tiles = []
 
@@ -111,8 +108,8 @@ def main() -> None:
             sample_size = len(fireball_tiles) * negative_ratio
         negative_tiles = random.Random(RANDOM_SEED).sample(negative_tiles, sample_size)
         
-
         return fireball_tiles, negative_tiles
+
 
     def copy_file(tile_file, dest_folder):
         image_filename = tile_file + ".jpg"
@@ -131,10 +128,13 @@ def main() -> None:
             list(tqdm(executor.map(lambda tf: copy_file(tf, dest_folder), tile_files), total=len(tile_files)))
 
 
-    train_fireball_tiles, train_negative_tiles = filter_and_sample_fireballs(train_fireballs, args.negative_ratio)
-    val_fireball_tiles, val_negative_tiles = filter_and_sample_fireballs(val_fireballs, args.negative_ratio)
+    train_fireball_tiles, train_negative_tiles = filter_and_sample_tiles(train_tiles, args.negative_ratio)
+    val_fireball_tiles, val_negative_tiles = filter_and_sample_tiles(val_tiles, args.negative_ratio)
     copy_files(train_fireball_tiles + train_negative_tiles, "train")
     copy_files(val_fireball_tiles + val_negative_tiles, "val")
+
+    # having separate ..._fireball_tiles and ..._negative_tiles
+    # is just for printing statistics
 
     print()
 
@@ -143,8 +143,11 @@ def main() -> None:
     val_fireball_total = len(val_fireball_tiles)
     val_negative_total = len(val_negative_tiles)
     
+    print(f"Total train tiles: {train_fireball_total + train_negative_total}")
     print(f"Total fireball tiles in train: {train_fireball_total}")
     print(f"Total negative tiles in train: {train_negative_total}")
+    print()
+    print(f"Total validation tiles: {val_fireball_total + val_negative_total}")
     print(f"Total fireball tiles in validation: {val_fireball_total}")
     print(f"Total negative tiles in validation: {val_negative_total}")
     print()

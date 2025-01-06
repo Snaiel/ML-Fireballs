@@ -42,7 +42,7 @@ def main() -> None:
 
     if Path(object_detection_folder).exists():
         if args.overwrite:
-            print("removing existing folder...")
+            print("removing existing folder...\n")
             shutil.rmtree(object_detection_folder)
         else:
             print(f"\"{object_detection_folder}\" already exists. include --overwrite option to overwrite folders.")
