@@ -54,7 +54,7 @@ def main():
     for image_path in images[:args.number]:
         inference_time = process_image(image_path, detector)
         inference_times.append(inference_time)
-        print(f"Inference time for {image_path}: {inference_time:.5f} seconds")
+        print(f"Inference time for {image_path.name}: {inference_time:.5f} seconds")
 
     average_time_excluding_warmup = sum(inference_times) / args.number
 
