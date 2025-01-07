@@ -28,7 +28,8 @@ if [ ! -d ".venv" ]; then
     echo ".venv does not exist. Creating virtual environment and installing dependencies..."
     python3 -m venv .venv --system-site-packages
     source .venv/bin/activate
-    pip install -r requirements.txt
+    mkdir -p $MYSCRATCH/tmp
+    TMPDIR=$MYSCRATCH/tmp pip install -r requirements.txt
 else
     source .venv/bin/activate
 fi
