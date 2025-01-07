@@ -1,10 +1,6 @@
 from object_detection.detectors.detector import Detector
 from object_detection.detectors.onnx import ONNXDetector
 from object_detection.detectors.ultralytics import UltralyticsDetector
-from utils.logging import get_logger
-
-
-logger = get_logger()
 
 
 class DetectorSingleton:
@@ -14,16 +10,7 @@ class DetectorSingleton:
     @staticmethod
     def get_detector(detector: str, model_path: str) -> Detector:
         if DetectorSingleton._detector is None:
-            detector_instance = get_detector(detector, model_path)
-            logger.info(
-                "new_detector_instance",
-                new_detector_instance={
-                    "detector": detector,
-                    "model_path": model_path,
-                    "detector_instance": detector_instance
-                }
-            )
-            DetectorSingleton._detector = detector_instance
+            DetectorSingleton._detector = get_detector(detector, model_path)
         return DetectorSingleton._detector
 
 

@@ -18,10 +18,6 @@ from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.detectors import Detector, get_detector
 from object_detection.utils import add_border, diagonal_length
-from utils.logging import get_logger
-
-
-logger = get_logger()
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
@@ -48,13 +44,6 @@ def detect_tiles_common(detector: Detector, border_size: int, tiles: list[Tile])
             tile.boxes = boxes
             tile.confidences = confidences
             detected_tiles.append(tile)
-            logger.info(
-                "tile_detections",
-                tile_detections={
-                    "tile_position": tile.position,
-                    "detections": tile.get_detections()
-                }
-            )
     
     return detected_tiles
 
