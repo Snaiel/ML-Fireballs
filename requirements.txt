@@ -1,4 +1,4 @@
-biopython==1.84
+biopython>=1.79
 matplotlib>=3.8.1
 numpy>=1.26.1
 opencv_python==4.10.0.84
