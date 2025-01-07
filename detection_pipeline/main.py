@@ -13,14 +13,15 @@ import structlog
 from skimage import io
 from tqdm import tqdm
 
-import detection_pipeline.standalone
 from detection_pipeline import MAX_TIME_DIFFERENCE
 from detection_pipeline.image_differencing import difference_images
 from fireball_detection.detect import detect_fireballs
 from object_detection.detectors import DetectorSingleton
 
+from utils.logging import get_logger
 
-logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+
+logger = get_logger()
 
 
 @dataclass
@@ -51,7 +52,10 @@ def get_time_seconds(fireball_label: str) -> int:
 
 
 def process_triple(args: ProcessTripleArgs) -> None:
+
     detector = DetectorSingleton.get_detector(args.detector, args.model_path)
+
+    structlog.contextvars.bind_contextvars(image=args.current)
     
     image_current = io.imread(Path(args.folder_path, args.current))
 
@@ -76,38 +80,38 @@ def process_triple(args: ProcessTripleArgs) -> None:
     fireball_name = args.current.split(".")[0]
     fireballs = detect_fireballs(differenced_image, detector)
 
-    if not fireballs:
-        return
-
-    fireball_folder = Path(args.output_folder, fireball_name)
-    os.mkdir(fireball_folder)
-
-    shutil.copy(Path(args.folder_path, args.current), fireball_folder)
-
-    for f in fireballs:
-        coords = list(map(int, f.box))
-        x1, y1, x2, y2 = coords
-        tile_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
-        io.imsave(
-            Path(fireball_folder, tile_name + ".jpg"), image_current[y1:y2, x1:x2],
-            check_contrast=False,
-            quality=100                                                 
-        )
-        io.imsave(
-            Path(fireball_folder, tile_name + "_differenced.jpg"), differenced_image[y1:y2, x1:x2],
-            check_contrast=False,
-            quality=100
-        )
-
     detections = [vars(fireball) for fireball in fireballs]
-    output_data = {"detections": detections}
+    logger.info("detected_fireballs", detected_fireballs=detections)
 
-    output_json = json.dumps(output_data, indent=4)
+    if fireballs:
+        fireball_folder = Path(args.output_folder, fireball_name)
+        os.mkdir(fireball_folder)
 
-    with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
-        json_file.write(output_json)
-    
-    # logger.info("fireball detection", detections=detections)
+        shutil.copy(Path(args.folder_path, args.current), fireball_folder)
+
+        for f in fireballs:
+            coords = list(map(int, f.box))
+            x1, y1, x2, y2 = coords
+            tile_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
+            io.imsave(
+                Path(fireball_folder, tile_name + ".jpg"), image_current[y1:y2, x1:x2],
+                check_contrast=False,
+                quality=100                                                 
+            )
+            io.imsave(
+                Path(fireball_folder, tile_name + "_differenced.jpg"), differenced_image[y1:y2, x1:x2],
+                check_contrast=False,
+                quality=100
+            )
+
+        output_data = {"detections": detections}
+
+        output_json = json.dumps(output_data, indent=4)
+
+        with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
+            json_file.write(output_json)
+        
+    structlog.contextvars.unbind_contextvars("image")
 
 
 def main() -> None:
@@ -121,8 +125,7 @@ def main() -> None:
     parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
     
     args = Args(**vars(parser.parse_args()))
-
-    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+    logger.info("args", args=vars(args))
 
     folder_path = Path(args.folder_path)
     if not folder_path.exists() or folder_path.is_file():
@@ -168,10 +171,14 @@ def main() -> None:
             )
         )
     
-    with Pool(args.processes) as pool:
-        list(tqdm(pool.imap(process_triple, args_list), total=len(args_list)))
-        
+    logger.info(
+        "starting detections using multiprocessing, the following logs will be ordered by image sequence, timestamps likely to be in different order"
+    )
 
+    with Pool(args.processes) as pool:
+        # list(tqdm(pool.imap(process_triple, args_list), total=len(args_list)))
+        list(pool.imap(process_triple, args_list))
+        
 
 if __name__ == "__main__":
     main()

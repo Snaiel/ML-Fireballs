@@ -7,7 +7,6 @@ from pathlib import Path
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
-import structlog
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from skimage import io
@@ -17,11 +16,12 @@ from fireball_detection import SQUARE_SIZE, FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
-from object_detection.utils import add_border, diagonal_length
 from object_detection.detectors import Detector, get_detector
+from object_detection.utils import add_border, diagonal_length
+from utils.logging import get_logger
 
 
-logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+logger = get_logger()
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
@@ -48,7 +48,13 @@ def detect_tiles_common(detector: Detector, border_size: int, tiles: list[Tile])
             tile.boxes = boxes
             tile.confidences = confidences
             detected_tiles.append(tile)
-            # logger.info("tile_detections", tile_position=tile.position, detections=tile.get_detections())
+            logger.info(
+                "tile_detections",
+                tile_detections={
+                    "tile_position": tile.position,
+                    "detections": tile.get_detections()
+                }
+            )
     
     return detected_tiles
 
@@ -110,8 +116,6 @@ def detect_fireballs(image: np.ndarray, detector: Detector, border_size: int = 5
     
     detected_fireballs = merge_bboxes(fireball_boxes)
     detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
-
-    # logger.info("detected_fireballs", detections=[vars(f) for f in detected_fireballs])
 
     return detected_fireballs
 
