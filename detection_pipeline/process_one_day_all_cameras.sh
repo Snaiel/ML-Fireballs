@@ -32,9 +32,11 @@ echo "Created output folder: $output_path"
 # Submit a job for each sub folder (assumed to be a folder for a camera's images that night)
 for subfolder in "$input_folder"/*; do
     if [ -d "$subfolder" ]; then
+        subfolder_basename=$(basename "$subfolder")
+        echo "Submitting job for: $input_basename/$subfolder_basename"
         sbatch \
             --export=ALL,FOLDER_PATH="$subfolder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path" \
-            "$MYSOFTWARE/detection_pipeline/job.sh"
-        echo "Submitted job for subfolder: $subfolder"
+            --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out"\
+            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/job.sh"
     fi
 done
