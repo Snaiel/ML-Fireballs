@@ -74,6 +74,7 @@ logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 @dataclass
 class Args:
     folder_path: str
+    output_path: str | None
     model_path: str
     processes: int
     detector: str
@@ -268,6 +269,7 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing images")
+    parser.add_argument("--output_path", type=str, required=False, default=None, help="Path to the folder to contain the output folder")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the YOLO model file")
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
     parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
@@ -280,10 +282,13 @@ def main() -> None:
         print(f"{folder_path} is not a valid folder.")
         return
 
-    output_folder = Path(folder_path, folder_path.name)
+    output_folder = Path(
+        folder_path if args.output_path is None else args.output_path,
+        folder_path.name
+    )
     if output_folder.exists():
         shutil.rmtree(output_folder)
-    os.mkdir(output_folder)
+    os.makedirs(output_folder, exist_ok=True)
 
     log_file = Path(output_folder, f"{'_'.join(folder_path.parts[-2:])}.log")
 

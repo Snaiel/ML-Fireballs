@@ -1,6 +1,6 @@
 biopython>=1.79
 matplotlib>=3.8.1
-numpy>=1.26.1
+numpy>=1.26.3
 opencv_python==4.10.0.84
 pandas>=2.1.2
 levenshtein==0.26.1
