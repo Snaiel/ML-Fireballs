@@ -37,8 +37,8 @@ module load pytorch/2.2.0-rocm5.7.3
 # module load py-pip/23.1.2-py3.11.6
 # module load py-matplotlib/3.8.1
 
-# important! go into the singularity container
-bash
+# important! start bash subshell in the singularity container
+bash << 'EOF'
 
 cd $MYSOFTWARE/ML-Fireballs
 
@@ -61,3 +61,5 @@ python3 -m detection_pipeline.main \
     --model_path "$MODEL_PATH" \
     --detector ONNX \
     --processes "$SLURM_CPUS_PER_TASK"
+
+EOF
