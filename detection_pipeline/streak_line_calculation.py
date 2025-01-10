@@ -35,23 +35,22 @@ import numpy as np
 import skimage as ski
 from skimage.feature import blob_dog
 from sklearn.linear_model import LinearRegression, RANSACRegressor
-from sklearn.pipeline import make_pipeline
 
 
 def main():
 
     image = ski.io.imread(
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110359_DSC_9000/48_2015-11-01_110359_DSC_9000_57_3319-91-3607-165.differenced.jpg",
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL51/51_2015-11-01_101728_DSC_0050/51_2015-11-01_101728_DSC_0050_62_4945-3624-5023-3807.differenced.jpg",
         as_gray=True
     )
 
     image_gray = image
 
     # Detect blobs using Difference of Gaussian (DoG)
-    blobs_dog = blob_dog(image_gray, min_sigma=2, max_sigma=15, threshold=0.01)
+    blobs_dog = blob_dog(image_gray, min_sigma=2, max_sigma=10, threshold=0.01)
     blobs_dog[:, 2] = blobs_dog[:, 2] * sqrt(2)  # Compute radii in the 3rd column
 
-    print(len(blobs_dog))
+    print("Blobs:", len(blobs_dog))
     for b in blobs_dog:
         print(b)
 
@@ -59,80 +58,81 @@ def main():
     y_coords = blobs_dog[:, 0]
     x_coords = blobs_dog[:, 1]
 
+    domain: np.ndarray = np.linspace(0, image_gray.shape[1], 1000)
+
+    _, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(image_gray, cmap='gray', aspect='equal')
+
+    gradient: float
+    intercept: float
+
     # Fit a linear regression model using RANSAC, fallback to simple Linear Regression if samples are less than 3
     if len(x_coords) >= 3:
-        model_ransac = make_pipeline(RANSACRegressor(estimator=LinearRegression(), residual_threshold=10, max_trials=100))
-        model_ransac.fit(x_coords.reshape(-1, 1), y_coords)
+        ax.set_title("Linear Regression with RANSAC")
+
+        model = RANSACRegressor(estimator=LinearRegression(), residual_threshold=10, max_trials=100)
+        model.fit(x_coords.reshape(-1, 1), y_coords)
 
         # Predict y values using the fitted model
-        domain = np.linspace(0, image_gray.shape[1], 1000)
-        y_values_ransac = model_ransac.predict(domain.reshape(-1, 1))
+        y_values = model.predict(domain.reshape(-1, 1))
 
-        # Check if the predicted y-values fall within the image dimensions
-        valid_indices_ransac = np.where((y_values_ransac >= 0) & (y_values_ransac < image_gray.shape[0]))
-
-        # Plot the original image with the fitted line
-        fig, ax = plt.subplots(figsize=(6, 6))
-        ax.set_title("Linear Regression with RANSAC")
-        ax.imshow(image_gray, cmap='gray', aspect='equal')
-
-        # Plot the RANSAC regression line
-        if len(valid_indices_ransac[0]) > 0:
-            ax.plot(domain[valid_indices_ransac], y_values_ransac[valid_indices_ransac], color='orange', linestyle='-', linewidth=2)
+        # Line parameters
+        estimator: LinearRegression = model.estimator_
+        gradient = estimator.coef_[0]
+        intercept = estimator.intercept_
 
         # Get the inlier indices
-        inlier_indices = model_ransac.named_steps['ransacregressor'].inlier_mask_
+        inlier_indices = model.inlier_mask_
 
-        # Plot inlier points
+        # Plot inlier blobs
         for idx in np.where(inlier_indices)[0]:
             blob = blobs_dog[idx]
             y, x, r = blob
             c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
             ax.add_patch(c)
 
-        # Plot outlier points
+        # Plot outlier blobs
         for idx in np.where(inlier_indices == False)[0]:
             blob = blobs_dog[idx]
             y, x, r = blob
             c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
             ax.add_patch(c)
 
-        # Output line parameters
-        ransac_model = model_ransac.named_steps['ransacregressor']
-        print(f"Gradient: {ransac_model.estimator_.coef_[0]}")
-        print(f"Intercept: {ransac_model.estimator_.intercept_}")
-
     else:
+        ax.set_title("Linear Regression without RANSAC")
+
         # Fallback to simple Linear Regression
-        model_linear = LinearRegression()
-        model_linear.fit(x_coords, y_coords)
+        model = LinearRegression()
+        model.fit(x_coords, y_coords)
 
         # Predict y values using the fitted model
-        domain = np.linspace(0, image_gray.shape[1], 1000)
-        y_values_linear = model_linear.predict(domain.reshape(-1, 1))
-
-        # Check if the predicted y-values fall within the image dimensions
-        valid_indices_linear = np.where((y_values_linear >= 0) & (y_values_linear < image_gray.shape[0]))
-
-        # Plot the original image with the fitted line
-        fig, ax = plt.subplots(figsize=(6, 6))
-        ax.set_title("Linear Regression without RANSAC")
-        ax.imshow(image_gray, cmap='gray', aspect='equal')
-
-        # Plot the Linear Regression line
-        if len(valid_indices_linear[0]) > 0:
-            ax.plot(domain[valid_indices_linear], y_values_linear[valid_indices_linear], color='blue', linestyle='-', linewidth=2)
+        y_values = model.predict(domain.reshape(-1, 1))
         
+        # Line parameters
+        gradient = model.coef_[0]
+        intercept = model.intercept_
+
         # Plot the blobs
         for blob in blobs_dog:
             y, x, r = blob
             c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
             ax.add_patch(c)
 
-        # Output line parameters
-        linear_model = model_linear.named_steps['linearregression']
-        print(f"Gradient: {linear_model.coef_}")
-        print(f"Intercept: {linear_model.intercept_}")
+    # Check if the predicted y-values fall within the image dimensions
+    valid_indices = np.where((y_values >= 0) & (y_values < image_gray.shape[0]))
+
+    # Plot the Linear Regression line
+    if len(valid_indices[0]) > 0:
+        ax.plot(
+            domain[valid_indices],
+            y_values[valid_indices],
+            color='orange' if len(x_coords) >= 3 else 'blue',
+            linestyle='-',
+            linewidth=2
+        )
+
+    print(f"Gradient: {gradient}")
+    print(f"Intercept: {intercept}")
 
     plt.axis('off')
     plt.tight_layout()
