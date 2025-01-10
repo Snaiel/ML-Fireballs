@@ -14,7 +14,9 @@ class UltralyticsDetector(Detector):
         results = self.model.predict(
             image,
             verbose=False,
-            imgsz=416
+            imgsz=416,
+            conf=0.3,
+            iou=0.5
         )
 
         boxes = results[0].boxes

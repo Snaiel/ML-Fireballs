@@ -13,7 +13,7 @@ from object_detection.detectors.detector import Detector
 class ONNXDetector(Detector):
 
     def __init__(self, path):
-        self.conf_threshold = 0.25
+        self.conf_threshold = 0.3
         self.iou_threshold = 0.5
         self._initialize_model(path)
 
