@@ -15,7 +15,7 @@ class UltralyticsDetector(Detector):
             image,
             verbose=False,
             imgsz=416,
-            conf=0.3,
+            conf=0.25,
             iou=0.5
         )
 
