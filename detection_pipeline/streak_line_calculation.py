@@ -1,46 +1,24 @@
-"""
-    Blob Detection and Polynomial Curve Fitting Script
-
-    This script performs blob detection on a set of grayscale images using the Difference of Gaussian (DoG) method from the scikit-image library.
-    It fits polynomial curves to the detected blobs using both standard linear regression and RANSAC (RANdom SAmple Consensus).
-    The results, including inliers and outliers detected by RANSAC, are visualized on the original images using matplotlib.
-
-    The script includes the following functionalities:
-    - Loading grayscale images from a specified directory.
-    - Rotating images to landscape orientation if necessary.
-    - Detecting blobs in the images using the DoG method.
-    - Fitting polynomial curves to the detected blobs using both standard linear regression and RANSAC.
-    - Visualizing the detected blobs and fitted curves on the original images.
-    - Using check buttons to toggle the visibility of various elements in the plot.
-
-    Dependencies:
-    - scikit-image (image processing)
-    - scikit-learn (regression and RANSAC)
-
-    Usage:
-        Run the script to perform blob detection and polynomial curve fitting on a predefined set of sample images and display the results.
-
-        Whilst in `point_pickings/`, run:
-
-        python3 blob_detection/view_blobs.py
-"""
-
-
-import os
 from math import sqrt
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
+from scipy.interpolate import BSpline
 from skimage.feature import blob_dog
 from sklearn.linear_model import LinearRegression, RANSACRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import SplineTransformer
 
 
 def main():
 
+    image_path = Path(
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL51/51_2015-11-01_110428_DSC_0144/51_2015-11-01_110428_DSC_0144_56_4032-1-4266-51.differenced.jpg"
+    )
+
     image = ski.io.imread(
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL51/51_2015-11-01_101728_DSC_0050/51_2015-11-01_101728_DSC_0050_62_4945-3624-5023-3807.differenced.jpg",
+        image_path,
         as_gray=True
     )
 
@@ -63,60 +41,41 @@ def main():
     _, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(image_gray, cmap='gray', aspect='equal')
 
-    gradient: float
-    intercept: float
+    if len(x_coords) < 3:
+        print("Less than 3 blobs, not performing line calculation.")
+        return
 
-    # Fit a linear regression model using RANSAC, fallback to simple Linear Regression if samples are less than 3
-    if len(x_coords) >= 3:
-        ax.set_title("Linear Regression with RANSAC")
+    ax.set_title("Fitting a Degree 2 Spline to Streak Blobs Using RANSAC and Linear Regression")
 
-        model = RANSACRegressor(estimator=LinearRegression(), residual_threshold=10, max_trials=100)
-        model.fit(x_coords.reshape(-1, 1), y_coords)
+    spline_transformer = SplineTransformer(n_knots=2, degree=2, extrapolation="continue")
+    ransac = RANSACRegressor(residual_threshold=5, max_trials=100)
 
-        # Predict y values using the fitted model
-        y_values = model.predict(domain.reshape(-1, 1))
+    model = make_pipeline(
+        spline_transformer,
+        ransac
+    )
 
-        # Line parameters
-        estimator: LinearRegression = model.estimator_
-        gradient = estimator.coef_[0]
-        intercept = estimator.intercept_
+    model.fit(x_coords.reshape(-1, 1), y_coords)
 
-        # Get the inlier indices
-        inlier_indices = model.inlier_mask_
+    # Get the inlier indices
+    inlier_indices = ransac.inlier_mask_
 
-        # Plot inlier blobs
-        for idx in np.where(inlier_indices)[0]:
-            blob = blobs_dog[idx]
-            y, x, r = blob
-            c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
-            ax.add_patch(c)
+    # Plot inlier blobs
+    for idx in np.where(inlier_indices)[0]:
+        blob = blobs_dog[idx]
+        y, x, r = blob
+        c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
+        ax.add_patch(c)
 
-        # Plot outlier blobs
-        for idx in np.where(inlier_indices == False)[0]:
-            blob = blobs_dog[idx]
-            y, x, r = blob
-            c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
-            ax.add_patch(c)
+    # Plot outlier blobs
+    for idx in np.where(inlier_indices == False)[0]:
+        blob = blobs_dog[idx]
+        y, x, r = blob
+        c = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
+        ax.add_patch(c)
 
-    else:
-        ax.set_title("Linear Regression without RANSAC")
-
-        # Fallback to simple Linear Regression
-        model = LinearRegression()
-        model.fit(x_coords, y_coords)
-
-        # Predict y values using the fitted model
-        y_values = model.predict(domain.reshape(-1, 1))
-        
-        # Line parameters
-        gradient = model.coef_[0]
-        intercept = model.intercept_
-
-        # Plot the blobs
-        for blob in blobs_dog:
-            y, x, r = blob
-            c = plt.Circle((x, y), r, color='lime', linewidth=2, fill=False)
-            ax.add_patch(c)
+    # Predict y values using the fitted model
+    y_values = model.predict(domain.reshape(-1, 1))
 
     # Check if the predicted y-values fall within the image dimensions
     valid_indices = np.where((y_values >= 0) & (y_values < image_gray.shape[0]))
@@ -126,13 +85,28 @@ def main():
         ax.plot(
             domain[valid_indices],
             y_values[valid_indices],
-            color='orange' if len(x_coords) >= 3 else 'blue',
+            color='orange',
             linestyle='-',
             linewidth=2
         )
 
-    print(f"Gradient: {gradient}")
-    print(f"Intercept: {intercept}")
+    # Access the B-spline representation
+    bspline: BSpline = spline_transformer.bsplines_[0]  # Get the first B-spline (one feature case)
+
+    # Midpoint of the data
+    x_mid = (x_coords.min() + x_coords.max()) / 2
+
+    # Calculate the derivatives of the basis functions at the point
+    basis_derivatives = bspline.derivative()(x_mid)
+
+    # Retrieve coefficients
+    estimator: LinearRegression = ransac.estimator_
+    coefficients = estimator.coef_
+
+    # Compute the actual gradient (weighted sum of basis derivatives)
+    gradient = np.dot(basis_derivatives, coefficients)
+
+    print(f"Gradient (slope) of the spline at x={x_mid} is {gradient}")
 
     plt.axis('off')
     plt.tight_layout()
