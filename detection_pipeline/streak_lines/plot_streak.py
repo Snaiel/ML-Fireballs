@@ -6,8 +6,7 @@ from detection_pipeline.streak_lines import StreakLine
 
 
 def main():
-    image_path = "/home/snaiel/Dropbox/Curtin/Year 3/NPSC3000 Research, Leadership and Entrepreneurship in Science 2/Fireballs/ML-Fireballs/data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL41/41_2015-11-01_110059_DSC_0205/41_2015-11-01_110059_DSC_0205_45_1237-2122-1364-2426.differenced.jpg",
-
+    image_path = "/home/snaiel/Dropbox/Curtin/Year 3/NPSC3000 Research, Leadership and Entrepreneurship in Science 2/Fireballs/ML-Fireballs/data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL41/41_2015-11-01_110059_DSC_0205/41_2015-11-01_110059_DSC_0205_45_1237-2122-1364-2426.differenced.jpg"
     streak_line = StreakLine(image_path)
     image: np.ndarray = ski.io.imread(image_path)
 
@@ -36,7 +35,7 @@ def main():
 
     # Predict y values using the fitted model
     x_values = np.linspace(0, image.shape[1], 1000).reshape(-1, 1)
-    y_values = streak_line.predict(x_values)
+    y_values = streak_line.compute_y(x_values)
 
     # Check if the predicted y-values fall within the image dimensions
     valid_indices = np.where((y_values >= 0) & (y_values < image.shape[0]))
