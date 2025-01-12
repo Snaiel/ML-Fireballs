@@ -7,17 +7,17 @@ from detection_pipeline.streak_lines import StreakLine
 
 
 def main():
-    original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110129_DSC_8995/48_2015-11-01_110129_DSC_8995.thumb.jpg"
+    # original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110129_DSC_8995/48_2015-11-01_110129_DSC_8995.thumb.jpg"
 
-    streak_images = [
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110129_DSC_8995/48_2015-11-01_110129_DSC_8995_32_1605-1076-1741-1204.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110159_DSC_8996/48_2015-11-01_110159_DSC_8996_67_1764-797-2071-1054.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110229_DSC_8997/48_2015-11-01_110229_DSC_8997_51_2084-586-2368-783.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110259_DSC_8998/48_2015-11-01_110259_DSC_8998_62_2476-329-2858-520.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110329_DSC_8999/48_2015-11-01_110329_DSC_8999_68_2897-174-3275-317.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110359_DSC_9000/48_2015-11-01_110359_DSC_9000_57_3319-91-3607-165.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110429_DSC_9001/48_2015-11-01_110429_DSC_9001_46_3741-24-4039-72.differenced.jpg"
-    ]
+    # streak_images = [
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110129_DSC_8995/48_2015-11-01_110129_DSC_8995_32_1605-1076-1741-1204.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110159_DSC_8996/48_2015-11-01_110159_DSC_8996_67_1764-797-2071-1054.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110229_DSC_8997/48_2015-11-01_110229_DSC_8997_51_2084-586-2368-783.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110259_DSC_8998/48_2015-11-01_110259_DSC_8998_62_2476-329-2858-520.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110329_DSC_8999/48_2015-11-01_110329_DSC_8999_68_2897-174-3275-317.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110359_DSC_9000/48_2015-11-01_110359_DSC_9000_57_3319-91-3607-165.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL48/48_2015-11-01_110429_DSC_9001/48_2015-11-01_110429_DSC_9001_46_3741-24-4039-72.differenced.jpg"
+    # ]
 
     # original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL41/41_2015-11-01_110059_DSC_0205/41_2015-11-01_110059_DSC_0205.thumb.jpg"
 
@@ -37,12 +37,12 @@ def main():
     #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_101758_DSC_0038/25_2015-11-01_101758_DSC_0038_45_3993-4231-4114-4407.differenced.jpg"
     # ]
 
-    # original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068.thumb.jpg"
+    original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068.thumb.jpg"
 
-    # streak_images = [
-    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068_55_3274-3204-3439-3646.differenced.jpg",
-    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103329_DSC_0069/25_2015-11-01_103329_DSC_0069_67_3083-3735-3244-4181.differenced.jpg"
-    # ]
+    streak_images = [
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068_55_3274-3204-3439-3646.differenced.jpg",
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103329_DSC_0069/25_2015-11-01_103329_DSC_0069_67_3083-3735-3244-4181.differenced.jpg"
+    ]
 
     original = ski.io.imread(original_image)
 
@@ -57,15 +57,16 @@ def main():
 
     for idx, streak in enumerate(streak_lines):
 
+        if not streak.is_valid:
+            print(f"Streak image {idx + 1} has less than 3 blobs. Skipping.")
+            continue
+
         print(streak.midpoint, streak.angle)
 
         if idx > 0:
             prev_streak = streak_lines[idx - 1]
             print(streak.midpoint_to_midpoint(prev_streak), abs(streak.angle - prev_streak.angle))
-
-        if not streak.is_valid:
-            print(f"Streak image {idx + 1} has less than 3 blobs. Skipping.")
-            continue
+            print(streak.same_trajectory(prev_streak))
 
         # Get start and end points
         start_point = streak.startpoint

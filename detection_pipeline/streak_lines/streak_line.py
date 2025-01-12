@@ -15,12 +15,13 @@ class StreakLine:
     _y_coords: np.ndarray
     _x_coords: np.ndarray
     _coords: tuple
+    _number: int
 
 
     def __init__(self, image: str):
-        print(image)
         self._coords = [float(i) for i in image.split("_")[-1].removesuffix(".differenced.jpg").split("-")]
-        print(self._coords)
+        self._number = int(image.split("_")[-3])
+        print(self._number)
 
         if not isinstance(image, np.ndarray):
             image = ski.io.imread(image, as_gray=True)
@@ -118,6 +119,11 @@ class StreakLine:
         return self._coords
 
 
+    @property
+    def number(self) -> int:
+        return self._number
+
+
     def compute_y_cropped(self, *args, **kwargs):
         return self._ransac.predict(*args, **kwargs)
 
@@ -138,3 +144,31 @@ class StreakLine:
 
     def midpoint_to_midpoint(self, streak_line: StreakLine) -> float:
         return self.midpoint_to_point(streak_line.midpoint)
+    
+
+    def same_trajectory(self, streak_line: StreakLine) -> bool:
+
+        offset = abs(self.number - streak_line.number)
+        print(offset, self.angle)
+
+        if abs(self.angle - streak_line.angle) > 10 * offset:
+            return False
+
+        estimated_point_1 = (
+            self.midpoint[0] + ((500 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] + ((500 * offset) * math.sin(math.radians(self.angle)))
+        )
+
+        estimated_point_2 = (
+            self.midpoint[0] - ((500 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] - ((500 * offset) * math.sin(math.radians(self.angle)))
+        )
+
+        print(estimated_point_1, estimated_point_2)
+        print(self.distance(estimated_point_1, streak_line.midpoint), self.distance(estimated_point_2, streak_line.midpoint))
+
+        if self.distance(estimated_point_1, streak_line.midpoint) > 200 * offset:
+            if self.distance(estimated_point_2, streak_line.midpoint) > 200 * offset:
+                return False
+
+        return True
