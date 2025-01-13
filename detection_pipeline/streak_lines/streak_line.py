@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import numpy as np
 import skimage as ski
@@ -18,13 +19,13 @@ class StreakLine:
     _number: int
 
 
-    def __init__(self, image: str):
-        self._coords = [float(i) for i in image.split("_")[-1].removesuffix(".differenced.jpg").split("-")]
-        self._number = int(image.split("_")[-3])
-        print(self._number)
+    def __init__(self, image_path: str | Path):
+        image_path = str(image_path)
+        self._coords = [float(i) for i in image_path.split("_")[-1].removesuffix(".differenced.jpg").split("-")]
+        self._number = int(image_path.split("_")[-3])
 
-        if not isinstance(image, np.ndarray):
-            image = ski.io.imread(image, as_gray=True)
+        if not isinstance(image_path, np.ndarray):
+            image = ski.io.imread(image_path, as_gray=True)
 
         # Detect blobs in the image
         blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=0.015)
@@ -149,7 +150,6 @@ class StreakLine:
     def same_trajectory(self, streak_line: StreakLine) -> bool:
 
         offset = abs(self.number - streak_line.number)
-        print(offset, self.angle)
 
         if abs(self.angle - streak_line.angle) > 10 * offset:
             return False
@@ -164,11 +164,8 @@ class StreakLine:
             self.midpoint[1] - ((500 * offset) * math.sin(math.radians(self.angle)))
         )
 
-        print(estimated_point_1, estimated_point_2)
-        print(self.distance(estimated_point_1, streak_line.midpoint), self.distance(estimated_point_2, streak_line.midpoint))
-
-        if self.distance(estimated_point_1, streak_line.midpoint) > 200 * offset:
-            if self.distance(estimated_point_2, streak_line.midpoint) > 200 * offset:
+        if self.distance(estimated_point_1, streak_line.midpoint) > 400 * offset:
+            if self.distance(estimated_point_2, streak_line.midpoint) > 400 * offset:
                 return False
 
         return True
