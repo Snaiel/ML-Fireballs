@@ -28,7 +28,7 @@ def main():
         for i, subfolder in enumerate(subfolders):
             
             number = int(subfolder.split("_")[-1])
-            neighbours = [n for n in subfolders[i+1:max(len(subfolders),i+3+1)] if abs(int(n.split("_")[-1]) - number) <= 3]
+            neighbours = [n for n in subfolders[i+1:max(len(subfolders),i+3+1)] if abs(int(n.split("_")[-1]) - number) <= 5]
 
             if not neighbours:
                 continue
@@ -62,6 +62,8 @@ def main():
 
                         if not current_neighbour_streak.is_valid:
                             continue
+                        
+                        # print(image, detection)
 
                         if current_streak.same_trajectory(current_neighbour_streak):
 
@@ -70,6 +72,10 @@ def main():
                             for group in groups:
                                 if image in group:
                                     group.append(detection)
+                                    break
+                                if detection in group:
+                                    group.append(image)
+                                    group.sort()
                                     break
                             else:
                                 groups.append([image, detection])

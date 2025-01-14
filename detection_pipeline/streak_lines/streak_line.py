@@ -133,6 +133,17 @@ class StreakLine:
         return self.compute_y_cropped(*args, **kwargs)
     
 
+    def angle_between(self, streak_line: StreakLine) -> float:
+        angle_radians = math.atan(
+            abs(
+                (self.gradient - streak_line.gradient) /
+                (1 + (self.gradient * streak_line.gradient))
+            )
+        )
+        angle_degrees = math.degrees(angle_radians)
+        return angle_degrees
+
+
     def distance(self, point1: tuple, point2: tuple) -> float:
         x1, y1 = point1
         x2, y2 = point2
@@ -151,21 +162,32 @@ class StreakLine:
 
         offset = abs(self.number - streak_line.number)
 
-        if abs(self.angle - streak_line.angle) > 10 * offset:
+        angle_between = self.angle_between(streak_line)
+
+        # print("Difference:", offset, angle_between)
+
+        if angle_between > 30 * offset:
             return False
 
         estimated_point_1 = (
-            self.midpoint[0] + ((500 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] + ((500 * offset) * math.sin(math.radians(self.angle)))
+            self.midpoint[0] + ((1000 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] + ((1000 * offset) * math.sin(math.radians(self.angle)))
         )
 
         estimated_point_2 = (
-            self.midpoint[0] - ((500 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] - ((500 * offset) * math.sin(math.radians(self.angle)))
+            self.midpoint[0] - ((1000 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] - ((1000 * offset) * math.sin(math.radians(self.angle)))
         )
 
-        if self.distance(estimated_point_1, streak_line.midpoint) > 400 * offset:
-            if self.distance(estimated_point_2, streak_line.midpoint) > 400 * offset:
+        # print("Estimated points:", estimated_point_1, estimated_point_2)
+
+        dist_to_p1 = self.distance(estimated_point_1, streak_line.midpoint)
+        dist_to_p2 = self.distance(estimated_point_2, streak_line.midpoint)
+
+        # print("Distance to estimated points:", dist_to_p1, dist_to_p2)
+
+        if dist_to_p1 > 1000 * offset:
+            if dist_to_p2 > 1000 * offset:
                 return False
 
         return True

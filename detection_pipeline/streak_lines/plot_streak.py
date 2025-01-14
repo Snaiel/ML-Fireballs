@@ -6,7 +6,7 @@ from detection_pipeline.streak_lines import StreakLine
 
 
 def main():
-    image_path = "/home/snaiel/Dropbox/Curtin/Year 3/NPSC3000 Research, Leadership and Entrepreneurship in Science 2/Fireballs/ML-Fireballs/data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL41/41_2015-11-01_110059_DSC_0205/41_2015-11-01_110059_DSC_0205_45_1237-2122-1364-2426.differenced.jpg"
+    image_path = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114358_DSC_0030/10_2015-11-01_114358_DSC_0030_33_4871-4320-4991-4604.differenced.jpg"
     streak_line = StreakLine(image_path)
     image: np.ndarray = ski.io.imread(image_path)
 

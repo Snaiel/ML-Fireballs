@@ -37,11 +37,27 @@ def main():
     #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_101758_DSC_0038/25_2015-11-01_101758_DSC_0038_45_3993-4231-4114-4407.differenced.jpg"
     # ]
 
-    original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068.thumb.jpg"
+    # original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068.thumb.jpg"
+
+    # streak_images = [
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068_55_3274-3204-3439-3646.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103329_DSC_0069/25_2015-11-01_103329_DSC_0069_67_3083-3735-3244-4181.differenced.jpg"
+    # ]
+
+    # original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114358_DSC_0030/10_2015-11-01_114358_DSC_0030.thumb.jpg"
+
+    # streak_images = [
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114358_DSC_0030/10_2015-11-01_114358_DSC_0030_33_4871-4320-4991-4604.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114458_DSC_0032/10_2015-11-01_114458_DSC_0032_71_4828-1363-4982-1691.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114528_DSC_0033/10_2015-11-01_114528_DSC_0033_52_4338-602-4735-1182.differenced.jpg",
+    #     "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114628_DSC_0035/10_2015-11-01_114628_DSC_0035_50_3787-6-3949-166.differenced.jpg"
+    # ]
+
+    original_image = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL16/16_2015-11-01_122829_DSC_0125/16_2015-11-01_122829_DSC_0125.thumb.jpg"
 
     streak_images = [
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103259_DSC_0068/25_2015-11-01_103259_DSC_0068_55_3274-3204-3439-3646.differenced.jpg",
-        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL25/25_2015-11-01_103329_DSC_0069/25_2015-11-01_103329_DSC_0069_67_3083-3735-3244-4181.differenced.jpg"
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL16/16_2015-11-01_122829_DSC_0125/16_2015-11-01_122829_DSC_0125_53_5436-2812-5487-3186.differenced.jpg",
+        "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL16/16_2015-11-01_122859_DSC_0126/16_2015-11-01_122859_DSC_0126_33_5388-1801-5457-2200.differenced.jpg"
     ]
 
     original = ski.io.imread(original_image)
