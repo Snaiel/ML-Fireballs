@@ -1,13 +1,7 @@
 import os
-import warnings
 from pathlib import Path
 
-from sklearn.exceptions import UndefinedMetricWarning
-
 from detection_pipeline.streak_lines import StreakLine
-
-
-warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
 
 def main():

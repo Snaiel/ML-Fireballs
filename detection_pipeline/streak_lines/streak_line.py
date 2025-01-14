@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import math
+import warnings
 from pathlib import Path
 
 import numpy as np
 import skimage as ski
 from skimage.feature import blob_dog
+from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+
+warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
 
 class StreakLine:
@@ -24,12 +29,17 @@ class StreakLine:
         self._coords = [float(i) for i in image_path.split("_")[-1].removesuffix(".differenced.jpg").split("-")]
         self._number = int(image_path.split("_")[-3])
 
-        if not isinstance(image_path, np.ndarray):
-            image = ski.io.imread(image_path, as_gray=True)
+        image = ski.io.imread(image_path, as_gray=True)
 
-        # Detect blobs in the image
-        blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=0.015)
-        blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2)  # Compute radii in the 3rd column
+        # Blob detection with dynamic threshold based on density
+        for thresh in [0.005, 0.010, 0.015, 0.020, 0.025, 0.030]:
+            blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=thresh)
+            density = len(blobs_dog) / (image.shape[0] * image.shape[1])
+            if density < 0.0015:
+                break
+        
+        # Compute radii in the 3rd column
+        blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2) 
         self._blobs = blobs_dog
 
         if not self.is_valid:
@@ -39,7 +49,7 @@ class StreakLine:
         self._x_coords = blobs_dog[:, 1]
 
         # RANSAC with Linear Regression
-        self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100)
+        self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=0)
         self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
 
 
