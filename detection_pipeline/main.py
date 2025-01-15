@@ -156,61 +156,62 @@ class DetectionWorkerProcess(mp.Process):
         fireball_name = images.current.split(".")[0]
 
         detected_tiles = detect_differenced_tiles(differenced_image, self.detector, 5)
+        detections = []
 
-        for tile in detected_tiles:
+        if detected_tiles:
+            detected_tiles.sort(key=lambda x: x.position)
             logger.info(
                 "tile_detections",
-                tile_detections={
-                    "tile_position": tile.position,
-                    "detections": tile.get_detections()
-                }
+                tile_detections=[i.to_dict() for i in detected_tiles]
             )
     
-        fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
-        
-        detected_fireballs = merge_bboxes(fireball_boxes)
-        detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
+            fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
+            
+            detected_fireballs = merge_bboxes(fireball_boxes)
+            detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 
-        detections = [vars(fireball) for fireball in detected_fireballs]
-        logger.info("detected_fireballs", detected_fireballs=detections)
+            if detected_fireballs:
+                fireball_folder = Path(self.args.output_folder, fireball_name)
+                os.mkdir(fireball_folder)
 
-        if detected_fireballs:
-            fireball_folder = Path(self.args.output_folder, fireball_name)
-            os.mkdir(fireball_folder)
+                shutil.copy(Path(self.args.folder_path, images.current), fireball_folder)
 
-            shutil.copy(Path(self.args.folder_path, images.current), fireball_folder)
-
-            io.imsave(
-                Path(fireball_folder, images.current.removesuffix("jpg") + "differenced.jpg"),
-                differenced_image,
-                check_contrast=False,
-                quality=100
-            )
-
-            for f in detected_fireballs:
-                coords = list(map(int, f.box))
-                x1, y1, x2, y2 = coords
-                tile_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
                 io.imsave(
-                    Path(fireball_folder, tile_name + ".jpg"),
-                    image_current[y1:y2, x1:x2],
-                    check_contrast=False,
-                    quality=100                                                 
-                )
-                io.imsave(
-                    Path(fireball_folder, tile_name + ".differenced.jpg"),
-                    differenced_image[y1:y2, x1:x2],
+                    Path(fireball_folder, images.current.removesuffix("jpg") + "differenced.jpg"),
+                    differenced_image,
                     check_contrast=False,
                     quality=100
                 )
 
-            output_data = {"detections": detections}
+                for f in detected_fireballs:
+                    coords = list(map(int, f.box))
+                    x1, y1, x2, y2 = coords
 
-            output_json = json.dumps(output_data, indent=4)
+                    detection_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
 
-            with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
-                json_file.write(output_json)
-            
+                    detection = {"name": detection_name, **vars(f)}
+                    detections.append(detection)
+
+                    io.imsave(
+                        Path(fireball_folder, detection_name + ".jpg"),
+                        image_current[y1:y2, x1:x2],
+                        check_contrast=False,
+                        quality=100                                                 
+                    )
+                    io.imsave(
+                        Path(fireball_folder, detection_name + ".differenced.jpg"),
+                        differenced_image[y1:y2, x1:x2],
+                        check_contrast=False,
+                        quality=100
+                    )
+
+                output_data = {"detections": detections}
+                output_json = json.dumps(output_data, indent=4)
+
+                with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
+                    json_file.write(output_json)
+        
+        logger.info("detected_fireballs", detected_fireballs=detections)
         structlog.contextvars.unbind_contextvars("image")
 
 
