@@ -67,7 +67,7 @@ def main():
                                 if image in group:
                                     group.append(detection)
                                     break
-                                if detection in group:
+                                elif detection in group:
                                     group.append(image)
                                     group.sort()
                                     break

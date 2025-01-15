@@ -14,6 +14,10 @@ from sklearn.linear_model import LinearRegression, RANSACRegressor
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
 
+def create_streak_line(detection: Path) -> StreakLine:
+    return StreakLine(detection)
+
+
 class StreakLine:
 
     _blobs: np.ndarray
@@ -113,6 +117,11 @@ class StreakLine:
 
 
     @property
+    def length(self) -> float:
+        return self.distance(self.startpoint, self.endpoint)
+
+
+    @property
     def gradient(self) -> float:
         estimator: LinearRegression = self._ransac.estimator_
         return estimator.coef_[0]
@@ -167,6 +176,22 @@ class StreakLine:
     def midpoint_to_midpoint(self, streak_line: StreakLine) -> float:
         return self.midpoint_to_point(streak_line.midpoint)
     
+
+    def similar_line(self, streak_line: StreakLine) -> bool:
+        
+        if self.angle_between(streak_line) > 20:
+            return False
+        
+        longer_streak, shorter_streak = (self, streak_line) if self.length > streak_line.length else (streak_line, self)
+
+        if longer_streak.midpoint_to_midpoint(shorter_streak) > longer_streak.length * 0.3:
+            return False
+        
+        if shorter_streak.length < 0.5 * longer_streak.length:
+            return False
+
+        return True
+
 
     def same_trajectory(self, streak_line: StreakLine) -> bool:
 

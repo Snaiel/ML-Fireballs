@@ -5,11 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import skimage as ski
 
-from detection_pipeline.streak_lines import StreakLine
-
-
-def create_streak_line(detection: Path) -> StreakLine:
-    return StreakLine(detection)
+from detection_pipeline.streak_lines import create_streak_line
 
 
 def main():
@@ -22,6 +18,9 @@ def main():
         camera_folder = Path(folder_path, camera)
 
         subfolders = [i for i in sorted(os.listdir(camera_folder)) if "log" not in i]
+
+        if not subfolders:
+            continue
 
         original_image = Path(camera_folder, subfolders[0], subfolders[0] + ".thumb.jpg")
 
