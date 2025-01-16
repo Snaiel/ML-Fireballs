@@ -37,6 +37,6 @@ for subfolder in "$input_folder"/*; do
         sbatch \
             --export=ALL,FOLDER_PATH="$subfolder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path" \
             --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out"\
-            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/job.sh"
+            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/job.sh"
     fi
 done
