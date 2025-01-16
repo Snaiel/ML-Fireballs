@@ -14,10 +14,6 @@ from sklearn.linear_model import LinearRegression, RANSACRegressor
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
 
-def create_streak_line(detection: Path) -> StreakLine:
-    return StreakLine(detection)
-
-
 class StreakLine:
 
     _blobs: np.ndarray
