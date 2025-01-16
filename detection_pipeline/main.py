@@ -11,17 +11,19 @@ from pathlib import Path
 import numpy as np
 import structlog
 from skimage import io
-from structlog.typing import WrappedLogger, EventDict
+from structlog.typing import EventDict, WrappedLogger
 from tqdm import tqdm
 
 from detection_pipeline import MAX_TIME_DIFFERENCE, MIN_DIAGONAL_LENGTH
 from detection_pipeline.image_differencing import difference_images
+from detection_pipeline.streak_lines import (StreakLine, find_similar_lines,
+                                             find_slow_objects,
+                                             get_streak_lines)
 from fireball_detection.detect import (detect_differenced_tiles,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
-
 
 VERSION = "1.0.0"
 
@@ -85,6 +87,7 @@ class WorkerProcessArgs:
     triples_queue: mp.Queue
     bar_queue: mp.Queue
     detection_log_queue: mp.Queue
+    detections_queue: mp.Queue
     folder_path: Path
     output_folder: Path
     model_path: Path
@@ -188,6 +191,8 @@ class DetectionWorkerProcess(mp.Process):
                     x1, y1, x2, y2 = coords
 
                     detection_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
+
+                    self.args.detections_queue.put(detection_name)
 
                     detection = {"name": detection_name, **vars(f)}
                     detections.append(detection)
@@ -354,10 +359,13 @@ def main() -> None:
     detection_logger = DetectionLoggerProcess(detection_log_queue, triples_queue.qsize())
     detection_logger.start()
 
+    detections_queue = mp.Queue()
+
     process_args = WorkerProcessArgs(
         triples_queue,
         bar_queue,
         detection_log_queue,
+        detections_queue,
         folder_path,
         output_folder,
         model_path,
@@ -378,7 +386,85 @@ def main() -> None:
     
     for p in processes:
         p.join()
-        
+    
+
+    logger.info("finished performing detections")
+
+    detections = []
+    while not detections_queue.empty():
+        detections.append(detections_queue.get())
+    detections.sort()
+
+    logger.info("total_detections", total_detections=len(detections))
+    logger.info("detections", detections=detections)
+
+    print("\n\n\nDetections:\n")
+
+    for detection in detections:
+        print(detection)
+
+    print("\nTotal detections:", len(detections))
+
+
+    all_detections_set = set(detections)
+    filtered_detections = set()
+
+
+    logger.info("starting checks for similar lines and slow moving objects")
+
+    streak_lines = get_streak_lines(output_folder)
+
+    similar_lines = find_similar_lines(streak_lines)
+    total_similar_lines = 0
+
+    print("\n\nLikely static lines and slow moving objects (not mutually exclusive)")
+    print("\nSimilar lines:\n")
+
+    for group in similar_lines:
+        total_similar_lines += len(group)
+        for i in group:
+            print(i)
+            filtered_detections.add(i)
+        print()
+    
+    print("\nTotal similar lines:", total_similar_lines)
+
+
+    print("\n\nSlow moving objects:\n")
+
+    logger.info("total_similar_lines", total_similar_lines=total_similar_lines)
+    logger.info("similar_lines", similar_lines=similar_lines)
+
+    slow_objects = find_slow_objects(output_folder, streak_lines)
+    total_slow_objects = 0
+
+    for group in slow_objects:
+        total_slow_objects += len(group)
+        for i in group:
+            print(i)
+            filtered_detections.add(i)
+        print()
+    
+    print("\nTotal slow objects:", total_slow_objects)
+
+    logger.info("total_slow_objects", total_slow_objects=total_slow_objects)
+    logger.info("slow_objects", slow_objects=slow_objects)
+    
+    logger.info("similar lines and slow objects are not mutually exclusive")
+
+
+    final_detections = sorted(list(all_detections_set.difference(filtered_detections)))
+
+    print("\n\nFinal detections:\n")
+
+    for i in final_detections:
+        print(i)
+
+    print("\nFinal total:", len(final_detections))
+
+    logger.info("total_final_detections", total_final_detections=len(final_detections))
+    logger.info("final_detections", final_detections=final_detections)
+
 
 if __name__ == "__main__":
     main()
