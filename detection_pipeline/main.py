@@ -116,7 +116,7 @@ class DetectionWorkerProcess(mp.Process):
 
 
     def run(self):
-        self.detector = DetectorSingleton.get_detector(self.args.detector, self.args.model_path)
+        self.detector = DetectorSingleton.get_detector(self.args.detector, self.args.model_path, 0.2)
 
         processors: list = structlog.get_config()["processors"]
         processors.insert(len(processors) - 1, DetectionLoggingProcessor(self))

@@ -12,13 +12,13 @@ from object_detection.detectors.detector import Detector
 
 class ONNXDetector(Detector):
 
-    def __init__(self, path):
-        self.conf_threshold = 0.25
+    def __init__(self, path: str, conf: float) -> None:
+        super().__init__(path, conf)
         self.iou_threshold = 0.5
         self._initialize_model(path)
 
 
-    def detect(self, image: np.ndarray):
+    def detect(self, image: np.ndarray) -> tuple:
         input_tensor = self._prepare_input(image)
         outputs = self.session.run(self.output_names, {self.input_names[0]: input_tensor})
         return self._process_output(outputs)
@@ -53,8 +53,8 @@ class ONNXDetector(Detector):
 
         # Filter out object confidence scores below threshold
         scores = np.max(predictions[:, 4:], axis=1)
-        predictions = predictions[scores > self.conf_threshold, :]
-        scores = scores[scores > self.conf_threshold]
+        predictions = predictions[scores > self.conf, :]
+        scores = scores[scores > self.conf]
 
         if len(scores) == 0:
             return [], [], []

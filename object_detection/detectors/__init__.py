@@ -8,18 +8,18 @@ class DetectorSingleton:
     _detector: Detector = None
 
     @staticmethod
-    def get_detector(detector: str, model_path: str) -> Detector:
+    def get_detector(detector: str, model_path: str, conf: float) -> Detector:
         if DetectorSingleton._detector is None:
-            DetectorSingleton._detector = get_detector(detector, model_path)
+            DetectorSingleton._detector = get_detector(detector, model_path, conf)
         return DetectorSingleton._detector
 
 
-def get_detector(name: str, path: str) -> Detector:
+def get_detector(name: str, path: str, conf: float) -> Detector:
     detector = None
     if name == 'Ultralytics':
-        detector = UltralyticsDetector(path)
+        detector = UltralyticsDetector(path, conf)
     elif name == 'ONNX':
-        detector = ONNXDetector(path)
+        detector = ONNXDetector(path, conf)
     else:
         print(f"Unsupported detector type: {name}")
     return detector

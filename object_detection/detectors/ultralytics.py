@@ -6,16 +6,17 @@ from object_detection.detectors.detector import Detector
 
 class UltralyticsDetector(Detector):
 
-    def __init__(self, path) -> None:
-        self.model = YOLO(path, task="detect")
+    def __init__(self, path: str, conf: float) -> None:
+        super().__init__(path, conf)
+        self.model = YOLO(self.path, task="detect")
     
 
-    def detect(self, image: np.ndarray):
+    def detect(self, image: np.ndarray) -> tuple:
         results = self.model.predict(
             image,
             verbose=False,
             imgsz=416,
-            conf=0.25,
+            conf=self.conf,
             iou=0.5
         )
 
