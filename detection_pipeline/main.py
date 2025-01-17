@@ -407,7 +407,7 @@ def main() -> None:
 
 
     all_detections_set = set(detections)
-    filtered_detections = set()
+    erroneous_detections = set()
 
 
     logger.info("starting checks for similar lines and slow moving objects")
@@ -424,10 +424,10 @@ def main() -> None:
         total_similar_lines += len(group)
         for i in group:
             print(i)
-            filtered_detections.add(i)
+            erroneous_detections.add(i)
         print()
     
-    print("\nTotal similar lines:", total_similar_lines)
+    print("Total similar lines:", total_similar_lines)
 
 
     print("\n\nSlow moving objects:\n")
@@ -442,18 +442,29 @@ def main() -> None:
         total_slow_objects += len(group)
         for i in group:
             print(i)
-            filtered_detections.add(i)
+            erroneous_detections.add(i)
         print()
     
-    print("\nTotal slow objects:", total_slow_objects)
+    print("Total slow objects:", total_slow_objects)
 
     logger.info("total_slow_objects", total_slow_objects=total_slow_objects)
     logger.info("slow_objects", slow_objects=slow_objects)
     
     logger.info("similar lines and slow objects are not mutually exclusive")
 
+    print("\n\nCombined erroneous detections:\n")
 
-    final_detections = sorted(list(all_detections_set.difference(filtered_detections)))
+    erroneous_detections = sorted(list(erroneous_detections))
+    for i in erroneous_detections:
+        print(i)
+    
+    print("\nTotal erroneous detections:", len(erroneous_detections))
+
+    logger.info("total_erroneous_detections", total_erroneous_detections=len(erroneous_detections))
+    logger.info("erroneous_detections", erroneous_detections=erroneous_detections)
+
+
+    final_detections = sorted(list(all_detections_set.difference(erroneous_detections)))
 
     print("\n\nFinal detections:\n")
 
