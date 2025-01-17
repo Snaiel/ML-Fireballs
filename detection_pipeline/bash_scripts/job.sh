@@ -42,18 +42,7 @@ bash << 'EOF'
 
 cd $MYSOFTWARE/ML-Fireballs
 
-if [ ! -d ".venv" ]; then
-    echo ".venv does not exist. Creating virtual environment and installing dependencies..."
-    python3 -m venv .venv --system-site-packages
-    source .venv/bin/activate
-    mkdir -p $MYSCRATCH/tmp
-    export TMPDIR="$MYSCRATCH/tmp"
-    mkdir -p "$TMPDIR"
-    pip install --cache-dir="$TMPDIR" -r requirements.txt
-    pip install --cache-dir="$TMPDIR" onnxruntime
-else
-    source .venv/bin/activate
-fi
+source .venv/bin/activate
 
 python3 -m detection_pipeline.main \
     --folder_path "$FOLDER_PATH" \
