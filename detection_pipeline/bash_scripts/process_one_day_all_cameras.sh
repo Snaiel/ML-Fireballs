@@ -25,8 +25,15 @@ fi
 # Create the output folder with the basename of the input folder
 input_basename=$(basename "$input_folder")
 output_path="$output_folder/$input_basename"
-mkdir -p "$output_path"
 
+# Check if the directory exists and delete it if it does
+if [ -d "$output_path" ]; then
+    echo "Deleting existing output folder: $output_path"
+    rm -rf "$output_path"
+fi
+
+# Create the output folder
+mkdir -p "$output_path"
 echo "Created output folder: $output_path"
 
 # Submit a job for each subfolder and collect job IDs
