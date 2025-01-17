@@ -45,7 +45,7 @@ for subfolder in "$input_folder"/*; do
         job_id=$(sbatch \
             --export=ALL,FOLDER_PATH="$subfolder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path" \
             --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out" \
-            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/job.sh" | awk '{print $4}')
+            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/fireball_detection.slurm" | awk '{print $4}')
         echo "$input_basename/$subfolder_basename job id: $job_id"
         # Add job ID to dependency list
         job_ids="${job_ids}:${job_id}"
@@ -57,17 +57,9 @@ job_ids=${job_ids#:}
 
 # Submit the final dependent job to collate all detections
 if [ -n "$job_ids" ]; then
-    final_script="python3 -m detection_pipeline.utils.collate_detections --processed_folder $output_path"
     collate_job_id=$(sbatch \
-        --job-name "collate_detections" \
+        --export=ALL,OUTPUT_PATH="$output_path" \
         --output="$output_path/slurm-%j-collate_detections.out" \
-        --nodes=1 \
-        --ntasks=1 \
-        --cpus-per-task=1 \
-        --time=00:05:00 \
-        --partition=work \
-        --dependency=afterok:$job_ids \
-        --wrap="$final_script" | awk '{print $4}')
-
+        "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/collate_detections.slurm" | awk '{print $4}')
     echo "collate_detections job id: $collate_job_id"
 fi
