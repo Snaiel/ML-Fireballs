@@ -34,7 +34,7 @@ def get_streak_lines(camera_folder: Path) -> dict[str, StreakLine]:
         streak_lines_list = pool.map(create_streak_line, detection_images)
 
     streak_lines_dict = {
-        detection.name.removesuffix(".differenced.jpg"): streak_line
+        str(detection.relative_to(camera_folder)).removesuffix(".differenced.jpg"): streak_line
         for detection, streak_line in
         zip(detection_images, streak_lines_list)
     }

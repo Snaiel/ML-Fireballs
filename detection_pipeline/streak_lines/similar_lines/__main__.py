@@ -6,7 +6,7 @@ from detection_pipeline.streak_lines import (find_similar_lines,
 
 
 def main():
-    folder_path = "data/detections_dfn-l0-20151101/dfn-l0-20151101/"
+    folder_path = "data/detections_1_to_8_conf_20_dfn-l0-20151101"
     camera_folders = [i for i in sorted(os.listdir(folder_path)) if (Path(folder_path, i)).is_dir()]
 
     total = 0

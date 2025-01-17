@@ -21,7 +21,7 @@ def find_similar_lines(streak_lines: dict[str, StreakLine]) -> list[list[str]]:
 
     for i in range(0, len(streak_lines) - 1):
         
-        current_image: Path = detections[i]
+        current_image = detections[i]
         current_streak = streak_lines[current_image]
 
         if not current_streak.is_valid:

@@ -43,3 +43,7 @@ class FireballBox:
 
     def __str__(self) -> str:
         return f"<{self.conf:.2f} ({', '.join(f'{i:.2f}' for i in self.box)})>"
+    
+
+    def to_dict(self) -> dict:
+        return {"conf": self.conf, "box": self.box}

@@ -6,9 +6,9 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
-input_folder="$1"
-output_folder="$2"
-model_path="$3"
+input_folder=$(realpath "$1")
+output_folder=$(realpath "$2")
+model_path=$(realpath "$3")
 
 # Check if the input folder exists
 if [ ! -d "$input_folder" ]; then
@@ -29,14 +29,37 @@ mkdir -p "$output_path"
 
 echo "Created output folder: $output_path"
 
-# Submit a job for each sub folder (assumed to be a folder for a camera's images that night)
+# Submit a job for each subfolder and collect job IDs
+job_ids=""
 for subfolder in "$input_folder"/*; do
     if [ -d "$subfolder" ]; then
+        subfolder=$(realpath "$subfolder")
         subfolder_basename=$(basename "$subfolder")
-        echo "Submitting job for: $input_basename/$subfolder_basename"
-        sbatch \
+        job_id=$(sbatch \
             --export=ALL,FOLDER_PATH="$subfolder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path" \
-            --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out"\
-            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/job.sh"
+            --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out" \
+            "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/job.sh" | awk '{print $4}')
+        echo "$input_basename/$subfolder_basename job id: $job_id"
+        # Add job ID to dependency list
+        job_ids="${job_ids}:${job_id}"
     fi
 done
+
+# Remove the leading colon from job IDs
+job_ids=${job_ids#:}
+
+# Submit the final dependent job to collate all detections
+if [ -n "$job_ids" ]; then
+    final_script="python3 -m detection_pipeline.utils.collate_detections --processed_folder $output_path"
+    echo "Submitting final job dependent on all others to collate resulting detections"
+    sbatch \
+        --job-name "collate_detections" \
+        --output="$output_path/slurm-%j-collate_detections.out" \
+        --nodes=1 \
+        --ntasks=1 \
+        --cpus-per-task=1 \
+        --time=00:05:00 \
+        --partition=work \
+        --dependency=afterok:$job_ids \
+        --wrap="$final_script"
+fi

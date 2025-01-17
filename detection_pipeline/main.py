@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+import jsonlines
 import numpy as np
 import structlog
 from skimage import io
@@ -24,6 +25,7 @@ from fireball_detection.detect import (detect_differenced_tiles,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
+
 
 VERSION = "1.0.0"
 
@@ -66,7 +68,7 @@ structlog.configure(
         ]),
         module_processor,
         reorder_event_dict,
-        structlog.processors.JSONRenderer(indent=4),
+        structlog.processors.JSONRenderer(),
     ]
 )
 
@@ -156,7 +158,7 @@ class DetectionWorkerProcess(mp.Process):
                 io.imread(Path(self.args.folder_path, images.before)) if images.before else io.imread(Path(self.args.folder_path, images.after))
             )
         
-        fireball_name = images.current.split(".")[0]
+        image_name = images.current.split(".")[0]
 
         detected_tiles = detect_differenced_tiles(differenced_image, self.detector, 5)
         detections = []
@@ -174,13 +176,13 @@ class DetectionWorkerProcess(mp.Process):
             detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 
             if detected_fireballs:
-                fireball_folder = Path(self.args.output_folder, fireball_name)
-                os.mkdir(fireball_folder)
+                image_folder = Path(self.args.output_folder, image_name)
+                os.mkdir(image_folder)
 
-                shutil.copy(Path(self.args.folder_path, images.current), fireball_folder)
+                shutil.copy(Path(self.args.folder_path, images.current), image_folder)
 
                 io.imsave(
-                    Path(fireball_folder, images.current.removesuffix("jpg") + "differenced.jpg"),
+                    Path(image_folder, images.current.removesuffix("jpg") + "differenced.jpg"),
                     differenced_image,
                     check_contrast=False,
                     quality=100
@@ -190,21 +192,21 @@ class DetectionWorkerProcess(mp.Process):
                     coords = list(map(int, f.box))
                     x1, y1, x2, y2 = coords
 
-                    detection_name = f"{fireball_name}_{int(f.conf * 100)}_{'-'.join(map(str, coords))}"
+                    detection_name = f"{image_name}_{int(f.conf * 100):02d}_{'-'.join(f'{coord:04d}' for coord in coords)}"
 
-                    self.args.detections_queue.put(detection_name)
+                    self.args.detections_queue.put(f"{image_folder.name}/{detection_name}")
 
-                    detection = {"name": detection_name, **vars(f)}
+                    detection = {"name": detection_name, **f.to_dict()}
                     detections.append(detection)
 
                     io.imsave(
-                        Path(fireball_folder, detection_name + ".jpg"),
+                        Path(image_folder, detection_name + ".jpg"),
                         image_current[y1:y2, x1:x2],
                         check_contrast=False,
                         quality=100                                                 
                     )
                     io.imsave(
-                        Path(fireball_folder, detection_name + ".differenced.jpg"),
+                        Path(image_folder, detection_name + ".differenced.jpg"),
                         differenced_image[y1:y2, x1:x2],
                         check_contrast=False,
                         quality=100
@@ -213,7 +215,7 @@ class DetectionWorkerProcess(mp.Process):
                 output_data = {"detections": detections}
                 output_json = json.dumps(output_data, indent=4)
 
-                with open(Path(fireball_folder, fireball_name + ".json"), 'w') as json_file:
+                with open(Path(image_folder, image_name + ".json"), 'w') as json_file:
                     json_file.write(output_json)
         
         logger.info("detected_fireballs", detected_fireballs=detections)
@@ -227,7 +229,7 @@ class DetectionLoggingProcessor:
 
     
     def __call__(self, logger: WrappedLogger, name: str, event_dict: EventDict):
-        self.worker_process.log_messages.append(json.dumps(event_dict, indent=4))
+        self.worker_process.log_messages.append(json.dumps(event_dict))
         raise structlog.DropEvent
 
 
@@ -471,7 +473,7 @@ def main() -> None:
     for i in final_detections:
         print(i)
 
-    print("\nFinal total:", len(final_detections))
+    print("\nTotal final detections:", len(final_detections))
 
     logger.info("total_final_detections", total_final_detections=len(final_detections))
     logger.info("final_detections", final_detections=final_detections)

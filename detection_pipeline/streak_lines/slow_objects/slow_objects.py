@@ -45,7 +45,7 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
         for current_detection_image in differenced_detections:
             same_trajectory = False
 
-            current_detection = current_detection_image.removesuffix(".differenced.jpg")
+            current_detection = f"{subfolder}/{current_detection_image.removesuffix('.differenced.jpg')}"
 
             if current_detection not in streak_lines:
                 streak_lines[current_detection] = StreakLine(Path(camera_folder, subfolder, current_detection_image))
@@ -68,7 +68,7 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
 
                 for neighbour_detection_image in neighbour_detection_images:
 
-                    neighbour_detection = neighbour_detection_image.removesuffix(".differenced.jpg")
+                    neighbour_detection = f"{neighbour}/{neighbour_detection_image.removesuffix('.differenced.jpg')}"
 
                     if neighbour_detection not in streak_lines:
                         streak_lines[neighbour_detection] = StreakLine(Path(camera_folder, neighbour, neighbour_detection_image))
