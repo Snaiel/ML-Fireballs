@@ -58,8 +58,7 @@ job_ids=${job_ids#:}
 # Submit the final dependent job to collate all detections
 if [ -n "$job_ids" ]; then
     final_script="python3 -m detection_pipeline.utils.collate_detections --processed_folder $output_path"
-    echo "Submitting final job dependent on all others to collate resulting detections"
-    sbatch \
+    collate_job_id=$(sbatch \
         --job-name "collate_detections" \
         --output="$output_path/slurm-%j-collate_detections.out" \
         --nodes=1 \
@@ -68,5 +67,7 @@ if [ -n "$job_ids" ]; then
         --time=00:05:00 \
         --partition=work \
         --dependency=afterok:$job_ids \
-        --wrap="$final_script"
+        --wrap="$final_script" | awk '{print $4}')
+
+    echo "collate_detections job id: $collate_job_id"
 fi
