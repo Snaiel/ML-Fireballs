@@ -15,7 +15,8 @@ from object_detection.dataset.differenced.differenced_tiles import \
 
 @dataclass
 class Args:
-    folder_path: str
+    differenced_images_folder: str
+    original_images_folder: str
     overwrite: bool
 
 
@@ -26,10 +27,9 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('--folder_path', type=str, required=True, 
-                        help='Folder containing source images.')
-    parser.add_argument('--overwrite', action='store_true', default=False,
-                        help='Overwrite the output directory if it exists.')
+    parser.add_argument('--differenced_images_folder', type=str, required=True, help='Folder containing differenced images.')
+    parser.add_argument('--original_images_folder', type=str, required=True, help='Folder containing original images.')
+    parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite the output directory if it exists.')
 
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
@@ -62,7 +62,7 @@ def main() -> None:
         yaml_file.write(content)
         yaml_file.truncate()
 
-    fireballs = list(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(args.folder_path))))
+    fireballs = list(map(lambda x: x.replace(".thumb.jpg", ""), sorted(os.listdir(args.differenced_images_folder))))
 
     with open(Path(all_folder, "fireballs.txt"), "w") as fireballs_file:
         fireballs_file.write(
@@ -70,7 +70,10 @@ def main() -> None:
         )
 
     def process_fireball(f):
-        tiles = DifferencedTiles(Path(args.folder_path, f + GFO_THUMB_EXT))
+        tiles = DifferencedTiles(
+            Path(args.differenced_images_folder, f + GFO_THUMB_EXT),
+            Path(args.original_images_folder, f + GFO_THUMB_EXT)
+        )
         tiles.save_tiles(all_images_folder, all_labels_folder)
         return len(tiles.fireball_tiles), len(tiles.negative_tiles)
 

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from skimage import io
+from matplotlib.axes import Axes
 
 from fireball_detection.tiling.included import SQUARE_SIZE
 from object_detection.dataset import MIN_BB_DIM_SIZE
@@ -93,30 +94,41 @@ class DatasetTiles:
     
 
 def plot_fireball_tile(fireball_name: str, i: int, tile: FireballTile) -> None:
-    # Unpack tile attributes
-    position = tile.position
     image = tile.image
 
-    # Create a plot
-    _, ax = plt.subplots(1)
+    if image.ndim == 3 and image.shape[2] == 4:
+        rgb_image = image[:, :, :3]
+        alpha_channel = image[:, :, 3]
+        _, axs = plt.subplots(1, 2, figsize=(12, 6))
+        axs[0].set_title(f"{fireball_name}_{i} - RGB")
+        axs[1].set_title(f"{fireball_name}_{i} - 4th Channel")
+        plot_on_axes(axs[0], rgb_image, tile)
+        plot_on_axes(axs[1], alpha_channel, tile)
+    else:
+        _, ax = plt.subplots(1)
+        ax.set_title(f"{fireball_name}_{i}.jpg")
+        plot_on_axes(ax, image, tile)
+    
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_on_axes(ax: Axes, image: np.ndarray, tile: FireballTile) -> None:
     if image.ndim == 2:
         ax.imshow(image, cmap='gray')
-    else:
+    elif image.ndim == 3:
         ax.imshow(image)
 
     if tile.points is not None:
-
-        points = np.array(tile.points)
         bb_centre = tile.bb_centre
         bb_dim = tile.bb_dim
 
         # Adjust points to be relative to the tile's position
-        relative_points = points - position
+        relative_points = np.array(tile.points) - tile.position
 
         # Calculate bounding box corners (xyxy format)
         bb_min_x = (bb_centre[0] - (bb_dim[0] / 2)) * SQUARE_SIZE
         bb_min_y = (bb_centre[1] - (bb_dim[1] / 2)) * SQUARE_SIZE
-
         bb_width = bb_dim[0] * SQUARE_SIZE
         bb_height = bb_dim[1] * SQUARE_SIZE
 
@@ -125,10 +137,16 @@ def plot_fireball_tile(fireball_name: str, i: int, tile: FireballTile) -> None:
             ax.scatter(relative_points[:, 0], relative_points[:, 1], c='red', label='Points', s=12)
 
         # Add a rectangle for the bounding box
-        rect = patches.Rectangle((bb_min_x, bb_min_y), bb_width, bb_height, linewidth=5, edgecolor='red', facecolor='none')
+        rect = patches.Rectangle(
+            (bb_min_x, bb_min_y),
+            bb_width,
+            bb_height,
+            linewidth=5,
+            edgecolor='red',
+            facecolor='none'
+        )
         ax.add_patch(rect)
-
-    # Add a legend and show the plot
-    ax.set_title(f"{fireball_name}_{i}.jpg")
+    
     ax.axis('off')
-    plt.show()
+
+    return ax

@@ -18,17 +18,23 @@ included_coordinates = retrieve_included_coordinates()
 
 class DifferencedTiles(DatasetTiles):
 
-    def __init__(self, differenced_image_path: str | Path) -> None:
-        image_path = Path(differenced_image_path)
+    def __init__(self, differenced_image_path: str | Path, original_image_path: str | Path) -> None:
+        differenced_image_path = Path(differenced_image_path)
+        original_image_path = Path(original_image_path)
         
-        super().__init__(image_path.name.split(".")[0])
+        super().__init__(differenced_image_path.name.split(".")[0])
 
-        fireball_image = io.imread(image_path)
+        differenced_image = io.imread(differenced_image_path)
+        differenced_image = np.expand_dims(differenced_image, axis=-1)
+        original_image = io.imread(original_image_path)
+        fireball_image = np.concatenate((original_image, differenced_image), axis=-1)
+
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
         
         for tile_pos in included_coordinates:
 
             tile_image = fireball_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
+            original_tile_image = original_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
 
             points_in_tile = []
 
@@ -43,7 +49,7 @@ class DifferencedTiles(DatasetTiles):
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
-                        tile_image,
+                        original_tile_image,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
@@ -55,7 +61,7 @@ class DifferencedTiles(DatasetTiles):
             self.negative_tiles.append(
                 FireballTile(
                     tile_pos,
-                    tile_image
+                    original_tile_image
                 )
             )
         
@@ -63,7 +69,10 @@ class DifferencedTiles(DatasetTiles):
 
 
 def main():
-    fireball = DifferencedTiles("data/2015_before_after/differenced_images/16_2015-04-18_123858_DSC_0237.thumb.jpg")
+    fireball = DifferencedTiles(
+        "data/2015_before_after/differenced_images/07_2015-03-18_140529_DSC_0351.thumb.jpg",
+        "data/2015_before_after/07_2015-03-18_140529_DSC_0351.thumb.jpg"
+    )
     print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):
         plot_fireball_tile(fireball.fireball_name, i, tile)
