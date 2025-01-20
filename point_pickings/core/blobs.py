@@ -2,11 +2,12 @@ from math import sqrt
 
 import numpy as np
 import pandas as pd
-from point_pickings.core import RANDOM_STATE
 from skimage.feature import blob_dog
 from sklearn.linear_model import RANSACRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import PolynomialFeatures
+
+from utils.constants import RANDOM_SEED
 
 
 FireballBlobs = np.ndarray[tuple[float, float, float]]
@@ -55,7 +56,7 @@ def get_fireball_blobs(image: np.ndarray, min_radius: float = 3, max_radius: flo
     x_coords = blobs[:, 1]
 
     # Fit a polynomial curve using RANSAC
-    model = make_pipeline(PolynomialFeatures(2), RANSACRegressor(residual_threshold=10, max_trials=100, random_state=RANDOM_STATE))
+    model = make_pipeline(PolynomialFeatures(2), RANSACRegressor(residual_threshold=10, max_trials=100, random_state=RANDOM_SEED))
     model.fit(x_coords.reshape(-1, 1), y_coords)
 
     inlier_mask = model.named_steps['ransacregressor'].inlier_mask_

@@ -4,7 +4,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import skimage as ski
 from skimage.feature import blob_dog
-import os
 
 
 def show_dog(image_path: str) -> None:

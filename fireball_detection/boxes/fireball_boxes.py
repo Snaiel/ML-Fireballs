@@ -1,4 +1,5 @@
-from fireball_detection import Tile, FireballBox, IMAGE_DIMENSIONS
+from fireball_detection import FireballBox, Tile
+from utils.constants import IMAGE_DIMENSIONS
 
 
 def compute_absolute_coordinates(tile: Tile, box: tuple):

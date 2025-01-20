@@ -1,14 +1,13 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
+from pathlib import Path
 
-from fireball_detection import SQUARE_SIZE
-from fireball_detection.tiling.included import retrieve_included_coordinates
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from skimage import io
 
-from object_detection.dataset import GFO_JPEGS
-from pathlib import Path
+from fireball_detection.tiling.included import retrieve_included_coordinates
+from utils.constants import GFO_JPEGS, SQUARE_SIZE
+
 
 # Sample list of rectangle coordinates (top-left corner (x, y), width, height)
 coordinates = sorted(retrieve_included_coordinates(), key=lambda x: x[1])

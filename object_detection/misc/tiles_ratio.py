@@ -6,10 +6,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from fireball_detection.tiling.included import (SQUARE_SIZE,
-                                         retrieve_included_coordinates)
-from object_detection.dataset import GFO_PICKINGS
-from object_detection.dataset.standalone.standalone_tiles import MIN_POINTS_IN_TILE
+from fireball_detection.tiling.included import retrieve_included_coordinates
+from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE, SQUARE_SIZE
 
 
 def main() -> None:

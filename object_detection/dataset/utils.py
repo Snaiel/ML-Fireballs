@@ -9,10 +9,6 @@ from tqdm import tqdm
 from object_detection.dataset.dataset_tiles import DatasetTiles
 
 
-# Sentinel value to indicate the end of the queue processing
-_SENTINEL = None
-
-
 def _generate_tiles(fireball_name: str, negative_ratio: int, images_folder: Path, labels_folder: Path) -> None:
     """
     Generate tile images and labels for a given fireball image.
@@ -38,7 +34,7 @@ def _run_generate_tiles(names_queue: mp.Queue, bar_queue: mp.Queue, negative_rat
     try:
         while True:
             fireball_name = names_queue.get()
-            if fireball_name is _SENTINEL:
+            if fireball_name is None:
                 break
             _generate_tiles(fireball_name, negative_ratio, images_folder, labels_folder)
             bar_queue.put_nowait(1)
@@ -74,7 +70,7 @@ def create_tiles(num_processes: int, negative_ratio: int, fireballs: list[str], 
     
     # Adding sentinel values to signal the processes they can stop
     for _ in range(num_processes):
-        names_queue.put(_SENTINEL)
+        names_queue.put(None)
 
     bar_queue = mp.Queue()
     # Process for updating the progress bar

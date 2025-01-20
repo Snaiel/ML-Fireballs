@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from point_pickings.core import DE_BRUIJN_SEQUENCE
-from point_pickings.core.sequence import FireballAlignment
 from point_pickings.core.blobs import FireballBlobs
+from point_pickings.core.sequence import FireballAlignment
+from utils.constants import DE_BRUIJN_SEQUENCE
 
 
 @dataclass

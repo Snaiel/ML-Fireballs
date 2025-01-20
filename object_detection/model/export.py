@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from ultralytics import YOLO
 from onnx.checker import check_model
 
+
 def main() -> None:
     @dataclass
     class Args:

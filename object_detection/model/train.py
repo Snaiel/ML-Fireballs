@@ -1,13 +1,12 @@
 import argparse
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 from ultralytics import YOLO, settings
 
-from object_detection.dataset import DATA_FOLDER
+from utils.constants import DATA_FOLDER
 
 
 settings.update({"wandb": False})

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from fireball_detection.val import (VAL_FIREBALL_DETECTION_FOLDER,
                                     discard_fireballs)
-from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS
+from utils.constants import GFO_JPEGS, GFO_PICKINGS
 from object_detection.dataset.point_pickings import PointPickings
 from object_detection.dataset.standalone.create_2015_excluded_dataset import \
     get_2015_removed_dataset

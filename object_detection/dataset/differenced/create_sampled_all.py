@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from object_detection.dataset import DATA_FOLDER, DATA_YAML, RANDOM_SEED
+from utils.constants import DATA_FOLDER, DATA_YAML, RANDOM_SEED
 
 
 @dataclass

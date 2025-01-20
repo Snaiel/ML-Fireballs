@@ -6,7 +6,7 @@ from skimage import io
 
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
-from object_detection.dataset import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
+from utils.constants import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
                                       MIN_POINTS_IN_TILE, RANDOM_SEED)
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)

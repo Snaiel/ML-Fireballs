@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 from tqdm import tqdm
 
-from object_detection.dataset import DATA_FOLDER, DATA_YAML, GFO_JPEGS
+from utils.constants import DATA_FOLDER, DATA_YAML, GFO_JPEGS
 
 
 def retrieve_fireball_splits() -> tuple[list[str], tuple[int, tuple[np.ndarray, np.ndarray]]]:

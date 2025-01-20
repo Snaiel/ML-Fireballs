@@ -1,8 +1,10 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from skimage import io
-from pathlib import Path
-from object_detection.dataset import GFO_JPEGS, GFO_PICKINGS
+
+from utils.constants import GFO_JPEGS, GFO_PICKINGS
 
 
 def show_points(fireball_name: str) -> None:

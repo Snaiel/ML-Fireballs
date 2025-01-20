@@ -11,13 +11,14 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from skimage import io
 
-from detection_pipeline import MIN_DIAGONAL_LENGTH, check_tile_threshold
-from fireball_detection import SQUARE_SIZE, FireballBox, Tile
+from detection_pipeline.utils import check_tile_threshold
+from fireball_detection import FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.detectors import Detector, get_detector
 from object_detection.utils import add_border, diagonal_length
+from utils.constants import MIN_DIAGONAL_LENGTH, SQUARE_SIZE
 
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()

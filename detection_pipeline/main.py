@@ -8,16 +8,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-import jsonlines
 import numpy as np
 import structlog
 from skimage import io
 from structlog.typing import EventDict, WrappedLogger
 from tqdm import tqdm
 
-from detection_pipeline import MAX_TIME_DIFFERENCE, MIN_DIAGONAL_LENGTH
 from detection_pipeline.image_differencing import difference_images
-from detection_pipeline.streak_lines import (StreakLine, find_similar_lines,
+from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
 from fireball_detection.detect import (detect_differenced_tiles,
@@ -25,6 +23,7 @@ from fireball_detection.detect import (detect_differenced_tiles,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
+from utils.constants import MAX_TIME_DIFFERENCE, MIN_DIAGONAL_LENGTH
 
 
 VERSION = "1.0.0"

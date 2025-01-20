@@ -12,8 +12,8 @@ from tqdm import tqdm
 from ultralytics import YOLO
 
 from fireball_detection.boxes.merge import intersects
-from object_detection.dataset import DATA_FOLDER
 from object_detection.utils import add_border, iom, iou, xywhn2xyxy
+from utils.constants import DATA_FOLDER
 
 
 discard_fireballs = {

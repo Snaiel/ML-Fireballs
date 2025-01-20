@@ -5,11 +5,10 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from skimage import io
 from matplotlib.axes import Axes
+from skimage import io
 
-from fireball_detection.tiling.included import SQUARE_SIZE
-from object_detection.dataset import MIN_BB_DIM_SIZE
+from utils.constants import MIN_BB_DIM_SIZE, SQUARE_SIZE
 
 
 @dataclass

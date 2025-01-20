@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 
 
-IMAGE_DIM = (7360, 4912)
-PADDING = 0.05
+from utils.constants import IMAGE_DIMENSIONS, BB_PADDING
+
 
 class PointPickings:
 
@@ -36,19 +36,18 @@ class PointPickings:
         self.pp_max_y = self.pp['y_image_thumb'].max()
 
         self.point_pickings_dim = (self.pp_max_x - self.pp_min_x, self.pp_max_y - self.pp_min_y)
-        self.padding = PADDING
 
-        self.bb_min_x = self.pp_min_x - (self.point_pickings_dim[0] * self.padding)
-        self.bb_max_x = self.pp_max_x + (self.point_pickings_dim[0] * self.padding)
+        self.bb_min_x = self.pp_min_x - (self.point_pickings_dim[0] * BB_PADDING)
+        self.bb_max_x = self.pp_max_x + (self.point_pickings_dim[0] * BB_PADDING)
 
-        self.bb_min_y = self.pp_min_y - (self.point_pickings_dim[1] * self.padding)
-        self.bb_max_y = self.pp_max_y + (self.point_pickings_dim[1] * self.padding)
+        self.bb_min_y = self.pp_min_y - (self.point_pickings_dim[1] * BB_PADDING)
+        self.bb_max_y = self.pp_max_y + (self.point_pickings_dim[1] * BB_PADDING)
 
-        self.bb_min_x = np.clip(self.bb_min_x, 0, IMAGE_DIM[0])
-        self.bb_max_x = np.clip(self.bb_max_x, 0, IMAGE_DIM[0])
+        self.bb_min_x = np.clip(self.bb_min_x, 0, IMAGE_DIMENSIONS[0])
+        self.bb_max_x = np.clip(self.bb_max_x, 0, IMAGE_DIMENSIONS[0])
 
-        self.bb_min_y = np.clip(self.bb_min_y, 0, IMAGE_DIM[1])
-        self.bb_max_y = np.clip(self.bb_max_y, 0, IMAGE_DIM[1])
+        self.bb_min_y = np.clip(self.bb_min_y, 0, IMAGE_DIMENSIONS[1])
+        self.bb_max_y = np.clip(self.bb_max_y, 0, IMAGE_DIMENSIONS[1])
 
         self.bounding_box_dim = (self.bb_max_x - self.bb_min_x, self.bb_max_y - self.bb_min_y)
 

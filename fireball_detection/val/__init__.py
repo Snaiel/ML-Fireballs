@@ -1,5 +1,5 @@
 from pathlib import Path
-from object_detection.dataset import DATA_FOLDER
+from utils.constants import DATA_FOLDER
 
 
 VAL_FIREBALL_DETECTION_FOLDER = Path(DATA_FOLDER, "val_fireball_detection")

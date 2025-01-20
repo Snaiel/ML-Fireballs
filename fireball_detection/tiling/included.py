@@ -5,7 +5,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from fireball_detection import IMAGE_DIMENSIONS, SQUARE_SIZE
+from utils.constants import IMAGE_DIMENSIONS, SQUARE_SIZE
 
 
 def retrieve_start_points(size: int, split_size: int, overlap: float = 0) -> list[int]:

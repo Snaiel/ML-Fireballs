@@ -1,6 +1,8 @@
-import os, shutil
+import os
+import shutil
 from pathlib import Path
-from dataset import GFO_PICKINGS, GFO_FIXES_FOLDER
+
+from utils.constants import GFO_FIXES_FOLDER, GFO_PICKINGS
 
 
 def main():

@@ -10,11 +10,11 @@ from matplotlib.axes import Axes
 from skimage import io
 from ultralytics import YOLO
 
-from fireball_detection import SQUARE_SIZE
-from fireball_detection.detect import FireballBox, Tile
 from fireball_detection.boxes.merge import intersects
+from fireball_detection.detect import FireballBox, Tile
 from fireball_detection.tiling.included import retrieve_included_coordinates
 from object_detection.utils import add_border
+from utils.constants import SQUARE_SIZE
 
 
 def get_merge_bboxes_iterations(fireballs: list[FireballBox], margin: float = 0.1) -> list[FireballBox]:

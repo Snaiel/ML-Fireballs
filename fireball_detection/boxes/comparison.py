@@ -13,13 +13,14 @@ from matplotlib.axes import Axes
 from numpy import ndarray
 from skimage import io
 
-from fireball_detection import IMAGE_DIMENSIONS, FireballBox
+from fireball_detection import FireballBox
 from fireball_detection.boxes.fireball_boxes import (
     get_absolute_fireball_boxes, get_normalised_fireball_boxes)
 from fireball_detection.boxes.merge import merge_bboxes
 from fireball_detection.boxes.nms import nms
 from fireball_detection.boxes.wbf import weighted_boxes_fusion
-from fireball_detection.detect import detect_tiles
+from fireball_detection.detect import detect_standalone_tiles
+from utils.constants import IMAGE_DIMENSIONS
 
 
 def _merge_boxes(method: callable, noramlised_fireball_boxes: list[FireballBox], threshold: float) -> list[FireballBox]:
@@ -83,7 +84,7 @@ def main() -> None:
     fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/50_2017-02-22_172331_S_DSC_7698.thumb.jpg"
 
     image = io.imread(Path(Path(__file__).parents[2], fireball_image))
-    detected_tiles = detect_tiles(image, border_size=5)
+    detected_tiles = detect_standalone_tiles(image, border_size=5)
 
     absolute_fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     normalised_fireball_boxes = get_normalised_fireball_boxes(detected_tiles)

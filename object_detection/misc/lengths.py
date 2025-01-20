@@ -6,9 +6,10 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from dataset import GFO_PICKINGS
+
 from object_detection.dataset.point_pickings import PointPickings
 from object_detection.misc.points import show_points
+from utils.constants import GFO_PICKINGS
 
 
 def main():

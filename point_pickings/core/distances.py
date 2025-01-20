@@ -1,7 +1,8 @@
 import numpy as np
-from point_pickings.core import RANDOM_STATE
-from point_pickings.core.blobs import FireballBlobs
 from sklearn.cluster import KMeans
+
+from point_pickings.core.blobs import FireballBlobs
+from utils.constants import RANDOM_SEED
 
 
 def get_distances_between_blobs(positions: np.ndarray[float, float]) -> np.ndarray[float]:
@@ -130,7 +131,7 @@ def k_means_distances(distances: np.ndarray[float]) -> tuple[list[float], list[i
         |                                 | a list of the corresponding labels of the distances   |
     """
     reshaped_distances = np.array(distances).reshape(-1, 1)
-    kmeans = KMeans(2, random_state=RANDOM_STATE)
+    kmeans = KMeans(2, random_state=RANDOM_SEED)
     kmeans.fit(reshaped_distances)
 
     # Get cluster centers

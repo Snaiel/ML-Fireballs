@@ -5,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import skimage as ski
 
-from detection_pipeline.streak_lines import create_streak_line
+from detection_pipeline.streak_lines.utils import create_streak_line
 
 
 def main():

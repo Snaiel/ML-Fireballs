@@ -6,10 +6,10 @@ import pandas as pd
 from skimage import io
 from sklearn.decomposition import PCA
 
-from detection_pipeline import check_tile_threshold
+from detection_pipeline.utils import check_tile_threshold
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
-from object_detection.dataset import GFO_PICKINGS, MIN_POINTS_IN_TILE
+from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
 

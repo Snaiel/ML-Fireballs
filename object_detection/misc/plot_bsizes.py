@@ -1,8 +1,10 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
-from object_detection.dataset import DATA_FOLDER
 import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from utils.constants import DATA_FOLDER
 
 
 def main() -> None:
