@@ -134,7 +134,7 @@ def plot_on_axes(ax: Axes, image: np.ndarray, tile: FireballTile) -> None:
 
         # Plot the points on the image
         if relative_points.any():
-            ax.scatter(relative_points[:, 0], relative_points[:, 1], c='red', label='Points', s=12)
+            ax.scatter(relative_points[:, 0], relative_points[:, 1], c='blue', label='Points', s=12)
 
         # Add a rectangle for the bounding box
         rect = patches.Rectangle(
@@ -142,7 +142,7 @@ def plot_on_axes(ax: Axes, image: np.ndarray, tile: FireballTile) -> None:
             bb_width,
             bb_height,
             linewidth=5,
-            edgecolor='red',
+            edgecolor='blue',
             facecolor='none'
         )
         ax.add_patch(rect)

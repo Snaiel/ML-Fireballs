@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from skimage import io
+from sklearn.decomposition import PCA
 
 from detection_pipeline import check_tile_threshold
 from fireball_detection.tiling.included import (SQUARE_SIZE,
@@ -25,16 +26,39 @@ class DifferencedTiles(DatasetTiles):
         super().__init__(differenced_image_path.name.split(".")[0])
 
         differenced_image = io.imread(differenced_image_path)
-        differenced_image = np.expand_dims(differenced_image, axis=-1)
         original_image = io.imread(original_image_path)
-        fireball_image = np.concatenate((original_image, differenced_image), axis=-1)
+        
+        max_value = np.max(differenced_image)
+        norm_differenced_image = differenced_image
+        if max_value > 0:
+            norm_differenced_image = (norm_differenced_image / max_value) * 255
+
+        norm_differenced_image = norm_differenced_image.astype(np.uint8)
+        norm_differenced_image = np.expand_dims(norm_differenced_image, axis=-1)
+
+        img_4ch = np.concatenate((original_image, norm_differenced_image), axis=-1)
+
+        weights = np.array([1, 1, 1, 10])
+        weighted_image = img_4ch * weights
+
+        img_flat = weighted_image.reshape(-1, 4)
+        pca = PCA(n_components=3)
+        img_pca = pca.fit_transform(img_flat)
+        
+        # print(differenced_image_path)
+        # print(pca.explained_variance_ratio_)
+        # print(pca.components_)
+        
+        img_3ch = img_pca.reshape(img_4ch.shape[0], img_4ch.shape[1], 3)
+
+        image_result: np.ndarray = (img_3ch - img_3ch.min()) / (img_3ch.max() - img_3ch.min()) * 255
+        image_result = image_result.astype(np.uint8)
 
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
         
         for tile_pos in included_coordinates:
 
-            tile_image = fireball_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
-            original_tile_image = original_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
+            tile_image = original_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
 
             points_in_tile = []
 
@@ -49,19 +73,21 @@ class DifferencedTiles(DatasetTiles):
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
-                        original_tile_image,
+                        tile_image,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
 
             if len(points_in_tile) != 0: continue
 
-            if not check_tile_threshold(tile_image): continue
+            differenced_tile = differenced_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
+
+            if not check_tile_threshold(differenced_tile): continue
 
             self.negative_tiles.append(
                 FireballTile(
                     tile_pos,
-                    original_tile_image
+                    tile_image
                 )
             )
         
@@ -70,8 +96,8 @@ class DifferencedTiles(DatasetTiles):
 
 def main():
     fireball = DifferencedTiles(
-        "data/2015_before_after/differenced_images/07_2015-03-18_140529_DSC_0351.thumb.jpg",
-        "data/2015_before_after/07_2015-03-18_140529_DSC_0351.thumb.jpg"
+        "data/2015_before_after/differenced_images/07_2015-04-27_123859_DSC_0269.thumb.jpg",
+        "data/2015_before_after/07_2015-04-27_123859_DSC_0269.thumb.jpg"
     )
     print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):
