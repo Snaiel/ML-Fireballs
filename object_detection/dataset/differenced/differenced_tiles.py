@@ -6,12 +6,12 @@ import pandas as pd
 from skimage import io
 from sklearn.decomposition import PCA
 
-from detection_pipeline.utils import check_tile_threshold
+from detection_pipeline.tile_preprocessing import satisfies_thresholds
 from fireball_detection.tiling.included import (SQUARE_SIZE,
                                                 retrieve_included_coordinates)
-from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
+from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE
 
 
 included_coordinates = retrieve_included_coordinates()
@@ -82,7 +82,7 @@ class DifferencedTiles(DatasetTiles):
 
             differenced_tile = differenced_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
 
-            if not check_tile_threshold(differenced_tile): continue
+            if not satisfies_thresholds(differenced_tile): continue
 
             self.negative_tiles.append(
                 FireballTile(

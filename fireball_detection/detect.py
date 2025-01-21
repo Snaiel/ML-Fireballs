@@ -11,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from skimage import io
 
-from detection_pipeline.utils import check_tile_threshold
+from detection_pipeline.tile_preprocessing import satisfies_thresholds
 from fireball_detection import FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
@@ -62,7 +62,7 @@ def detect_differenced_tiles(image: np.ndarray, detector: Detector, border_size:
         Tile(pos, np.stack((tile_image,) * 3, axis=-1))
         for pos in INCLUDED_COORDINATES
         if (tile_image := image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE]).any()
-        and check_tile_threshold(tile_image)
+        and satisfies_thresholds(tile_image)
     ]
     return detect_tiles_common(detector, border_size, tiles)
 

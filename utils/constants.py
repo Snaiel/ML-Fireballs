@@ -21,7 +21,7 @@ MIN_BB_DIM_SIZE = 20
 
 
 # Paths
-DATA_FOLDER = Path(Path(__file__).parents[2], "data")
+DATA_FOLDER = Path(Path(__file__).parents[1], "data")
 
 GFO_DATASET_FOLDER = Path(DATA_FOLDER, "GFO_fireball_object_detection_training_set")
 GFO_JPEGS = Path(GFO_DATASET_FOLDER, "jpegs")
