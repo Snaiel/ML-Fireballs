@@ -1,16 +1,18 @@
-import numpy as np
 from dataclasses import dataclass
+
+import numpy as np
+
 from utils.constants import (MAX_PIXEL_TOTAL_THRESHOLD,
                              MIN_PIXEL_TOTAL_THRESHOLD,
-                             PIXEL_BRIGHTNESS_THRESHOLD)
+                             PIXEL_BRIGHTNESS_THRESHOLD, VARIANCE_THRESHOLD)
 
 
 @dataclass
 class TilePreprocessingThresholds:
-    pixel_threshold: int
-    min_pixel: int
-    max_pixel: int
-    variance_threshold: float
+    pixel_threshold: int = MAX_PIXEL_TOTAL_THRESHOLD
+    min_pixel: int = MIN_PIXEL_TOTAL_THRESHOLD
+    max_pixel: int = PIXEL_BRIGHTNESS_THRESHOLD
+    variance_threshold: float = VARIANCE_THRESHOLD
 
 
 def satisfies_thresholds(

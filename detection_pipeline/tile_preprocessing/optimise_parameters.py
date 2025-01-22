@@ -28,6 +28,8 @@ from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT,
 included_coordinates = retrieve_included_coordinates()
 
 
+FBETA_BETA = 10 
+
 def process_fireball(fireball_name: str) -> list:
     points = pd.read_csv(Path(GFO_PICKINGS, fireball_name + ".csv"))
     fireball_ground_truth = []
@@ -63,33 +65,18 @@ def evaluate_with_params(args):
     return evaluate_thresholds(*args)
 
 
-def optimise_thresholds(ground_truth_results: list[list[bool]], differenced_images: list[Path]):
+def optimise_thresholds(ground_truth, differenced_images):
     def objective(params):
         thresholds = TilePreprocessingThresholds(*params)
-        
         map_args = [(img, thresholds) for img in differenced_images]
         predictions = []
-        
         with Pool() as pool:
-            predictions_results = pool.map(evaluate_with_params, map_args)
-        for result in predictions_results:
+            results = pool.map(evaluate_with_params, map_args)
+        for result in results:
             predictions.extend(result)
 
-        full_images_kept = 0
-        for g_tiles, p_tiles in zip(ground_truth_results, predictions_results):
-            if sum(1 for g, p in zip(g_tiles, p_tiles) if g and p) > g_tiles.count(True) // 2:
-                full_images_kept += 1
-
-        tiles_removed = predictions.count(False) / len(predictions)
-        fireballs_kept = full_images_kept / len(ground_truth_results)
-
-        if tiles_removed == 0 or fireballs_kept == 0:
-            return 0
-        
-        fireballs_kept_weight = 5
-
-        score = (1 + fireballs_kept_weight) / ((1 / tiles_removed) + (fireballs_kept_weight / fireballs_kept))
-        return -score
+        f_beta = fbeta_score(ground_truth, predictions, beta=FBETA_BETA)
+        return -f_beta
 
     space = [
         Integer(1, 255, name="pixel_threshold"),
@@ -142,29 +129,30 @@ def main() -> None:
 
     # Optimize thresholds
     print("Starting Bayesian optimization...")
-    result = optimise_thresholds(ground_truth_results, differenced_images)
-
-    print()
-    print("Best harmonic mean between tiles removed and fireballs kept:", -result.fun)
+    result = optimise_thresholds(ground_truth, differenced_images)
 
     plot_evaluations(result)
     plot_objective(result)
 
     thresholds = TilePreprocessingThresholds(*result.x)
 
-    print(thresholds)
-
     # thresholds = TilePreprocessingThresholds(
-    #     13,
-    #     99,
-    #     102114,
-    #     1
+    #     11,
+    #     105,
+    #     100000,
+    #     50
     # )
+
+    # thresholds = None
+
+    print(thresholds)
+    print()
 
     map_args = [(img, thresholds) for img in differenced_images]
 
     predictions = []
-    full_images_kept = 0
+    full_images_kept_at_least_half = 0
+    full_images_kept_at_least_one = 0
     
     with Pool() as pool:
         predictions_results = list(tqdm(pool.imap(evaluate_with_params, map_args), total=len(differenced_images), desc="Evaluating thresholds"))
@@ -174,14 +162,22 @@ def main() -> None:
     print()
     print("Missed fireballs:")
     for i, g_tiles, p_tiles in zip(range(len(ground_truth_results)), ground_truth_results, predictions_results):
-        if sum(1 for g, p in zip(g_tiles, p_tiles) if g and p) > sum(1 for g in g_tiles if g) // 2:
-            full_images_kept += 1
+        true_count = sum(1 for g, p in zip(g_tiles, p_tiles) if g and p)
+        if true_count > 0:
+            full_images_kept_at_least_one += 1
+            if true_count > sum(1 for g in g_tiles if g) // 2:
+                full_images_kept_at_least_half += 1
         else:
             print(differenced_images[i].name)
     
     print()
     print(f"Tiles removed: {predictions.count(False)}/{len(predictions)} ({predictions.count(False)/len(predictions)})")
-    print(f"Fireballs kept: {full_images_kept}/{len(ground_truth_results)} ({full_images_kept / len(ground_truth_results)})")
+    print(f"Fireballs kept (At least half of tiles detected): {full_images_kept_at_least_half}/{len(ground_truth_results)} ({full_images_kept_at_least_half / len(ground_truth_results)})")
+    print(f"Fireballs kept (At least one tile detected): {full_images_kept_at_least_one}/{len(ground_truth_results)} ({full_images_kept_at_least_one / len(ground_truth_results)})")
+    print()
+    print("Precision:", precision_score(ground_truth, predictions))
+    print("Recall:", recall_score(ground_truth, predictions))
+    print(f"F{int(FBETA_BETA)}:", fbeta_score(ground_truth, predictions, beta=FBETA_BETA))
 
     plt.show()
 
