@@ -7,12 +7,11 @@ from skimage import io
 from sklearn.decomposition import PCA
 
 from detection_pipeline.tile_preprocessing import satisfies_thresholds
-from fireball_detection.tiling.included import (SQUARE_SIZE,
-                                                retrieve_included_coordinates)
+from fireball_detection.tiling import (get_image_tile,
+                                       retrieve_included_coordinates)
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
-from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE
-
+from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE, SQUARE_SIZE
 
 included_coordinates = retrieve_included_coordinates()
 
@@ -58,7 +57,8 @@ class DifferencedTiles(DatasetTiles):
         
         for tile_pos in included_coordinates:
 
-            tile_image = original_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
+            tile_image = get_image_tile(original_image, tile_pos)
+            differenced_tile = get_image_tile(differenced_image, tile_pos)
 
             points_in_tile = []
 
@@ -73,21 +73,19 @@ class DifferencedTiles(DatasetTiles):
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
-                        tile_image,
+                        differenced_tile,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
 
             if len(points_in_tile) != 0: continue
 
-            differenced_tile = differenced_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
-
             if not satisfies_thresholds(differenced_tile): continue
 
             self.negative_tiles.append(
                 FireballTile(
                     tile_pos,
-                    tile_image
+                    differenced_tile
                 )
             )
         
@@ -96,8 +94,8 @@ class DifferencedTiles(DatasetTiles):
 
 def main():
     fireball = DifferencedTiles(
-        "data/2015_before_after/differenced_images/07_2015-04-27_123859_DSC_0269.thumb.jpg",
-        "data/2015_before_after/07_2015-04-27_123859_DSC_0269.thumb.jpg"
+        "data/2015_before_after/differenced_images/39_2015-12-12_113628_DSC_0128.thumb.jpg",
+        "data/2015_before_after/39_2015-12-12_113628_DSC_0128.thumb.jpg"
     )
     print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):

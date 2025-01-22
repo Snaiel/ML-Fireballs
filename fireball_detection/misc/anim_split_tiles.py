@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from skimage import io
 
-from fireball_detection.tiling.included import retrieve_included_coordinates
+from fireball_detection.tiling import retrieve_included_coordinates
 from utils.constants import GFO_JPEGS, SQUARE_SIZE
 
 

@@ -1,1 +1,1 @@
-from .thresholds import satisfies_thresholds
+from .thresholds import TilePreprocessingThresholds, satisfies_thresholds

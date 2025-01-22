@@ -12,7 +12,7 @@ from ultralytics import YOLO
 
 from fireball_detection.boxes.merge import intersects
 from fireball_detection.detect import FireballBox, Tile
-from fireball_detection.tiling.included import retrieve_included_coordinates
+from fireball_detection.tiling import retrieve_included_coordinates
 from object_detection.utils import add_border
 from utils.constants import SQUARE_SIZE
 

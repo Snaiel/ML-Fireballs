@@ -15,7 +15,7 @@ from detection_pipeline.tile_preprocessing import satisfies_thresholds
 from fireball_detection import FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
-from fireball_detection.tiling.included import retrieve_included_coordinates
+from fireball_detection.tiling import retrieve_included_coordinates
 from object_detection.detectors import Detector, get_detector
 from object_detection.utils import add_border, diagonal_length
 from utils.constants import MIN_DIAGONAL_LENGTH, SQUARE_SIZE

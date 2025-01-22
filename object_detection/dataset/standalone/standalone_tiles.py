@@ -4,12 +4,12 @@ from pathlib import Path
 import pandas as pd
 from skimage import io
 
-from fireball_detection.tiling.included import (SQUARE_SIZE,
-                                                retrieve_included_coordinates)
-from utils.constants import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
-                                      MIN_POINTS_IN_TILE, RANDOM_SEED)
+from fireball_detection.tiling import (get_image_tile,
+                                       retrieve_included_coordinates)
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
+from utils.constants import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
+                             MIN_POINTS_IN_TILE, RANDOM_SEED, SQUARE_SIZE)
 
 
 included_coordinates = retrieve_included_coordinates()
@@ -25,7 +25,7 @@ class StandaloneTiles(DatasetTiles):
         
         for tile_pos in included_coordinates:
 
-            tile_image = fireball_image[tile_pos[1] : tile_pos[1] + SQUARE_SIZE, tile_pos[0] : tile_pos[0] + SQUARE_SIZE]
+            tile_image = get_image_tile(fireball_image, tile_pos)
 
             points_in_tile = []
 
