@@ -28,9 +28,6 @@ from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT,
 included_coordinates = retrieve_included_coordinates()
 
 
-FBETA_BETA = 10.0
-
-
 def process_fireball(fireball_name: str) -> list:
     points = pd.read_csv(Path(GFO_PICKINGS, fireball_name + ".csv"))
     fireball_ground_truth = []
@@ -86,6 +83,9 @@ def optimise_thresholds(ground_truth_results: list[list[bool]], differenced_imag
         tiles_removed = predictions.count(False) / len(predictions)
         fireballs_kept = full_images_kept / len(ground_truth_results)
 
+        if tiles_removed == 0 or fireballs_kept == 0:
+            return 0
+        
         score = 2 / ((1 / tiles_removed) + (1 / fireballs_kept))
         return -score
 
