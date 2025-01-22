@@ -28,7 +28,7 @@ from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT,
 included_coordinates = retrieve_included_coordinates()
 
 
-FBETA_BETA = 15.0
+FBETA_BETA = 10.0
 
 
 def process_fireball(fireball_name: str) -> list:
@@ -66,18 +66,28 @@ def evaluate_with_params(args):
     return evaluate_thresholds(*args)
 
 
-def optimise_thresholds(ground_truth, differenced_images):
+def optimise_thresholds(ground_truth_results: list[list[bool]], differenced_images: list[Path]):
     def objective(params):
         thresholds = TilePreprocessingThresholds(*params)
+        
         map_args = [(img, thresholds) for img in differenced_images]
         predictions = []
+        
         with Pool() as pool:
-            results = pool.map(evaluate_with_params, map_args)
-        for result in results:
+            predictions_results = pool.map(evaluate_with_params, map_args)
+        for result in predictions_results:
             predictions.extend(result)
 
-        f_beta = fbeta_score(ground_truth, predictions, beta=FBETA_BETA)
-        return -f_beta
+        full_images_kept = 0
+        for g_tiles, p_tiles in zip(ground_truth_results, predictions_results):
+            if sum(1 for g, p in zip(g_tiles, p_tiles) if g and p) > g_tiles.count(True) // 2:
+                full_images_kept += 1
+
+        tiles_removed = predictions.count(False) / len(predictions)
+        fireballs_kept = full_images_kept / len(ground_truth_results)
+
+        score = 2 / ((1 / tiles_removed) + (1 / fireballs_kept))
+        return -score
 
     space = [
         Integer(1, 255, name="pixel_threshold"),
@@ -130,30 +140,23 @@ def main() -> None:
 
     # Optimize thresholds
     print("Starting Bayesian optimization...")
-    result = optimise_thresholds(ground_truth, differenced_images)
+    result = optimise_thresholds(ground_truth_results, differenced_images)
 
-    # Output the best thresholds
     print()
-    print("Best thresholds found:")
-    print()
-    print(f"Pixel Threshold: {result.x[0]}")
-    print(f"Min Pixel: {result.x[1]}")
-    print(f"Max Pixel: {result.x[2]}")
-    print(f"Variance Threshold: {result.x[3]}")
-    print()
-    print(f"Best F{int(FBETA_BETA)} Score: {-result.fun}")
-    print()
+    print("Best harmonic mean between tiles removed and fireballs kept:", -result.fun)
 
     plot_evaluations(result)
     plot_objective(result)
 
     thresholds = TilePreprocessingThresholds(*result.x)
 
+    print(thresholds)
+
     # thresholds = TilePreprocessingThresholds(
-    #     14,
-    #     90,
-    #     100000,
-    #     30
+    #     13,
+    #     99,
+    #     102114,
+    #     1
     # )
 
     map_args = [(img, thresholds) for img in differenced_images]
@@ -169,20 +172,14 @@ def main() -> None:
     print()
     print("Missed fireballs:")
     for i, g_tiles, p_tiles in zip(range(len(ground_truth_results)), ground_truth_results, predictions_results):
-        for g, p in zip(g_tiles, p_tiles):
-            if g and p:
-                full_images_kept += 1
-                break
+        if sum(1 for g, p in zip(g_tiles, p_tiles) if g and p) > sum(1 for g in g_tiles if g) // 2:
+            full_images_kept += 1
         else:
             print(differenced_images[i].name)
     
     print()
     print(f"Tiles removed: {predictions.count(False)}/{len(predictions)} ({predictions.count(False)/len(predictions)})")
     print(f"Fireballs kept: {full_images_kept}/{len(ground_truth_results)} ({full_images_kept / len(ground_truth_results)})")
-    print()
-    print("Precision:", precision_score(ground_truth, predictions))
-    print("Recall:", recall_score(ground_truth, predictions))
-    print(f"F{int(FBETA_BETA)}:", fbeta_score(ground_truth, predictions, beta=FBETA_BETA))
 
     plt.show()
 
