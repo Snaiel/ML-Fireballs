@@ -86,7 +86,9 @@ def optimise_thresholds(ground_truth_results: list[list[bool]], differenced_imag
         if tiles_removed == 0 or fireballs_kept == 0:
             return 0
         
-        score = 2 / ((1 / tiles_removed) + (1 / fireballs_kept))
+        fireballs_kept_weight = 5
+
+        score = 1 + fireballs_kept_weight / ((1 / tiles_removed) + (fireballs_kept_weight / fireballs_kept))
         return -score
 
     space = [
