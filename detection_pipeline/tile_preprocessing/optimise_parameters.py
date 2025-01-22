@@ -88,7 +88,7 @@ def optimise_thresholds(ground_truth_results: list[list[bool]], differenced_imag
         
         fireballs_kept_weight = 5
 
-        score = 1 + fireballs_kept_weight / ((1 / tiles_removed) + (fireballs_kept_weight / fireballs_kept))
+        score = (1 + fireballs_kept_weight) / ((1 / tiles_removed) + (fireballs_kept_weight / fireballs_kept))
         return -score
 
     space = [
