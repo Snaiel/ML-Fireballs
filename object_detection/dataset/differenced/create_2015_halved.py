@@ -40,7 +40,7 @@ def main() -> None:
     all_folder = Path(args.all_folder_path)
     # maintain all generated negative tiles if -1
     folder_name = "halved" if args.negative_ratio == -1 else f"halved_1_to_{args.negative_ratio}"
-    object_detection_folder = Path(DATA_FOLDER, "object_detection", "2015_differenced", folder_name)
+    object_detection_folder = Path(all_folder.parent, folder_name).absolute()
 
     if Path(object_detection_folder).exists():
         if args.overwrite:

@@ -6,24 +6,20 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import skimage.io as io
 from sklearn.metrics import fbeta_score, precision_score, recall_score
 from skopt import gp_minimize
 from skopt.plots import plot_evaluations, plot_objective
-from skopt.space import Integer, Real
+from skopt.space import Integer
 from tqdm import tqdm
 
 from detection_pipeline.tile_preprocessing import (TilePreprocessingThresholds,
                                                    satisfies_thresholds)
 from fireball_detection.tiling import (get_image_tile,
                                        retrieve_included_coordinates)
-from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT,
-                             MAX_PIXEL_TOTAL_THRESHOLD,
-                             MIN_PIXEL_TOTAL_THRESHOLD, MIN_POINTS_IN_TILE,
-                             PIXEL_BRIGHTNESS_THRESHOLD, RANDOM_SEED,
-                             SQUARE_SIZE)
+from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT, MIN_POINTS_IN_TILE,
+                             RANDOM_SEED, SQUARE_SIZE)
 
 included_coordinates = retrieve_included_coordinates()
 

@@ -2,8 +2,8 @@ import argparse
 import json
 import os
 import shutil
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from multiprocessing import Pool
 from pathlib import Path
 
 from tqdm import tqdm
@@ -18,6 +18,24 @@ class Args:
     differenced_images_folder: str
     original_images_folder: str
     overwrite: bool
+    processes: int | None
+
+
+@dataclass
+class ProcessFireballArgs:
+    fireball: str
+    args: Args
+    all_images_folder: Path
+    all_labels_folder: Path
+
+
+def process_fireball(args: ProcessFireballArgs):
+    tiles = DifferencedTiles(
+        Path(args.args.differenced_images_folder, args.fireball + GFO_THUMB_EXT),
+        Path(args.args.original_images_folder, args.fireball + GFO_THUMB_EXT)
+    )
+    tiles.save_tiles(args.all_images_folder, args.all_labels_folder)
+    return len(tiles.fireball_tiles), len(tiles.negative_tiles)
 
 
 def main() -> None:
@@ -30,6 +48,7 @@ def main() -> None:
     parser.add_argument('--differenced_images_folder', type=str, required=True, help='Folder containing differenced images.')
     parser.add_argument('--original_images_folder', type=str, required=True, help='Folder containing original images.')
     parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite the output directory if it exists.')
+    parser.add_argument('--processes', type=int, default=None, help='Number of processes')
 
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
@@ -69,21 +88,23 @@ def main() -> None:
             "\n".join(fireballs)
         )
 
-    def process_fireball(f):
-        tiles = DifferencedTiles(
-            Path(args.differenced_images_folder, f + GFO_THUMB_EXT),
-            Path(args.original_images_folder, f + GFO_THUMB_EXT)
-        )
-        tiles.save_tiles(all_images_folder, all_labels_folder)
-        return len(tiles.fireball_tiles), len(tiles.negative_tiles)
-
     print()
 
-    with ThreadPoolExecutor() as executor:
+    args_list = [
+        ProcessFireballArgs(
+            f,
+            args,
+            all_images_folder,
+            all_labels_folder
+        )
+        for f in fireballs
+    ]
+
+    with Pool(args.processes) as pool:
         tile_counts = list(
             tqdm(
-                executor.map(lambda f: process_fireball(f), fireballs),
-                total=len(fireballs),
+                pool.imap(process_fireball, args_list),
+                total=len(args_list),
                 desc="Training Set"
             )
         )

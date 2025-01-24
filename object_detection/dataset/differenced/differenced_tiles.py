@@ -37,7 +37,7 @@ class DifferencedTiles(DatasetTiles):
 
         img_4ch = np.concatenate((original_image, norm_differenced_image), axis=-1)
 
-        weights = np.array([1, 1, 1, 10])
+        weights = np.array([1, 1, 1, 1])
         weighted_image = img_4ch * weights
 
         img_flat = weighted_image.reshape(-1, 4)
@@ -57,7 +57,7 @@ class DifferencedTiles(DatasetTiles):
         
         for tile_pos in included_coordinates:
 
-            tile_image = get_image_tile(original_image, tile_pos)
+            tile_image = get_image_tile(image_result, tile_pos)
             differenced_tile = get_image_tile(differenced_image, tile_pos)
 
             points_in_tile = []
@@ -73,7 +73,7 @@ class DifferencedTiles(DatasetTiles):
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
-                        differenced_tile,
+                        tile_image,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
@@ -85,7 +85,7 @@ class DifferencedTiles(DatasetTiles):
             self.negative_tiles.append(
                 FireballTile(
                     tile_pos,
-                    differenced_tile
+                    tile_image
                 )
             )
         
@@ -94,8 +94,8 @@ class DifferencedTiles(DatasetTiles):
 
 def main():
     fireball = DifferencedTiles(
-        "data/2015_before_after/differenced_images/39_2015-12-12_113628_DSC_0128.thumb.jpg",
-        "data/2015_before_after/39_2015-12-12_113628_DSC_0128.thumb.jpg"
+        "data/2015_before_after/differenced_images/07_2015-03-18_140529_DSC_0351.thumb.jpg",
+        "data/2015_before_after/07_2015-03-18_140529_DSC_0351.thumb.jpg"
     )
     print(len(fireball.fireball_tiles), len(fireball.negative_tiles))
     for i, tile in enumerate(fireball.fireball_tiles):
