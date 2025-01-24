@@ -66,7 +66,7 @@ def main() -> None:
             print(f"\"{object_detection_folder}\" already exists. include --overwrite option to overwrite folders.")
             return
     
-    os.mkdir(object_detection_folder)
+    os.makedirs(object_detection_folder, exist_ok=True)
     os.mkdir(all_folder)
     os.mkdir(all_images_folder)
     os.mkdir(all_labels_folder)
