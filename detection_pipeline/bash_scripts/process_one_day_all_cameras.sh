@@ -60,7 +60,7 @@ if [ -n "$job_ids" ]; then
     collate_job_id=$(sbatch \
         --export=ALL,OUTPUT_PATH="$output_path" \
         --output="$output_path/slurm-%j-collate_detections.out" \
-        --dependency=afterok:$job_ids \
+        --dependency=after:$job_ids \
         "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/collate_detections.slurm" | awk '{print $4}')
     echo "collate_detections job id: $collate_job_id"
 fi
