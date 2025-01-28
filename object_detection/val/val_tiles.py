@@ -146,7 +146,7 @@ def val_split(args: Args) -> dict:
 
     total_fireballs = len(fireball_names)
     detected_fireballs = len(detected_fireball_names)
-    false_negative_fireballs = len(fireball_names) - len(detected_fireball_names)
+    false_negative_fireballs = fireball_names.difference(detected_fireball_names)
     recall_entire_fireballs = len(detected_fireball_names) / len(fireball_names)
     
     false_positives = total_boxes - true_positives
@@ -192,8 +192,12 @@ def output_stats(args: Args, stats: dict) -> None:
     print()
     print(f"{'Total fireballs:':<30} {total_fireballs}")
     print(f"{'Detected fireballs:':<30} {detected_fireballs}")
-    print(f"{'False negative fireballs:':<30} {false_negative_fireballs}")
+    print(f"{'False negative fireballs:':<30} {len(false_negative_fireballs)}")
     print(f"{'Recall on entire fireballs:':<30} {recall_entire_fireballs:.5f}")
+    print()
+    print("Missed Fireballs:")
+    for i in sorted(list(false_negative_fireballs)):
+        print(i)
     print()
     print(f"{'Total boxes:':<30} {total_boxes}")
     print(f"{'True positives:':<30} {true_positives}")
