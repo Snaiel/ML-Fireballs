@@ -18,7 +18,7 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
-from fireball_detection.detect import (detect_differenced_tiles,
+from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
@@ -159,7 +159,7 @@ class DetectionWorkerProcess(mp.Process):
         
         image_name = images.current.split(".")[0]
 
-        detected_tiles = detect_differenced_tiles(differenced_image, self.detector, 5)
+        detected_tiles = detect_differenced_tiles_norm(differenced_image, self.detector, 5)
         detections = []
 
         if detected_tiles:

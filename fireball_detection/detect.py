@@ -15,11 +15,11 @@ from detection_pipeline.tile_preprocessing import satisfies_thresholds
 from fireball_detection import FireballBox, Tile
 from fireball_detection.boxes.fireball_boxes import get_absolute_fireball_boxes
 from fireball_detection.boxes.merge import merge_bboxes
-from fireball_detection.tiling import retrieve_included_coordinates
+from fireball_detection.tiling import (get_image_tile,
+                                       retrieve_included_coordinates)
 from object_detection.detectors import Detector, get_detector
 from object_detection.utils import add_border, diagonal_length
 from utils.constants import MIN_DIAGONAL_LENGTH, SQUARE_SIZE
-
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 
@@ -51,7 +51,7 @@ def detect_tiles_common(detector: Detector, border_size: int, tiles: list[Tile])
     
 def detect_standalone_tiles(image: np.ndarray, detector: Detector, border_size: int) -> list[Tile]:
     tiles: list[Tile] = [
-        Tile(pos, image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE])
+        Tile(pos, get_image_tile(image, pos))
         for pos in INCLUDED_COORDINATES
     ]
     return detect_tiles_common(detector, border_size, tiles)
@@ -61,9 +61,46 @@ def detect_differenced_tiles(image: np.ndarray, detector: Detector, border_size:
     tiles: list[Tile] = [
         Tile(pos, np.stack((tile_image,) * 3, axis=-1))
         for pos in INCLUDED_COORDINATES
-        if (tile_image := image[pos[1]: pos[1] + SQUARE_SIZE, pos[0]: pos[0] + SQUARE_SIZE]).any()
+        if (tile_image := get_image_tile(image, pos)).any()
         and satisfies_thresholds(tile_image)
     ]
+    return detect_tiles_common(detector, border_size, tiles)
+
+
+def detect_differenced_norm_tiles(image: np.ndarray, detector: Detector, border_size: int) -> list[Tile]:
+    max_value = np.max(image)
+    norm_differenced_image = image
+    if max_value > 0:
+        norm_differenced_image = (norm_differenced_image / max_value) * 255
+    norm_differenced_image = norm_differenced_image.astype(np.uint8)
+
+    tiles: list[Tile] = [
+        Tile(pos, np.stack((tile_image,) * 3, axis=-1))
+        for pos in INCLUDED_COORDINATES
+        if (tile_image := get_image_tile(norm_differenced_image, pos)).any()
+        and satisfies_thresholds(tile_image)
+    ]
+    
+    return detect_tiles_common(detector, border_size, tiles)
+
+
+def detect_differenced_tiles_norm(image: np.ndarray, detector: Detector, border_size: int) -> list[Tile]:
+    tiles: list[Tile] = []
+
+    for pos in INCLUDED_COORDINATES:
+        tile_image = get_image_tile(image, pos)
+
+        if not satisfies_thresholds(tile_image):
+            continue
+        
+        max_value = np.max(tile_image)
+        if max_value <= 0:
+            continue
+        
+        tile_image: np.ndarray = (tile_image / max_value) * 255
+        tile_image = tile_image.astype(np.uint8)
+        tiles.append(Tile(pos, np.stack((tile_image,) * 3, axis=-1)))
+
     return detect_tiles_common(detector, border_size, tiles)
 
 
