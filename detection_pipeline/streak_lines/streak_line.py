@@ -34,7 +34,7 @@ class StreakLine:
 
         # Blob detection with dynamic threshold based on density
         for thresh in [0.005, 0.010, 0.015, 0.020, 0.025, 0.030]:
-            blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=thresh)
+            blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=thresh, overlap=0.6)
             density = len(blobs_dog) / (image.shape[0] * image.shape[1])
             if density < 0.002:
                 break
@@ -66,7 +66,7 @@ class StreakLine:
 
     @property
     def is_valid(self) -> bool:
-        return len(self._blobs) >= 3
+        return self._is_valid
 
 
     @property
