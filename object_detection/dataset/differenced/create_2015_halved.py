@@ -4,8 +4,8 @@ import os
 import random
 import re
 import shutil
-from multiprocessing import Pool
 from dataclasses import dataclass
+from multiprocessing import Pool
 from pathlib import Path
 
 from tqdm import tqdm
