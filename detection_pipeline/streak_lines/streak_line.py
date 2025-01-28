@@ -17,6 +17,7 @@ warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 class StreakLine:
 
     _blobs: np.ndarray
+    _is_valid: bool
     _ransac: RANSACRegressor
     _y_coords: np.ndarray
     _x_coords: np.ndarray
@@ -35,12 +36,14 @@ class StreakLine:
         for thresh in [0.005, 0.010, 0.015, 0.020, 0.025, 0.030]:
             blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=thresh)
             density = len(blobs_dog) / (image.shape[0] * image.shape[1])
-            if density < 0.0015:
+            if density < 0.002:
                 break
         
         # Compute radii in the 3rd column
         blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2) 
         self._blobs = blobs_dog
+
+        self._is_valid = len(self._blobs) >= 5
 
         if not self.is_valid:
             return
@@ -49,8 +52,11 @@ class StreakLine:
         self._x_coords = blobs_dog[:, 1]
 
         # RANSAC with Linear Regression
-        self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=0)
-        self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
+        try:
+            self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=0)
+            self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
+        except:
+            self._is_valid = False
 
 
     @property

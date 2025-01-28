@@ -391,6 +391,8 @@ def main() -> None:
 
     logger.info("finished performing detections")
 
+    # All Detections
+
     detections = []
     while not detections_queue.empty():
         detections.append(detections_queue.get())
@@ -412,8 +414,32 @@ def main() -> None:
 
 
     logger.info("starting checks for similar lines and slow moving objects")
-
     streak_lines = get_streak_lines(output_folder)
+
+
+    # Invalid Lines
+
+    invalid_lines = {
+        name
+        for name, streak_line in streak_lines.items()
+        if not streak_line.is_valid
+    }
+
+    erroneous_detections = erroneous_detections.union(invalid_lines)
+
+    print("\n\nInvalid lines:\n")
+
+    for streak in sorted(list(invalid_lines)):
+        print(streak)
+    print()
+
+    print("Total invalid lines:", len(invalid_lines))
+
+    logger.info("total_invalid_lines", total_invalid_lines=len(invalid_lines))
+    logger.info("invalid_lines", invalid_lines=invalid_lines)
+
+
+    # Similar Lines
 
     similar_lines = find_similar_lines(streak_lines)
     total_similar_lines = 0
@@ -430,6 +456,8 @@ def main() -> None:
     
     print("Total similar lines:", total_similar_lines)
 
+
+    # Slow moving objects
 
     print("\n\nSlow moving objects:\n")
 
@@ -453,6 +481,9 @@ def main() -> None:
     
     logger.info("similar lines and slow objects are not mutually exclusive")
 
+
+    # Combined erroneous detections
+
     print("\n\nCombined erroneous detections:\n")
 
     erroneous_detections = sorted(list(erroneous_detections))
@@ -464,6 +495,8 @@ def main() -> None:
     logger.info("total_erroneous_detections", total_erroneous_detections=len(erroneous_detections))
     logger.info("erroneous_detections", erroneous_detections=erroneous_detections)
 
+
+    # Final detections
 
     final_detections = sorted(list(all_detections_set.difference(erroneous_detections)))
 
