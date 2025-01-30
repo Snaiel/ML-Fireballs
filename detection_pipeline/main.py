@@ -298,7 +298,7 @@ def main() -> None:
         folder_path if args.output_path is None else args.output_path,
         folder_path.name
     )
-    
+
     if output_folder.exists() and not args.no_overwrite:
         shutil.rmtree(output_folder)
     os.makedirs(output_folder, exist_ok=True)
@@ -503,7 +503,7 @@ def main() -> None:
 
     if not args.save_erroneous:
         for erroneous in erroneous_detections:
-            remove_saved_detection(erroneous)
+            remove_saved_detection(output_folder, erroneous)
             
     # Final detections
 
