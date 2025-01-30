@@ -18,6 +18,7 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
+from detection_pipeline.utils import remove_saved_detection
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
@@ -81,6 +82,7 @@ class Args:
     model_path: str
     processes: int
     detector: str
+    save_erroneous: bool
 
 
 @dataclass
@@ -280,6 +282,7 @@ def main() -> None:
     parser.add_argument("--model_path", type=str, required=True, help="Path to the YOLO model file")
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
     parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
+    parser.add_argument('--save_erroneous', action='store_true', default=False, help='Output erroneous detections.')
     
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
@@ -495,7 +498,10 @@ def main() -> None:
     logger.info("total_erroneous_detections", total_erroneous_detections=len(erroneous_detections))
     logger.info("erroneous_detections", erroneous_detections=erroneous_detections)
 
-
+    if not args.save_erroneous:
+        for erroneous in erroneous_detections:
+            remove_saved_detection(erroneous)
+            
     # Final detections
 
     final_detections = sorted(list(all_detections_set.difference(erroneous_detections)))
