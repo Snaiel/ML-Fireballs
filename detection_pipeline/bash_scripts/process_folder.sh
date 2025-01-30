@@ -10,17 +10,19 @@
 
 # a folder with the basename of input_folder will be created in output_folder
 # model_path is the .onnx file to the differenced object detector
+# put true in save_erroneous to not delete erroneous detections outputs
 
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <input_folder> <output_folder> <model_path>"
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+    echo "Usage: $0 <input_folder> <output_folder> <model_path> [save_erroneous]"
     exit 1
 fi
 
 input_folder=$(realpath "$1")
 output_folder=$(realpath "$2")
 model_path=$(realpath "$3")
+save_erroneous="${4:-false}"
 
 # Check if the input folder exists
 if [ ! -d "$input_folder" ]; then
@@ -49,7 +51,7 @@ mkdir -p "$output_path"
 echo "Created output folder: $output_path"
 
 job_id=$(sbatch \
-    --export=ALL,FOLDER_PATH="$input_folder",OUTPUT_PATH="$output_folder",MODEL_PATH="$model_path" \
+    --export=ALL,FOLDER_PATH="$input_folder",OUTPUT_PATH="$output_folder",MODEL_PATH="$model_path",SAVE_ERRONEOUS="$save_erroneous",NO_OVERWRITE="true" \
     --output="$output_path/slurm-%j-$input_basename.out" \
     "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/fireball_detection.slurm" | awk '{print $4}')
 

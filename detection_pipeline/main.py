@@ -83,6 +83,7 @@ class Args:
     processes: int
     detector: str
     save_erroneous: bool
+    no_overwrite: bool
 
 
 @dataclass
@@ -283,6 +284,7 @@ def main() -> None:
     parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
     parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
     parser.add_argument('--save_erroneous', action='store_true', default=False, help='Output erroneous detections.')
+    parser.add_argument('--no_overwrite', action='store_true', default=False, help='Keep existing output folder if exists. Useful alongside other bash script behaviour.')
     
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
@@ -296,7 +298,8 @@ def main() -> None:
         folder_path if args.output_path is None else args.output_path,
         folder_path.name
     )
-    if output_folder.exists():
+    
+    if output_folder.exists() and not args.no_overwrite:
         shutil.rmtree(output_folder)
     os.makedirs(output_folder, exist_ok=True)
 

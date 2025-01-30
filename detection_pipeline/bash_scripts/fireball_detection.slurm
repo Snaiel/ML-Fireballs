@@ -49,6 +49,8 @@ python3 -m detection_pipeline.main \
     --output_path "$OUTPUT_PATH" \
     --model_path "$MODEL_PATH" \
     --detector ONNX \
-    --processes "$SLURM_CPUS_PER_TASK"
+    --processes "$SLURM_CPUS_PER_TASK" \
+    $( [[ "$SAVE_ERRONEOUS" == "true" ]] && echo "--save_erroneous" ) \
+    $( [[ "$NO_OVERWRITE" == "true" ]] && echo "--no_overwrite" )
 
 EOF
