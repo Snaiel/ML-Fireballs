@@ -113,8 +113,8 @@ class DetectionWorkerProcess(mp.Process):
     log_messages: list[str]
 
 
-    def __init__(self, args: WorkerProcessArgs):
-        super().__init__()
+    def __init__(self, args: WorkerProcessArgs, i: int):
+        super().__init__(name=f"DetectionPipeline-Worker-{i}")
         self.args = args
         self.log_messages = []
 
@@ -244,7 +244,7 @@ class DetectionLoggerProcess(mp.Process):
 
 
     def __init__(self, detection_log_queue: mp.Queue, max_index: int):
-        super().__init__()
+        super().__init__(name="DetectionPipeline-Logger")
         self.detection_log_queue = detection_log_queue
         self.detection_messages = dict()
         self.current_index = 0
@@ -359,7 +359,12 @@ def main() -> None:
         index += 1
 
     bar_queue = mp.Queue()
-    bar_process = mp.Process(target=update_bar, args=(bar_queue, triples_queue.qsize()), daemon=True)
+    bar_process = mp.Process(
+        target=update_bar,
+        args=(bar_queue, triples_queue.qsize()),
+        daemon=True,
+        name="DetectionPipeline-ProgressBar"
+    )
     bar_process.start()
 
     detection_log_queue = mp.Queue()
@@ -379,7 +384,7 @@ def main() -> None:
         args.detector
     )
 
-    processes = [DetectionWorkerProcess(process_args) for _ in range(args.processes)]
+    processes = [DetectionWorkerProcess(process_args, i) for i in range(args.processes)]
 
     for _ in processes:
         triples_queue.put(None)
