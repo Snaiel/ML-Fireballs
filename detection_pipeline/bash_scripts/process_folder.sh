@@ -49,7 +49,7 @@ mkdir -p "$output_path"
 echo "Created output folder: $output_path"
 
 job_id=$(sbatch \
-    --export=ALL,FOLDER_PATH="$input_folder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path" \
+    --export=ALL,FOLDER_PATH="$input_folder",OUTPUT_PATH="$output_folder",MODEL_PATH="$model_path" \
     --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out" \
     "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/fireball_detection.slurm" | awk '{print $4}')
 
