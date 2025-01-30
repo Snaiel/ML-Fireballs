@@ -18,7 +18,7 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
-from detection_pipeline.utils import remove_saved_detection
+from detection_pipeline.utils import check_image_brightness, remove_saved_detection
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
@@ -318,13 +318,33 @@ def main() -> None:
 
     images = [i for i in sorted(os.listdir(folder_path)) if i.endswith(".jpg")]
 
+
+    with mp.Pool() as pool:
+        results = list(
+            tqdm(
+                pool.imap(check_image_brightness, [Path(folder_path, i) for i in images]),
+                desc="checking pixel brightness",
+                total=len(images)
+            )
+        )
+
+    images_copy = images.copy()
+    images = []
+    skipped_images = []
+
+    for image, result in zip(images_copy, results):
+        if result:
+            skipped_images.append((image, result))
+        else:
+            images.append(image)
+
+
     def get_time_seconds(fireball_label: str) -> int:
         pattern = r"\d{4}-\d{2}-\d{2}_\d{6}"
         datetime_str = re.search(pattern, fireball_label).group(0)
         dt = datetime.strptime(datetime_str, "%Y-%m-%d_%H%M%S")
         time_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
         return time_seconds
-
 
     triples_queue = mp.Queue()
     index = 0
@@ -344,7 +364,7 @@ def main() -> None:
             after = images[i+1]
 
         if not (before or after):
-            logger.info("image skipped due to lack of recent before or after images", image=current)
+            skipped_images.append((image, "lack of recent before or after images"))
             continue
         
         triples_queue.put(
@@ -357,6 +377,11 @@ def main() -> None:
         )
 
         index += 1
+
+    skipped_images.sort(key=lambda x: x[0])
+    for image, reason in skipped_images:
+        logger.info(f"image skipped to due {reason}", image=image)
+
 
     bar_queue = mp.Queue()
     bar_process = mp.Process(
