@@ -12,7 +12,7 @@ def create_streak_line(detection: Path) -> StreakLine:
 def get_streak_lines(camera_folder: Path) -> dict[str, StreakLine]:
     streak_lines_dict = {}
 
-    subfolders = [i for i in sorted(os.listdir(camera_folder)) if "log" not in i]
+    subfolders = [i for i in sorted(os.listdir(camera_folder)) if Path(camera_folder, i).is_dir()]
 
     if not subfolders:
         return streak_lines_dict
