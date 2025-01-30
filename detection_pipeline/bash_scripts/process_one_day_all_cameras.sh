@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# input_folder is the path to the folder of camera folders
+
+# dfn-l0-20150101 <- this one
+#   DFNSMALL07
+#       0001.thumb.jpg
+#       0002.thumb.jpg
+#       0003.thumb.jpg
+#       ...
+#   DFNSMALL10
+#   ...
+# ...
+
+# a folder with the basename of input_folder will be created in output_folder
+# model_path is the .onnx file to the differenced object detector
+
+# after all cameras are processed, one last job is submitted to collate
+# all detections from each camera into one json file for convenience.
+
+
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <input_folder> <output_folder> <model_path>"
