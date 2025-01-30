@@ -6,16 +6,12 @@ from detection_pipeline.streak_lines import StreakLine
 
 
 def main():
-    image_path = "data/detections_dfn-l0-20151101/dfn-l0-20151101/DFNSMALL10/10_2015-11-01_114358_DSC_0030/10_2015-11-01_114358_DSC_0030_33_4871-4320-4991-4604.differenced.jpg"
+    image_path = "data/DFNSMALL08/DFNSMALL08 (copy)/08_2013-10-28_173629_DSC_0830/08_2013-10-28_173629_DSC_0830_35_2606-2019-2702-2060.differenced.jpg"
     streak_line = StreakLine(image_path)
     image: np.ndarray = ski.io.imread(image_path)
 
     _, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(image, cmap="gray", aspect="equal")
-
-    if not streak_line.is_valid:
-        print("Less than 3 blobs, not performing line calculation.")
-        return
 
     ax.set_title("Fitting a Straight Line to Streak Blobs Using RANSAC and Linear Regression")
 

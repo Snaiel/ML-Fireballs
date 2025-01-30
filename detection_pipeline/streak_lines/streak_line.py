@@ -10,6 +10,8 @@ from skimage.feature import blob_dog
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.linear_model import LinearRegression, RANSACRegressor
 
+from utils.constants import RANDOM_SEED
+
 
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
@@ -30,22 +32,26 @@ class StreakLine:
         self._coords = [float(i) for i in image_path.split("_")[-1].removesuffix(".differenced.jpg").split("-")]
         self._number = int(image_path.split("_")[-3])
 
+        self._is_valid = True
+
         image = ski.io.imread(image_path, as_gray=True)
 
-        # Blob detection with dynamic threshold based on density
-        for thresh in [0.005, 0.010, 0.015, 0.020, 0.025, 0.030]:
-            blobs_dog = blob_dog(image, min_sigma=2, max_sigma=10, threshold=thresh, overlap=0.6)
-            density = len(blobs_dog) / (image.shape[0] * image.shape[1])
-            if density < 0.002:
-                break
+        blobs_dog = blob_dog(
+            image,
+            min_sigma=1,
+            max_sigma=10, 
+            sigma_ratio=5.0,
+            threshold_rel=0.2,
+            threshold=None,
+            overlap=0.5
+        )
         
         # Compute radii in the 3rd column
         blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2) 
         self._blobs = blobs_dog
 
-        self._is_valid = len(self._blobs) >= 5
-
-        if not self.is_valid:
+        if len(self._blobs) < 3:
+            self._is_valid = False
             return
 
         self._y_coords = blobs_dog[:, 0]
@@ -53,8 +59,10 @@ class StreakLine:
 
         # RANSAC with Linear Regression
         try:
-            self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=0)
+            self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=RANDOM_SEED)
             self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
+            if self._ransac.inlier_mask_.sum() < 5:
+                self._is_valid = False
         except:
             self._is_valid = False
 
