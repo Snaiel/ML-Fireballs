@@ -8,9 +8,9 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     """
 
     if len(image1.shape) == 3:
-        image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+        image1 = cv2.cvtColor(image1, cv2.COLOR_RGB2GRAY)
     if len(image2.shape) == 3:
-        image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+        image2 = cv2.cvtColor(image2, cv2.COLOR_RGB2GRAY)
 
     # Step 1: Detect keypoints and descriptors using ORB
     orb = cv2.ORB.create()

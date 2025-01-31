@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+import cv2
 import numpy as np
 import structlog
 from skimage import io
@@ -18,14 +19,14 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
-from detection_pipeline.utils import check_image_brightness, remove_saved_detection
+from detection_pipeline.utils import (check_image_brightness,
+                                      remove_saved_detection)
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
 from utils.constants import MAX_TIME_DIFFERENCE, MIN_DIAGONAL_LENGTH
-
 
 VERSION = "1.0.0"
 
@@ -143,8 +144,8 @@ class DetectionWorkerProcess(mp.Process):
         image_current = io.imread(Path(self.args.folder_path, images.current))
 
         if images.before and images.after:
-            image_before = io.imread(Path(self.args.folder_path, images.before))
-            image_after = io.imread(Path(self.args.folder_path, images.after))
+            image_before = cv2.imread(Path(self.args.folder_path, images.before), cv2.IMREAD_GRAYSCALE)
+            image_after = cv2.imread(Path(self.args.folder_path, images.after), cv2.IMREAD_GRAYSCALE)
 
             differenced_image_pair1 = difference_images(image_current, image_before)
             differenced_image_pair2 = difference_images(image_current, image_after)
@@ -157,7 +158,10 @@ class DetectionWorkerProcess(mp.Process):
         else:
             differenced_image = difference_images(
                 image_current,
-                io.imread(Path(self.args.folder_path, images.before)) if images.before else io.imread(Path(self.args.folder_path, images.after))
+                cv2.imread(
+                    Path(self.args.folder_path, images.before if images.before else images.after),
+                    cv2.IMREAD_GRAYSCALE
+                )
             )
         
         image_name = images.current.split(".")[0]

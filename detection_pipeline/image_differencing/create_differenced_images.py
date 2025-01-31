@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
+import cv2
 import numpy as np
-from skimage import io
 from tqdm import tqdm
 
 from detection_pipeline.image_differencing import difference_images
@@ -27,9 +27,9 @@ def process_image_chunk(args: list):
     if fireball_image in differenced_images:
         return
 
-    image1 = io.imread(Path(folder_2015_before_after, images[n]))
-    image2 = io.imread(Path(folder_2015_before_after, fireball_image))
-    image3 = io.imread(Path(folder_2015_before_after, images[n+2]))
+    image1 = cv2.imread(Path(folder_2015_before_after, images[n]), cv2.IMREAD_GRAYSCALE)
+    image2 = cv2.imread(Path(folder_2015_before_after, fireball_image), cv2.IMREAD_GRAYSCALE)
+    image3 = cv2.imread(Path(folder_2015_before_after, images[n+2]), cv2.IMREAD_GRAYSCALE)
 
     differenced_image_pair1 = difference_images(image2, image1)
     differenced_image_pair2 = difference_images(image2, image3)
@@ -43,11 +43,10 @@ def process_image_chunk(args: list):
 
     image_to_save = differenced_image_pair1 if brightness_image_pair1 < brightness_image_pair2 else differenced_image_pair2
 
-    io.imsave(
+    cv2.imwrite(
         Path(folder_differenced_images, fireball_image),
         image_to_save,
-        check_contrast=False,
-        quality=100
+        [cv2.IMWRITE_JPEG_QUALITY, 100]
     )
 
 
