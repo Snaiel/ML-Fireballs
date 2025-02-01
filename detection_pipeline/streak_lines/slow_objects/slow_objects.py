@@ -30,7 +30,7 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
         neighbours = [
             n for n in
             subfolders[i+1:max(len(subfolders),i+3+1)]
-            if abs(int(n.split("_")[-1]) - number) <= 5
+            if abs(int(n.split("_")[-1]) - number) <= 3
         ]
 
         if not neighbours:
@@ -80,7 +80,8 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
                     
                     # print(image, detection)
 
-                    if current_streak.same_trajectory(current_neighbour_streak):
+                    if current_streak.same_trajectory(current_neighbour_streak) and \
+                    current_neighbour_streak.same_trajectory(current_streak):
 
                         same_trajectory = True
 

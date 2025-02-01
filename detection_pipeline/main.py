@@ -462,7 +462,8 @@ def main() -> None:
     invalid_lines = {
         name
         for name, streak_line in streak_lines.items()
-        if not streak_line.is_valid
+        if not streak_line.is_valid and
+        int(name.split("_")[-2]) < 60 # if confidence is high, allow it
     }
 
     erroneous_detections = erroneous_detections.union(invalid_lines)

@@ -59,7 +59,11 @@ class StreakLine:
 
         # RANSAC with Linear Regression
         try:
-            self._ransac = RANSACRegressor(residual_threshold=5, max_trials=100, random_state=RANDOM_SEED)
+            self._ransac = RANSACRegressor(
+                residual_threshold=10,
+                max_trials=100,
+                random_state=RANDOM_SEED
+            )
             self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
             if self._ransac.inlier_mask_.sum() < 5:
                 self._is_valid = False
@@ -189,15 +193,15 @@ class StreakLine:
 
     def similar_line(self, streak_line: StreakLine) -> bool:
         
-        if self.angle_between(streak_line) > 20:
+        if self.angle_between(streak_line) > 15:
             return False
         
         longer_streak, shorter_streak = (self, streak_line) if self.length > streak_line.length else (streak_line, self)
 
-        if longer_streak.midpoint_to_midpoint(shorter_streak) > longer_streak.length * 0.3:
+        if longer_streak.midpoint_to_midpoint(shorter_streak) > longer_streak.length * 0.25:
             return False
         
-        if shorter_streak.length < 0.5 * longer_streak.length:
+        if shorter_streak.length < 0.75 * longer_streak.length:
             return False
 
         return True
@@ -211,17 +215,17 @@ class StreakLine:
 
         # print("Difference:", offset, angle_between)
 
-        if angle_between > 30 * offset:
+        if angle_between > 25 * offset:
             return False
 
         estimated_point_1 = (
-            self.midpoint[0] + ((1000 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] + ((1000 * offset) * math.sin(math.radians(self.angle)))
+            self.midpoint[0] + ((800 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] + ((800 * offset) * math.sin(math.radians(self.angle)))
         )
 
         estimated_point_2 = (
-            self.midpoint[0] - ((1000 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] - ((1000 * offset) * math.sin(math.radians(self.angle)))
+            self.midpoint[0] - ((800 * offset) * math.cos(math.radians(self.angle))),
+            self.midpoint[1] - ((800 * offset) * math.sin(math.radians(self.angle)))
         )
 
         # print("Estimated points:", estimated_point_1, estimated_point_2)
@@ -231,8 +235,8 @@ class StreakLine:
 
         # print("Distance to estimated points:", dist_to_p1, dist_to_p2)
 
-        if dist_to_p1 > 1000 * offset:
-            if dist_to_p2 > 1000 * offset:
+        if dist_to_p1 > 800 + (100 * (offset - 1)):
+            if dist_to_p2 > 800 + (100 * (offset - 1)):
                 return False
 
         return True
