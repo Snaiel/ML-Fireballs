@@ -1,3 +1,7 @@
+import argparse
+import json
+from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage as ski
@@ -6,9 +10,21 @@ from detection_pipeline.streak_lines import StreakLine
 
 
 def main():
-    image_path = "data/DFNSMALL08/DFNSMALL08 (copy)/08_2013-10-28_173629_DSC_0830/08_2013-10-28_173629_DSC_0830_35_2606-2019-2702-2060.differenced.jpg"
-    streak_line = StreakLine(image_path)
-    image: np.ndarray = ski.io.imread(image_path)
+    @dataclass
+    class Args:
+        image_path: str
+    
+    parser = argparse.ArgumentParser(
+        description="Plot a .differenced.jpg detection",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("image_path", type=str, help="Path to the .differenced.jpg detection")
+
+    args = Args(**vars(parser.parse_args()))
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+
+    streak_line = StreakLine(args.image_path)
+    image: np.ndarray = ski.io.imread(args.image_path)
 
     _, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(image, cmap="gray", aspect="equal")

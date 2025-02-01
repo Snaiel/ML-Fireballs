@@ -1,4 +1,7 @@
+import argparse
+import json
 import os
+from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -9,22 +12,35 @@ from detection_pipeline.streak_lines.utils import create_streak_line
 
 
 def main():
-    folder_path = "data/detections_dfn-l0-20151101/dfn-l0-20151101/"
+    @dataclass
+    class Args:
+        folder_path: str
+    
+    parser = argparse.ArgumentParser(
+        description="Plot a .differenced.jpg detection",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("folder_path", type=str, help="Detection outputs folder which contains folders for each camera")
 
-    camera_folders = [i for i in sorted(os.listdir(folder_path)) if Path(folder_path, i).is_dir()]
+    args = Args(**vars(parser.parse_args()))
+    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
+
+    camera_folders = [i for i in sorted(os.listdir(args.folder_path)) if Path(args.folder_path, i).is_dir()]
+
+    print("Invalid lines:")
 
     for camera in camera_folders:
 
-        camera_folder = Path(folder_path, camera)
+        camera_folder = Path(args.folder_path, camera)
 
-        subfolders = [i for i in sorted(os.listdir(camera_folder)) if "log" not in i]
+        subfolders = [i for i in sorted(os.listdir(camera_folder)) if Path(camera_folder, i).is_dir()]
 
         if not subfolders:
             continue
 
         original_image = Path(camera_folder, subfolders[0], subfolders[0] + ".thumb.jpg")
 
-        detections_images = []
+        detections_images: list[Path] = []
 
         for subfolder in subfolders:
             detections = [i for i in sorted(os.listdir(Path(camera_folder, subfolder))) if "differenced" in i and "thumb" not in i]
@@ -45,6 +61,7 @@ def main():
         for idx, streak in enumerate(streak_lines):
 
             if not streak.is_valid:
+                print(detections_images[idx].name)
                 continue
 
             start_point = streak.startpoint
