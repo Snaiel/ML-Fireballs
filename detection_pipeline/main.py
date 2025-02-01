@@ -469,7 +469,8 @@ def main() -> None:
 
     print("\n\nInvalid lines:\n")
 
-    for streak in sorted(list(invalid_lines)):
+    invalid_lines = sorted(list(invalid_lines))
+    for streak in invalid_lines:
         print(streak)
     print()
 
