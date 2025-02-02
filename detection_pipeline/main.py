@@ -19,7 +19,7 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
-from detection_pipeline.utils import (check_image_brightness,
+from detection_pipeline.utils import (FilteredDetections, check_image_brightness,
                                       remove_saved_detection)
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
@@ -430,126 +430,64 @@ def main() -> None:
     
 
     logger.info("finished performing detections")
+    logger.info("filtering detections based on streak lines")
 
-    # All Detections
+    filtered_detections = FilteredDetections(output_folder)
 
-    detections = []
-    while not detections_queue.empty():
-        detections.append(detections_queue.get())
-    detections.sort()
-
-    logger.info("total_detections", total_detections=len(detections))
-    logger.info("detections", detections=detections)
 
     print("\n\n\nDetections:\n")
-
+    detections = sorted(list(filtered_detections.all_detections))
     for detection in detections:
         print(detection)
-
     print("\nTotal detections:", len(detections))
+    logger.info("detections", total=len(detections), detections=detections)
 
-
-    all_detections_set = set(detections)
-    erroneous_detections = set()
-
-
-    logger.info("starting checks for similar lines and slow moving objects")
-    streak_lines = get_streak_lines(output_folder)
-
-
-    # Invalid Lines
-
-    invalid_lines = {
-        name
-        for name, streak_line in streak_lines.items()
-        if not streak_line.is_valid and
-        int(name.split("_")[-2]) < 60 # if confidence is high, allow it
-    }
-
-    erroneous_detections = erroneous_detections.union(invalid_lines)
 
     print("\n\nInvalid lines:\n")
-
-    invalid_lines = sorted(list(invalid_lines))
+    invalid_lines = sorted(list(filtered_detections.invalid_lines))
     for streak in invalid_lines:
         print(streak)
     print()
-
     print("Total invalid lines:", len(invalid_lines))
+    logger.info("invalid_lines", total=len(invalid_lines), invalid_lines=invalid_lines)
 
-    logger.info("total_invalid_lines", total_invalid_lines=len(invalid_lines))
-    logger.info("invalid_lines", invalid_lines=invalid_lines)
-
-
-    # Similar Lines
-
-    similar_lines = find_similar_lines(streak_lines)
-    total_similar_lines = 0
 
     print("\n\nLikely static lines and slow moving objects (not mutually exclusive)")
-    print("\nSimilar lines:\n")
 
-    for group in similar_lines:
-        total_similar_lines += len(group)
+    print("\nSimilar lines:\n")
+    for group in filtered_detections.similar_lines:
         for i in group:
             print(i)
-            erroneous_detections.add(i)
         print()
-    
-    print("Total similar lines:", total_similar_lines)
-
-
-    # Slow moving objects
+    print("Total similar lines:", filtered_detections.total_similar_lines)
+    logger.info("similar_lines", total=filtered_detections.total_similar_lines, similar_lines=filtered_detections.similar_lines)
 
     print("\n\nSlow moving objects:\n")
-
-    logger.info("total_similar_lines", total_similar_lines=total_similar_lines)
-    logger.info("similar_lines", similar_lines=similar_lines)
-
-    slow_objects = find_slow_objects(output_folder, streak_lines)
-    total_slow_objects = 0
-
-    for group in slow_objects:
-        total_slow_objects += len(group)
+    for group in filtered_detections.slow_objects:
         for i in group:
             print(i)
-            erroneous_detections.add(i)
         print()
+    print("Total slow objects:", filtered_detections.total_slow_objects)
+    logger.info("slow_objects", stotal=filtered_detections.total_slow_objects, low_objects=filtered_detections.slow_objects)
     
-    print("Total slow objects:", total_slow_objects)
-
-    logger.info("total_slow_objects", total_slow_objects=total_slow_objects)
-    logger.info("slow_objects", slow_objects=slow_objects)
     
     logger.info("similar lines and slow objects are not mutually exclusive")
 
 
-    # Combined erroneous detections
-
     print("\n\nCombined erroneous detections:\n")
-
-    erroneous_detections = sorted(list(erroneous_detections))
+    erroneous_detections = sorted(list(filtered_detections.erroneous_detections))
     for i in erroneous_detections:
         print(i)
-    
     print("\nTotal erroneous detections:", len(erroneous_detections))
 
     logger.info("total_erroneous_detections", total_erroneous_detections=len(erroneous_detections))
     logger.info("erroneous_detections", erroneous_detections=erroneous_detections)
 
-    if not args.save_erroneous:
-        for erroneous in erroneous_detections:
-            remove_saved_detection(output_folder, erroneous)
             
-    # Final detections
-
-    final_detections = sorted(list(all_detections_set.difference(erroneous_detections)))
-
     print("\n\nFinal detections:\n")
-
+    final_detections = sorted(list(filtered_detections.final_detections))
     for i in final_detections:
         print(i)
-
     print("\nTotal final detections:", len(final_detections))
 
     logger.info("total_final_detections", total_final_detections=len(final_detections))

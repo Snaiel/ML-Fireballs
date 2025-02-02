@@ -65,7 +65,7 @@ class StreakLine:
                 random_state=RANDOM_SEED
             )
             self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
-            if self._ransac.inlier_mask_.sum() < 5:
+            if self._ransac.inlier_mask_.sum() < 4:
                 self._is_valid = False
         except:
             self._is_valid = False
