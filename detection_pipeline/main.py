@@ -19,7 +19,7 @@ from detection_pipeline.image_differencing import difference_images
 from detection_pipeline.streak_lines import (find_similar_lines,
                                              find_slow_objects,
                                              get_streak_lines)
-from detection_pipeline.utils import (FilteredDetections, check_image_brightness,
+from detection_pipeline.core import (FilteredDetections, check_image_brightness,
                                       remove_saved_detection)
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,

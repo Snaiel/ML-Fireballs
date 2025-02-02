@@ -116,7 +116,7 @@ def main():
         description="Print filtered detections from output folder",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("output_path", type=str, help="Detection outputs folder which contains folders for each camera")
+    parser.add_argument("output_path", type=str, help="Detection outputs folder containing subfolders for each image")
 
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")

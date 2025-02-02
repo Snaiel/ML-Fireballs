@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import argparse
 import json
 
-from detection_pipeline.utils.parse_logs import parse_logs
+from detection_pipeline.core.parse_logs import parse_logs
 
 
 @dataclass
