@@ -60,11 +60,18 @@ def remove_saved_detection(output_folder: str, detection: str) -> None:
     (image_folder, detection_name) = detection.split("/")
 
     image_folder_path = Path(output_folder, image_folder)
+
+    if not image_folder_path.exists():
+        return
+
     json_file_path = Path(image_folder_path, image_folder + ".json")
 
     with open(json_file_path) as json_file:
         json_data: dict = json.load(json_file)
     
+    if not any(d["name"] == detection_name for d in json_data["detections"]):
+        return
+
     json_data["detections"] = [d for d in json_data["detections"] if d["name"] != detection_name]
     
     if len(json_data["detections"]) == 0:
