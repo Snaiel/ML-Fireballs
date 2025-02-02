@@ -474,7 +474,7 @@ def main() -> None:
             print(i)
         print()
     print("Total slow objects:", filtered_detections.total_slow_objects)
-    logger.info("slow_objects", stotal=filtered_detections.total_slow_objects, low_objects=filtered_detections.slow_objects)
+    logger.info("slow_objects", total=filtered_detections.total_slow_objects, low_objects=filtered_detections.slow_objects)
     
     
     logger.info("similar lines and slow objects are not mutually exclusive")
@@ -485,9 +485,7 @@ def main() -> None:
     for i in erroneous_detections:
         print(i)
     print("\nTotal erroneous detections:", len(erroneous_detections))
-
-    logger.info("total_erroneous_detections", total_erroneous_detections=len(erroneous_detections))
-    logger.info("erroneous_detections", erroneous_detections=erroneous_detections)
+    logger.info("erroneous_detections", total=len(erroneous_detections), erroneous_detections=erroneous_detections)
 
             
     print("\n\nFinal detections:\n")
@@ -495,9 +493,7 @@ def main() -> None:
     for i in final_detections:
         print(i)
     print("\nTotal final detections:", len(final_detections))
-
-    logger.info("total_final_detections", total_final_detections=len(final_detections))
-    logger.info("final_detections", final_detections=final_detections)
+    logger.info("final_detections", total=len(final_detections), final_detections=final_detections)
 
 
     if not args.save_erroneous:
