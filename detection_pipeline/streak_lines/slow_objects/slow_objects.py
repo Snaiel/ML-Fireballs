@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from .streak_line import StreakLine
+from ..streak_line import StreakLine
 
 
 def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] = {}) -> list[list[str]]:
@@ -97,40 +97,3 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
                         break
 
     return groups
-
-
-def main():
-    import argparse
-    import json
-    import os
-    from dataclasses import dataclass
-
-    @dataclass
-    class Args:
-        folder_path: str
-    
-    parser = argparse.ArgumentParser(
-        description="Plot a .differenced.jpg detection",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument("folder_path", type=str, help="Detection outputs folder containing subfolders for each image")
-
-    args = Args(**vars(parser.parse_args()))
-    print("\nargs:", json.dumps(vars(args), indent=4), "\n")
-
-    total = 0
-
-    groups = find_slow_objects(Path(args.folder_path))
-    
-    for group in groups:
-        print()
-        for i in group:
-            print(i)
-        total += len(group)
-    print()
-
-    print(total)
-
-
-if __name__ == "__main__":
-    main()
