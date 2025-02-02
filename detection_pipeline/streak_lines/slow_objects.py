@@ -78,8 +78,6 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
                     if not current_neighbour_streak.is_valid:
                         continue
                     
-                    # print(image, detection)
-
                     if current_streak.same_trajectory(current_neighbour_streak) and \
                     current_neighbour_streak.same_trajectory(current_streak):
 

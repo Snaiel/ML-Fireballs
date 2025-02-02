@@ -167,14 +167,32 @@ class StreakLine:
     
 
     def angle_between(self, streak_line: StreakLine) -> float:
+        """
+        Calculates the angle (in degrees) between the current line and another streak line.
+
+        Args:
+            streak_line (StreakLine): Another line object to compare with.
+
+        Returns:
+            float: The angle between the two lines in degrees.
+        """
+
+        # Calculate the angle in radians using the arctangent (atan) function.
+        # This formula is derived from the tangent of the angle between two lines:
+        #     tan(θ) = |(m1 - m2) / (1 + m1 * m2)|
+        # Where:
+        # - m1 = self.gradient (slope of the current line)
+        # - m2 = streak_line.gradient (slope of the other line)
+        # The absolute value ensures the angle is always positive.
         angle_radians = math.atan(
             abs(
                 (self.gradient - streak_line.gradient) /
                 (1 + (self.gradient * streak_line.gradient))
             )
         )
-        angle_degrees = math.degrees(angle_radians)
-        return angle_degrees
+
+        # Return the final angle in degrees.
+        return math.degrees(angle_radians)
 
 
     def distance(self, point1: tuple, point2: tuple) -> float:
@@ -190,6 +208,36 @@ class StreakLine:
     def midpoint_to_midpoint(self, streak_line: StreakLine) -> float:
         return self.midpoint_to_point(streak_line.midpoint)
     
+
+    def project_point(self, point: tuple):
+        """
+        Projects a given point onto the line defined by this streak.
+
+        Args:
+            point (tuple): The (x, y) coordinates of the point to be projected.
+
+        Returns:
+            tuple: The (x, y) coordinates of the projected point.
+        """
+
+        # Convert input points to NumPy arrays for easy vector operations
+        p = np.array(point)        # The point to be projected
+        p0 = np.array(self.midpoint)  # A known point on the line
+
+        # Create the direction vector of the line based on the gradient
+        # This represents the change in x and y along the line: (dx, dy) = (1, m)
+        d = np.array([1, self.gradient])  
+
+        # Calculate the projection using the vector projection formula:
+        # Projection = p0 + [( (p - p0) ⋅ d ) / ( d ⋅ d )] * d
+        # - (p - p0) is the vector from the known point to the point to project
+        # - The dot product (⋅) measures how much of (p - p0) aligns with d
+        # - The scaling factor adjusts d to reach the closest point on the line
+        projection: np.ndarray = p0 + (np.dot(p - p0, d) / np.dot(d, d)) * d
+
+        # Convert the NumPy array to a tuple of native Python floats for clean output
+        return tuple(map(float, projection))
+
 
     def similar_line(self, streak_line: StreakLine) -> bool:
         
@@ -213,30 +261,15 @@ class StreakLine:
 
         angle_between = self.angle_between(streak_line)
 
-        # print("Difference:", offset, angle_between)
-
         if angle_between > 25 * offset:
             return False
 
-        estimated_point_1 = (
-            self.midpoint[0] + ((800 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] + ((800 * offset) * math.sin(math.radians(self.angle)))
-        )
+        projected_point = self.project_point(streak_line.midpoint)
 
-        estimated_point_2 = (
-            self.midpoint[0] - ((800 * offset) * math.cos(math.radians(self.angle))),
-            self.midpoint[1] - ((800 * offset) * math.sin(math.radians(self.angle)))
-        )
-
-        # print("Estimated points:", estimated_point_1, estimated_point_2)
-
-        dist_to_p1 = self.distance(estimated_point_1, streak_line.midpoint)
-        dist_to_p2 = self.distance(estimated_point_2, streak_line.midpoint)
-
-        # print("Distance to estimated points:", dist_to_p1, dist_to_p2)
-
-        if dist_to_p1 > 800 + (100 * (offset - 1)):
-            if dist_to_p2 > 800 + (100 * (offset - 1)):
-                return False
+        if self.midpoint_to_point(projected_point) > 1000 * offset:
+            return False
+        
+        if streak_line.midpoint_to_point(projected_point) > 200 * offset:
+            return False
 
         return True
