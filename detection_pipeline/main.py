@@ -187,8 +187,9 @@ class DetectionWorkerProcess(mp.Process):
 
                 shutil.copy(Path(self.args.folder_path, images.current), image_folder)
 
+                differenced_image_path = Path(image_folder, images.current.removesuffix("jpg") + "differenced.jpg")
                 io.imsave(
-                    Path(image_folder, images.current.removesuffix("jpg") + "differenced.jpg"),
+                    differenced_image_path,
                     differenced_image,
                     check_contrast=False,
                     quality=100
@@ -218,7 +219,11 @@ class DetectionWorkerProcess(mp.Process):
                         quality=100
                     )
 
-                output_data = {"detections": detections}
+                output_data = {
+                    "original_image": images.current,
+                    "differenced_image": differenced_image_path.name,
+                    "detections": detections
+                }
                 output_json = json.dumps(output_data, indent=4)
 
                 with open(Path(image_folder, image_name + ".json"), 'w') as json_file:
@@ -321,6 +326,7 @@ def main() -> None:
     model_path = Path(args.model_path)
 
     images = [i for i in sorted(os.listdir(folder_path)) if i.endswith(".jpg")]
+    logger.info("images", total=len(images), images=images)
 
 
     with mp.Pool() as pool:

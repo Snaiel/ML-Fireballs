@@ -15,11 +15,11 @@ def check_image_brightness(image_path: Path) -> None | str:
     median = np.median(image)
     median_max_threshold = 165
     if median > median_max_threshold:
-        return f"median pixel brightness too bright ({median:.2f} > {median_max_threshold})"
+        return f"median pixel brightness too bright ({median} > {median_max_threshold})"
     
     max = np.max(image)
     max_min_threshold =40
     if max < max_min_threshold:
-        return f"max pixel brightness too low ({max:.2f} < {max_min_threshold})"
+        return f"max pixel brightness too low ({max} < {max_min_threshold})"
     
     return None
