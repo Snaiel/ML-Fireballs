@@ -500,5 +500,10 @@ def main() -> None:
     logger.info("final_detections", final_detections=final_detections)
 
 
+    if not args.save_erroneous:
+        for erroneous in erroneous_detections:
+            remove_saved_detection(output_folder, erroneous)
+
+
 if __name__ == "__main__":
     main()

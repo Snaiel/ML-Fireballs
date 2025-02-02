@@ -34,7 +34,7 @@ def get_detections(output_folder: str) -> list[str]:
     return detections
 
 
-def remove_saved_detection(output_folder: Path, detection: str):
+def remove_saved_detection(output_folder: str, detection: str) -> None:
     """
     output_folder is the folder containing subfolders for each image
 
