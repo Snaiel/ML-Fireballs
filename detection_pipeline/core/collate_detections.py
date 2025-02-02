@@ -18,9 +18,8 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
-        "--processed_folder",
+        "processed_folder",
         type=str,
-        required=True,
         help="Path to the folder of a given night containing the detections for each camera."
     )
     

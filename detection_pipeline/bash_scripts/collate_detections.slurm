@@ -23,7 +23,6 @@ cd $MYSOFTWARE/ML-Fireballs
 
 source .venv/bin/activate
 
-python3 -m detection_pipeline.utils.collate_detections \
-    --processed_folder "$OUTPUT_PATH"
+python3 -m detection_pipeline.core.collate_detections "$OUTPUT_PATH"
 
 EOF
