@@ -40,17 +40,19 @@ pip install -r requirements.txt
 
 ## Directories
 
-`object_detection` contains code for training and testing a YOLO object detection model for fireballs in tiles.
+`detection_pipeline`: performing detections on a folder containing a sequence of images.
 
-`fireball_detection` contains code for tiling and performing detections on full-sized images.
+`fireball_detection`: tiling and performing detections on standalone full-sized images.
 
-`point_pickings` contains code for automating the point pickings process.
+`object_detection`: training and testing a YOLO object detection model for fireballs in tiles.
+
+`point_pickings`: automating the point pickings process.
 
 <br>
 
 ## Usage
 
-Everything is designed to work (hopefully) from the project directory. If a particular script/file is meant to be run directly, you run it as a module. For example, to run
+Everything is designed to work (hopefully) from the root project directory (`ML-Fireballs/`). If a particular script/file is meant to be run directly, you run it as a module. For example, to run
 
 ```
 point_pickings/misc/scikit_blobs.py
@@ -66,7 +68,43 @@ Notice how `.` is used for package separators and `.py` is omitted. Tab completi
 
 <br>
 
+## Detection Pipeline
+
+This folder contains code for detecting fireballs in a folder of images. Functionality such as checking brightness of whole images, image differencing, tile pixel thresholds, and streak line analysis.
+
+`detection_pipeline.main` is the main program where you give it a folder of images, an optional output destination, and a trained yolo model and it will run the detection pipeline on the input folder using the model, then generate outputs in the designated destination.
+
+### Running on Setonix
+
+`detection_pipeline/bash_scripts/` is a folder containing useful bash scripts for running the detection pipeline on Setonix.
+
+<br>
+
+## Fireball Detection
+
+`fireball_detection` contains code for splitting an input image into tiles, running a yolo model on tiles, then repositioning and merging detections together.
+
+**This only deals with detecting a fireball in a single image. It is better to use `detection_pipeline` for proper fireball detection on a folder of images since it uses image differencing and does analysis on the detected streak lines.**
+
+`fireball_detection.detect` has the detection system implemented as a function where you call `detect_fireballs` with an image and it returns bounding boxes and confidence of detected fireballs.
+
+Running the module also shows a sample detection.
+
+```sh
+python3 -m fireball_detection.detect
+```
+
+### Methodology
+
+Animation source: https://github.com/Snaiel/Manim-Fireball-Detection
+
+https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
+
+<br>
+
 ## Object Detection
+
+This deals with YOLOv8 stuff.
 
 ### Dataset Creation
 
@@ -99,24 +137,6 @@ Running the module performs the training process with a specified dataset.
 ```sh
 python3 -m object_detection.model.train
 ```
-
-<br>
-
-## Fireball Detection
-
-`fireball_detection.detect` has the detection system implemented as a function where you call `detect_fireballs` with an image and it returns bounding boxes and confidence of detected fireballs.
-
-Running the module also shows a sample detection.
-
-```sh
-python3 -m fireball_detection.detect
-```
-
-### Methodology
-
-Animation source: https://github.com/Snaiel/Manim-Fireball-Detection
-
-https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
 
 <br>
 
