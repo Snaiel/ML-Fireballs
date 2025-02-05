@@ -17,7 +17,7 @@ def main():
         folder_path: str
     
     parser = argparse.ArgumentParser(
-        description="Plot a .differenced.jpg detection",
+        description="Plot streaks from a camera folder",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("folder_path", type=str, help="Detection outputs folder containing subfolders for each image")
