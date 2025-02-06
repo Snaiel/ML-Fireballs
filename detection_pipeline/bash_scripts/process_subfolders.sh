@@ -66,6 +66,7 @@ for subfolder in "$input_folder"/*; do
         job_id=$(sbatch \
             --export=ALL,FOLDER_PATH="$subfolder",OUTPUT_PATH="$output_path",MODEL_PATH="$model_path",SAVE_ERRONEOUS="$save_erroneous" \
             --output="$output_path/slurm-%j-$input_basename-$subfolder_basename.out" \
+            --account="$PAWSEY_PROJECT" \
             "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/fireball_detection.slurm" | awk '{print $4}')
         echo "$input_basename/$subfolder_basename job id: $job_id"
         # Add job ID to dependency list

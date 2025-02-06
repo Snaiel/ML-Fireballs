@@ -53,6 +53,7 @@ echo "Created output folder: $output_path"
 job_id=$(sbatch \
     --export=ALL,FOLDER_PATH="$input_folder",OUTPUT_PATH="$output_folder",MODEL_PATH="$model_path",SAVE_ERRONEOUS="$save_erroneous",NO_OVERWRITE="true" \
     --output="$output_path/slurm-%j-$input_basename.out" \
+    --account="$PAWSEY_PROJECT" \
     "$MYSOFTWARE/ML-Fireballs/detection_pipeline/bash_scripts/fireball_detection.slurm" | awk '{print $4}')
 
 echo "$input_basename job id: $job_id"
