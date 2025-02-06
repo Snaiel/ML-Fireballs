@@ -438,7 +438,7 @@ Building off of the paper: [Fireball streak detection with minimal CPU processin
 
 **Overview of the new detection pipeline**
 
-
+![Drawing 2025-01-25 19 31 21 excalidraw](https://github.com/user-attachments/assets/320a4d2c-4264-45c1-8e80-4d162420ee5a)
 
 This folder contains code for detecting fireballs in a folder of images. Functionality such as checking brightness of whole images, image differencing, tile pixel thresholds, and streak line analysis.
 
