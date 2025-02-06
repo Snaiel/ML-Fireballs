@@ -9,21 +9,10 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
   - [Fireball detection on Setonix](#fireball-detection-on-setonix)
     - [Installation](#installation)
     - [Running Jobs](#running-jobs)
-      - [Processing a Single Folder (i.e a nights worth of images by a single camera)](#processing-a-single-folder-ie-a-nights-worth-of-images-by-a-single-camera)
-      - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
-      - [Example: Processing an Entire Month of Detections](#example-processing-an-entire-month-of-detections)
+    - [Processing a Single Folder (i.e a nights worth of images by a single camera)](#processing-a-single-folder-ie-a-nights-worth-of-images-by-a-single-camera)
+    - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
+    - [Example: Processing an Entire Month of Detections](#example-processing-an-entire-month-of-detections)
     - [Useful Setonix Commands](#useful-setonix-commands)
-      - [View Jobs in Queue](#view-jobs-in-queue)
-      - [View Total, Running, Pending Jobs in Queue](#view-total-running-pending-jobs-in-queue)
-      - [View Queued Jobs of Other Users](#view-queued-jobs-of-other-users)
-      - [Cancel All Jobs](#cancel-all-jobs)
-      - [View Jobs History](#view-jobs-history)
-      - [View Usage](#view-usage)
-      - [Find Paths of Cropped Detections](#find-paths-of-cropped-detections)
-      - [Copy Cropped Detections to Folder](#copy-cropped-detections-to-folder)
-      - [Count Images Captured](#count-images-captured)
-      - [Count Number of Detections](#count-number-of-detections)
-      - [Count Number of Images with Detections](#count-number-of-images-with-detections)
   - [Working on the project](#working-on-the-project)
     - [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)
     - [Working On The Project In Setonix](#working-on-the-project-in-setonix)
@@ -89,11 +78,13 @@ Run the virtual environment setup script.
 ./detection_pipeline/bash_scripts/venv.sh
 ```
 
+<br>
+
 ### Running Jobs
 
 We'll refer to this folder structure moving forwards:
 
-```txt
+```
 /scratch/$PAWSEY_PROJECT/acacia_JPGs/
 ```
 
@@ -121,7 +112,9 @@ acacia_JPGs
 
 The following commands should be run while in the `ML-Fireballs/` folder.
 
-#### Processing a Single Folder (i.e a nights worth of images by a single camera)
+<br>
+
+### Processing a Single Folder (i.e a nights worth of images by a single camera)
 
 If you want to process a single folder containing images (e.g. `/scratch/$PAWSEY_PROJECT/acacia_JPGS/dfn-l0-20150101/DFNSMALL09`), run:
 
@@ -144,7 +137,9 @@ So the final command may look like:
 
 From the above command, a folder `$MYSCRATCH/DFNSMALL09/` will be created containing the outputs of the program.
 
-#### Processing Multiple Folders (i.e each camera of a given day)
+<br>
+
+### Processing Multiple Folders (i.e each camera of a given day)
 
 If you want to process a folder containing subfolders of images (e.g. `/scratch/$PAWSEY_PROJECT/acacia_JPGS/dfn-l0-20150101/`), run:
 
@@ -162,7 +157,7 @@ The final command may look like:
 
 From the above command, a folder `$MYSCRATCH/dfn-l0-20150101/` will be created containing the outputs of the program.
 
-#### Example: Processing an Entire Month of Detections
+### Example: Processing an Entire Month of Detections
 
 `acacia_JPGs/` may have folders of days from multiple months.
 
@@ -180,51 +175,53 @@ find /scratch/$PAWSEY_PROJECT/acacia_JPGs/ -maxdepth 1 -type d -name "*201501*" 
 done
 ```
 
+<br>
+
 ### Useful Setonix Commands
 
-#### View Jobs in Queue
+**View Jobs in Queue**
 
 ```sh
 squeue -u $USER
 ```
 
-#### View Total, Running, Pending Jobs in Queue
+**View Total, Running, Pending Jobs in Queue**
 
 ```sh
 echo "Total: $(squeue -u $USER | tail -n +2 | wc -l), Running: $(squeue -u $USER --state=R | tail -n +2 | wc -l), Pending: $(squeue -u $USER --state=PD | tail -n +2 | wc -l)"
 ```
 
-#### View Queued Jobs of Other Users
+**View Queued Jobs of Other Users**
 
 ```sh
 squeue --format="%u" --noheader | sort | uniq -c | sort -nr
 ```
 
-#### Cancel All Jobs
+**Cancel All Jobs**
 
 ```sh
 scancel -u $USER
 ```
 
-#### View Jobs History
+**View Jobs History**
 
 ```sh
 sacct -u $USER
 ```
 
-#### View Usage
+**View Usage**
 
 ```sh
 pawseyAccountBalance -u
 ```
 
-#### Find Paths of Cropped Detections
+**Find Paths of Cropped Detections**
 
 ```sh
 find $MYSCRATCH/dfn-2015-01-candidates -type f -regex '.*/.*_[0-9]+-[0-9]+-[0-9]+-[0-9]+\.jpg'
 ```
 
-#### Copy Cropped Detections to Folder
+**Copy Cropped Detections to Folder**
 
 ```sh
 find $MYSCRATCH/dfn-2015-01-candidates -type f -regex '.*/.*_[0-9]+-[0-9]+-[0-9]+-[0-9]+\.jpg' -exec cp {} dfn-2015-01-candidates-cropped/ \;
@@ -232,13 +229,13 @@ find $MYSCRATCH/dfn-2015-01-candidates -type f -regex '.*/.*_[0-9]+-[0-9]+-[0-9]
 
 Make sure `dfn-2015-01-candidates-cropped/` exists first!
 
-#### Count Images Captured
+**Count Images Captured**
 
 ```sh
 find /scratch/$PAWSEY_PROJECT/acacia_JPGs/dfn-l0-201501* -type f | wc -l
 ```
 
-#### Count Number of Detections
+**Count Number of Detections**
 
 ```sh
 for folder in $MYSCRATCH/dfn-2015-01-candidates/dfn-l0-2015*; do
@@ -260,7 +257,7 @@ You can swap out `'.final_detections[]'` for
 - `'.detections[]'`
 - `'.erroneous_detections[]'`
 
-#### Count Number of Images with Detections
+**Count Number of Images with Detections**
 
 ```sh
 for folder in $MYSCRATCH/dfn-2015-01-candidates/dfn-l0-2015*; do
@@ -435,6 +432,13 @@ Notice how `.` is used for package separators and `.py` is omitted. Tab completi
 <br>
 
 ## Detection Pipeline
+
+Building off of the paper: [Fireball streak detection with minimal CPU processing requirements for the Desert Fireball Network data processing pipeline
+](https://doi.org/10.1017/pasa.2019.48) by Towner et al. (2020).
+
+**Overview of the new detection pipeline**
+
+
 
 This folder contains code for detecting fireballs in a folder of images. Functionality such as checking brightness of whole images, image differencing, tile pixel thresholds, and streak line analysis.
 
