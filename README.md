@@ -20,6 +20,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 - [Usage](#usage)
 - [Directories](#directories)
 - [Detection Pipeline](#detection-pipeline)
+  - [Logs](#logs)
 - [Fireball Detection](#fireball-detection)
 - [Object Detection](#object-detection)
   - [What’s the Deal with object\_detection.detectors?](#whats-the-deal-with-object_detectiondetectors)
@@ -184,6 +185,8 @@ The final command may look like:
 ```
 
 From the above command, a folder `$MYSCRATCH/dfn-l0-20150101/` will be created containing the outputs of the program.
+
+<br>
 
 ### Example: Processing an Entire Month of Detections
 
@@ -366,7 +369,7 @@ Load the PyTorch module.
 module load pytorch/2.2.0-rocm5.7.3
 ```
 
-*Note: PyTorch is very important for the entire YOLO object detection part. Even if the ultralytics package is not being directly used, running inference on the models requires math to be done by PyTorch.*
+*Note: PyTorch is very important for the entire YOLO object detection part. Even if the `ultralytics` package is not being directly used, running inference on the models requires math to be done by PyTorch.*
 
 Enter the subshell. **THIS IS IMPORTANT!!!**
 
@@ -474,7 +477,9 @@ This folder contains code for detecting fireballs in a folder of images. Functio
 
 `detection_pipeline.main` is the main program where you give it a folder of images, an optional output destination, and a trained yolo model and it will run the detection pipeline on the input folder using the model, then generate outputs in the designated destination.
 
-The logs made by the pipeline use the JSON Lines format. You can use the `jq` command to view them in a human readable way.
+## Logs
+
+The logs made by the pipeline use the **JSON Lines** format. You can use the `jq` command to view them in a human readable way.
 
 ```sh
 jq . $MYSCRATCH/dfn-2015-01-candidates/dfn-l0-20150101/DFNSMALL09/dfn-l0-20150101_DFNSMALL09.log | less
@@ -482,7 +487,7 @@ jq . $MYSCRATCH/dfn-2015-01-candidates/dfn-l0-20150101/DFNSMALL09/dfn-l0-2015010
 
 Piping it to `less` makes it navigable. Up and down arrows, page up and page down, `g` to go to the start, `shift + g` to go to the end, `<num> + g` to go that line e.g. to go to line 11, type`11g`. `q` to quit.
 
-For example, to output the final detections by a camera:
+`jq` works well when parsing through it. For example, to output the final detections by a camera:
 
 ```sh
 jq -r 'select(.final_detections != null) | .final_detections[]' "$MYSCRATCH/dfn-2015-01-candidates/dfn-l0-20150101/DFNSMALL09/dfn-l0-20150101_DFNSMALL09.log"
