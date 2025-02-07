@@ -24,6 +24,7 @@ from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
+import utils.constants
 from utils.constants import (DETECTOR_CONF, MAX_TIME_DIFFERENCE,
                              MERGE_BBOXES_MARGIN, MIN_DIAGONAL_LENGTH,
                              TILE_BORDER_SIZE)
@@ -323,6 +324,14 @@ def main() -> None:
 
     logger.info("version", version=VERSION)
     logger.info("args", args=vars(args))
+
+    logger.info(
+        "constants",
+        constants={
+            key: value for key, value in vars(utils.constants).items()
+            if not key.startswith("__")
+        }
+    )
 
     model_path = Path(args.model_path)
 
