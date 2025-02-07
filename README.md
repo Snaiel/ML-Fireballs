@@ -2,35 +2,41 @@
 
 Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) research. Contains code for automated point pickings and YOLO fireball detection.
 
-## Table of Contents
+# Table of Contents
 
 - [ML-Fireballs](#ml-fireballs)
-  - [Table of Contents](#table-of-contents)
-  - [Fireball detection on Setonix](#fireball-detection-on-setonix)
-    - [Installation](#installation)
-    - [Running Jobs](#running-jobs)
+- [Table of Contents](#table-of-contents)
+- [Fireball detection on Setonix](#fireball-detection-on-setonix)
+  - [Installation](#installation)
+  - [Custom-Trained YOLO Model](#custom-trained-yolo-model)
+  - [Running Jobs](#running-jobs)
     - [Processing a Single Folder (i.e a nights worth of images by a single camera)](#processing-a-single-folder-ie-a-nights-worth-of-images-by-a-single-camera)
     - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
     - [Example: Processing an Entire Month of Detections](#example-processing-an-entire-month-of-detections)
-    - [Useful Setonix Commands](#useful-setonix-commands)
-  - [Working on the project](#working-on-the-project)
-    - [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)
-    - [Working On The Project In Setonix](#working-on-the-project-in-setonix)
-  - [Directories](#directories)
-  - [Usage](#usage)
-  - [Detection Pipeline](#detection-pipeline)
-  - [Fireball Detection](#fireball-detection)
-    - [Methodology](#methodology)
-  - [Object Detection](#object-detection)
-    - [Dataset Creation](#dataset-creation)
-    - [Model Training](#model-training)
-  - [Point Pickings](#point-pickings)
+  - [Useful Setonix Commands](#useful-setonix-commands)
+- [Working on the project](#working-on-the-project)
+  - [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)
+  - [Working On The Project In Setonix](#working-on-the-project-in-setonix)
+- [Usage](#usage)
+- [Directories](#directories)
+- [Detection Pipeline](#detection-pipeline)
+- [Fireball Detection](#fireball-detection)
+- [Object Detection](#object-detection)
+  - [What’s the Deal with object\_detection.detectors?](#whats-the-deal-with-object_detectiondetectors)
+  - [Training a Model for the Detection Pipeline](#training-a-model-for-the-detection-pipeline)
+    - [Requirements](#requirements)
+    - [Creating Differenced Images](#creating-differenced-images)
+    - [Generating the Dataset of Tiles](#generating-the-dataset-of-tiles)
+    - [Training a YOLO Model on the Tiles Dataset](#training-a-yolo-model-on-the-tiles-dataset)
+    - [Validating Model](#validating-model)
+    - [Converting Model to ONNX Format](#converting-model-to-onnx-format)
+- [Point Pickings](#point-pickings)
 
 <br>
 
-## Fireball detection on Setonix
+# Fireball detection on Setonix
 
-### Installation
+## Installation
 
 `ssh` into setonix.
 
@@ -80,7 +86,29 @@ Run the virtual environment setup script.
 
 <br>
 
-### Running Jobs
+## Custom-Trained YOLO Model
+
+You need to have the custom-trained YOLO model to do the detections! Either download from https://github.com/Snaiel/ML-Fireballs/releases or train a model yourself (Refer to [Training a Model for the Detection Pipeline](#training-a-model-for-the-detection-pipeline))
+
+If you just want to do detections and don't care about the "integrity of detection rate comparisons", just download `2015-trained-entire-year_differenced-norm-tiles_yolov8s-pt.onnx`. It is trained on (mostly) all of the 2015 fireballs (available data at the time) and uses the `.onnx` format for CPU inference on Setonix.
+
+If you want to do testing on the first half of 2015 using Setonix for a proper detection rate comparison, use `2015-trained-jul-to-dec_differenced-norm-tiles_yolov8s-pt.onnx`.
+
+The respective `.pt` models are essentially the base that which the `.onnx` models were converted from. They can be used for testing, during development, or exporting to other formats like `.engine` which is optimised for Nvidia GPUs.
+
+We need to copy the models onto Setonix. We can use `scp` for that. Refer to https://pawsey.atlassian.net/wiki/spaces/US/pages/51925882/Transferring+Files+in+out+Pawsey+Filesystems.
+
+The following is from your local machine, not within Setonix.
+
+```sh
+scp path/to/model.onnx [username]@data-mover.pawsey.org.au:/software/projects/[project]/[username]/ML-Fireballs/data/
+```
+
+For convenience, just put it in `$MYSOFTWARE/ML-Fireballs/data/`.
+
+<br>
+
+## Running Jobs
 
 We'll refer to this folder structure moving forwards:
 
@@ -110,7 +138,7 @@ acacia_JPGs
     ...
 ```
 
-The following commands should be run while in the `ML-Fireballs/` folder.
+The following commands should be run while in the `ML-Fireballs/` folder within Setonix (`ssh` back into it if needed).
 
 <br>
 
@@ -177,7 +205,7 @@ done
 
 <br>
 
-### Useful Setonix Commands
+## Useful Setonix Commands
 
 **View Jobs in Queue**
 
@@ -274,11 +302,11 @@ done | awk -F'/' '{print $2}' | sort | uniq | wc -l
 
 <br>
 
-## Working on the project
+# Working on the project
 
 Here are the steps if you are going to be tinkering around or doing development.
 
-### Locally / On a Regular Server Like Nectar
+## Locally / On a Regular Server Like Nectar
 
 Clone repository.
 
@@ -310,7 +338,9 @@ Install dependencies.
 pip install -r requirements.txt
 ```
 
-### Working On The Project In Setonix
+<br>
+
+## Working On The Project In Setonix
 
 oh boy.
 
@@ -401,19 +431,7 @@ pip install --cache-dir="$TMPDIR" onnxruntime
 
 <br>
 
-## Directories
-
-`detection_pipeline`: performing detections on a folder containing a sequence of images.
-
-`fireball_detection`: tiling and performing detections on standalone full-sized images.
-
-`object_detection`: training and testing a YOLO object detection model for fireballs in tiles.
-
-`point_pickings`: automating the point pickings process.
-
-<br>
-
-## Usage
+# Usage
 
 Everything is designed to work (hopefully) from the root project directory (`ML-Fireballs/`). If a particular script/file is meant to be run directly, you run it as a module. For example, to run
 
@@ -431,7 +449,19 @@ Notice how `.` is used for package separators and `.py` is omitted. Tab completi
 
 <br>
 
-## Detection Pipeline
+# Directories
+
+`detection_pipeline`: performing detections on a folder containing a sequence of images.
+
+`fireball_detection`: tiling and performing detections on standalone full-sized images.
+
+`object_detection`: training and testing a YOLO object detection model for fireballs in tiles.
+
+`point_pickings`: automating the point pickings process.
+
+<br>
+
+# Detection Pipeline
 
 Building off of the paper: [Fireball streak detection with minimal CPU processing requirements for the Desert Fireball Network data processing pipeline
 ](https://doi.org/10.1017/pasa.2019.48) by Towner et al. (2020).
@@ -460,7 +490,7 @@ jq -r 'select(.final_detections != null) | .final_detections[]' "$MYSCRATCH/dfn-
 
 <br>
 
-## Fireball Detection
+# Fireball Detection
 
 `fireball_detection` contains code for splitting an input image into tiles, running a yolo model on tiles, then repositioning and merging detections together.
 
@@ -474,53 +504,294 @@ Running the module also shows a sample detection.
 python3 -m fireball_detection.detect
 ```
 
-### Methodology
-
 Animation source: https://github.com/Snaiel/Manim-Fireball-Detection
 
 https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
 
 <br>
 
-## Object Detection
+# Object Detection
 
 This deals with YOLOv8 stuff.
 
-### Dataset Creation
+## What’s the Deal with object_detection.detectors?
 
-`object_detection.dataset.generate_dataset` generates a dataset of 400x400 pixel tiles from the full sized images.
+YOLOv8 is made through the `ultralytics` Python package. It makes things very convenient by doing a lot of the work for you. But when doing detections on Setonix, more control over the inference using `onnxruntime` was required. So the custom `Detector` abstract class was made for this project, along with `ONNXDetector` and `UltralyticsDetector`. `ONNXDetector` just has some configurations that make things smoother for CPU inference in general, not just for Setonix. `UltralyticsDetector` basically just feeds the input into `ultralytics`, used in development for the convenience.
 
-Running the module generates the dataset with a specified positive to negative tile sample ratio.
+<br>
 
-```sh
-python3 -m object_detection.dataset.generate_dataset
+## Training a Model for the Detection Pipeline
+
+oh boy.
+
+### Requirements
+
+What you'll need:
+
+- A folder containaing original JPGs of fireballs, along with their before and after images.
+
+For example:
+
+```
+ML-Fireballs/data/fireballs_before_after/
+    07_2015-03-18_140459_DSC_0350.thumb.jpg
+    07_2015-03-18_140529_DSC_0351.thumb.jpg
+    07_2015-03-18_140559_DSC_0352.thumb.jpg
+    07_2015-03-21_153258_DSC_0497.thumb.jpg
+    07_2015-03-21_154558_DSC_0498.thumb.jpg
+    07_2015-03-21_154628_DSC_0499.thumb.jpg
+    07_2015-04-11_164128_DSC_0670.thumb.jpg
+    07_2015-04-11_164158_DSC_0671.thumb.jpg
+    07_2015-04-11_164228_DSC_0672.thumb.jpg
+    ...
+```
+
+In this case, the fireball images are:
+
+```
+    07_2015-03-18_140529_DSC_0351.thumb.jpg
+    07_2015-03-21_154558_DSC_0498.thumb.jpg
+    07_2015-04-11_164158_DSC_0671.thumb.jpg
+    ...
 ```
 
 <br>
 
-`object_detection.dataset.create_kfold_dataset` creates a 5-fold kfold dataset using the tiles generated from the `generate_dataset` script.
+- A folder containing corresponding point pickings CSVs.
 
-Running the module creates the different splits based on the dataset with the specified negative tile sample ratio.
+**IMPORTANT: Unfortunately, the required path of these CSVs are hardcoded throughout the project. Please ensure that the CSVs are located in the following folder:**
+
+```
+ML-Fireballs/data/GFO_fireball_object_detection_training_set/point_pickings_csvs/
+```
+
+For example:
+
+```
+ML-Fireballs/data/GFO_fireball_object_detection_training_set/point_pickings_csvs/
+    07_2015-03-18_140529_DSC_0351.csv
+    07_2015-03-21_154558_DSC_0498.csv
+    07_2015-04-11_164158_DSC_0671.csv
+```
+
+Make sure they are in the following format:
+
+```
+07_2015-03-18_140529_DSC_0351.csv
+```
+
+```csv
+x_image_thumb,y_image_thumb
+5170.27009161,4224.71460824
+5151.98774013,4252.4533484
+5135.5966664,4276.40953309
+5099.66238936,4329.36530978
+5088.62993589,4345.44117056
+...
+```
+
+Since this is used throughout the project, it might useful just to put all the known fireball CSVs in this folder.
+
+<br>
+
+### Creating Differenced Images
+
+The first step is to create the differenced images. Make sure you've got the virtual environment activated (refer to installing [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar))! The following is executed in the `ML-Fireballs/` directory.
+
+We will use `detection_pipeline.image_differencing.create_differenced_images`
 
 ```sh
-python3 -m object_detection.dataset.create_kfold_dataset
+python3 -m detection_pipeline.image_differencing.create_differenced_images -h
+```
+
+For example:
+
+```sh
+python3 -m detection_pipeline.image_differencing.create_differenced_images data/fireballs_before_after/
+```
+
+This will create the folder `data/fireballs_before_after/differenced_images/`.
+
+<br>
+
+### Generating the Dataset of Tiles
+
+The second step will be to generate all the tiles from these differenced images.
+
+We will use `object_detection.dataset.differenced.generate_all_tiles`
+
+```sh
+python3 -m object_detection.dataset.differenced.generate_all_tiles -h
+```
+
+For example:
+
+```sh
+python3 -m object_detection.dataset.differenced.generate_all_tiles data/fireballs_before_after/ data/fireballs_before_after/differenced_images/
+```
+
+This will create the folder `data/object_detection/differenced/all/`.
+
+```
+ML-Fireballs/data/object_detection/differenced/all/
+    images/
+    labels/
+    data.yaml
+    fireballs.txt
+```
+
+You can rename `data/object_detection/differenced/` to something more recognisable or if you want to differentiate between datasets.
+
+This is enough to train a model on all of this data, but if you want to create a validation and training split, you'll have to modify `object_detection.dataset.differenced.create_2015_halved` or write another python file that mimics it, sorry!
+
+Running `object_detection.dataset.differenced.create_2015_halved` will create the training set of fireballs from July to December 2015 and a validation set of fireballs from January to June 2015. Coincidentally, this creates a convenient 80/20 train/validation split.
+
+```sh
+python3 -m object_detection.dataset.differenced.create_2015_halved -h
+```
+
+For example
+
+```sh
+python3 -m object_detection.dataset.differenced.create_2015_halved --all_folder_path data/object_detection/differenced/all/
+```
+
+This will created the folder `data/object_detection/differenced/halved/`
+
+`negative_ratio` refers to the ratio of tiles containing no fireballs to the fireball tiles. The default value of `-1` means it will use all the available negative samples in the dataset. **It was found through testing that having all available negative samples in the dataset provides the best performance.** A custom negative ratio may not result in the exact amount since there may not be enough negative samples.
+
+<br>
+
+### Training a YOLO Model on the Tiles Dataset
+
+The third step is to train a YOLO model on created dataset. We will be using `object_detection.model.train`
+
+**It is important to use a GPU-enabled device. Nectar VMs worked nicely!**
+
+```sh
+python3 -m object_detection.model.train -h
+```
+
+For example:
+
+```sh
+python3 -m object_detection.model.train --data_yaml_path data/object_detection/differenced/all/data.yaml --yolo_model yolov8s.pt --batch_size 0.8
+```
+
+Outputs of YOLO training go to `ML-Fireballs/runs/detect/`.
+
+The above command should result in a folder `ML-Fireballs/runs/detect/object_detection-differenced-all-yolov8s.pt/`
+
+If you point towards an "all" folder, there won't be a validation set to compare against as training progresses. In the generated `data.yaml` file, the validation set points towards the same training set in this case, so `ultralytics` will do one validation test at the very end on it but the usefuless of that is up to you.
+
+Using `yolov8s.pt` means we are using the pre-trained YOLOv8 small model. YOLOv8 over YOLO11, the `small` model size, and the pre-trained model were found to be better.
+
+Be careful about `--batch_size`, probably start high then work your way down from `0.8`, you'll know if it's too high because it'll crash... Needs good amount of GPU VRAM and also regular RAM.
+
+For a system like (RTX 3060 12GB VRAM + 32GB RAM), a batch size of `0.5` was achievable. For a Nectar VM with an A100 40GB VRAM (I forgot how much regular RAM it had), it worked well with `0.8`.
+
+A high batch size is preferrable because it considers more samples during a training pass, which makes training faster and it provides slightly more performance as it supposedly considers a bigger sample when modifying the network's weights (supported somewhat by the literature).
+
+<br>
+
+### Validating Model
+
+Ultralytic's inbuilt validation isn't that useful for us since its metrics aren't reliable and we want to know the detection rate of fireballs as a whole instead of just on the tiles.
+
+We will use `object_detection.val.val_tiles`.
+
+```sh
+python3 -m object_detection.val.val_tiles -h
+```
+
+For example:
+
+```sh
+python3 -m object_detection.val.val_tiles --yolo_pt_path runs/detect/object_detection-differenced-all-yolov8s.pt/weights/last.pt --data_yaml_path data/object_detection/differenced/all/data.yaml 
+```
+
+Validating on an "all" dataset might not allow for a reliable comparison because the model has already seen the data in the training set but it enables a view of the expected fireballs to be detected when rerunning detections on already-trained data.
+
+If for example we did create a validation set, the program will test accordingly and provide a better judgement of the model on unseen data.
+
+Example output:
+
+```
+(.venv) ubuntu@fireballs-detection:/data/ML-Fireballs$ python3 -m object_detection.val.val_tiles --data_yaml_path data/object_detection/2015_differenced_norm_tiles/halved/data.yaml --yolo_pt_path runs/detect/object_detection-2015_differenced_norm_tiles-halved-yolov8s.pt/weights/last.pt 
+
+args: {
+    "border_size": 5,
+    "data_yaml_path": "data/object_detection/2015_differenced_norm_tiles/halved/data.yaml",
+    "yolo_pt_path": "runs/detect/object_detection-2015_differenced_norm_tiles-halved-yolov8s.pt/weights/last.pt",
+    "samples": "both",
+    "metric": "iom",
+    "threshold": 0.5,
+    "show_false_negatives": false,
+    "save_false_negatives": false
+} 
+
+runs/detect/object_detection-2015_differenced_norm_tiles-halved-yolov8s.pt/weights/last.pt 
+
+kfold folder: data/object_detection/2015_differenced_norm_tiles/halved/data.yaml 
+
+Total samples:                 11901
+Positive samples:              2007
+Negative samples:              9894
+
+running predictions: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 11901/11901 [02:02<00:00, 97.28it/s]
+
+Detected samples:              1808
+False negative samples:        199
+Recall on individual samples:  0.90085
+
+Total fireballs:               248
+Detected fireballs:            244
+False negative fireballs:      4
+Recall on entire fireballs:    0.98387
+
+Missed Fireballs:
+10_2015-06-12_140028_DSC_0509
+20_2015-04-03_132758_DSC_0042
+34_2015-03-29_133259_DSC_0385
+35_2015-06-26_155628_DSC_0811
+
+Total boxes:                   2121
+True positives:                2027
+False positives:               94
+Precision:                     0.95568
 ```
 
 <br>
 
-### Model Training
+### Converting Model to ONNX Format
 
-`object_detection.model.train` trains a YOLO model using the generated dataset.
+If we want to run the model on Setonix, we need to convert to ONNX, a format that is optimised for CPU inference.
 
-Running the module performs the training process with a specified dataset.
+We will use `object_detection.model.export`
 
 ```sh
-python3 -m object_detection.model.train
+python3 -m object_detection.model.export -h
 ```
+
+For example:
+
+```sh
+python3 -m object_detection.model.export --yolo_pt_path runs/detect/object_detection-differenced-all-yolov8s.pt/weights/last.pt
+```
+
+This will create the following file: `runs/detect/object_detection-differenced-all-yolov8s.pt/weights/last.onnx`.
+
+Rename and move where needed.
+
+If you want to export to any other formats, just modify `object_detection.model.export` accordingly (Refer to https://docs.ultralytics.com/modes/export/).
 
 <br>
 
-## Point Pickings
+Congratulations, you've trained a model! It can now be used for fireball detection.
+
+<br>
+
+# Point Pickings
 
 `point_pickings.process` has the automated point picking system implemented as a function where you call `retrieve_fireball` with an image (assumed to be cropped) and returns all the processed position and timing information.
 

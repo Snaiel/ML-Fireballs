@@ -53,7 +53,7 @@ def main() -> None:
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
-    object_detection_folder = Path(DATA_FOLDER, "object_detection", "2015_differenced")
+    object_detection_folder = Path(DATA_FOLDER, "object_detection", "differenced")
     all_folder = Path(object_detection_folder, "all")
     all_images_folder = Path(all_folder, "images")
     all_labels_folder = Path(all_folder, "labels")
