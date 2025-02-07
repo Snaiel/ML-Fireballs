@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from utils.constants import DATA_FOLDER, DATA_YAML, GFO_JPEGS
+from utils.paths import DATA_FOLDER, DATA_YAML, GFO_JPEGS
 from object_detection.dataset.standalone import GenerateDatasetArgs, get_args
 from object_detection.dataset.utils import create_tiles
 

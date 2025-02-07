@@ -1,3 +1,13 @@
+"""
+This uses bayesian optimisation to optimise the tiles
+preprocessing thresholds.
+
+*sigh* this tangent was kinda interesting. I learnt a lot
+about bayesian optimisation. But this was kinda useless in
+the end. My initial guesses turned out to be perfect. It
+validated my assumptions though which is a win.
+"""
+
 import argparse
 import json
 import os
@@ -18,8 +28,9 @@ from detection_pipeline.tile_preprocessing import (TilePreprocessingThresholds,
                                                    satisfies_thresholds)
 from fireball_detection.tiling import (get_image_tile,
                                        retrieve_included_coordinates)
-from utils.constants import (GFO_PICKINGS, GFO_THUMB_EXT, MIN_POINTS_IN_TILE,
-                             RANDOM_SEED, SQUARE_SIZE)
+from utils.constants import MIN_POINTS_IN_TILE, RANDOM_SEED, SQUARE_SIZE
+from utils.paths import GFO_PICKINGS, GFO_THUMB_EXT
+
 
 included_coordinates = retrieve_included_coordinates()
 

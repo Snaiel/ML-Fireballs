@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from utils.constants import GAUSSIAN_BLUR_SIZE, MAX_TRANSFORMATION_MAGNITUDE
+
 
 def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     """
@@ -30,20 +32,20 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     matrix, mask = cv2.estimateAffinePartial2D(points2, points1, method=cv2.RANSAC)
     transformation_magnitude = np.linalg.norm(matrix - np.eye(2, 3))
     
-    blurred_image1 = cv2.GaussianBlur(image1, (11, 11), 0)
-    blurred_image2 = cv2.GaussianBlur(image2, (11, 11), 0)
+    blurred_image1 = cv2.GaussianBlur(image1, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
+    blurred_image2 = cv2.GaussianBlur(image2, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
     unaligned_difference = cv2.subtract(blurred_image1, blurred_image2)
 
     output_image = unaligned_difference
 
-    if transformation_magnitude > 10:
+    if transformation_magnitude > MAX_TRANSFORMATION_MAGNITUDE:
         return output_image
     
     # Apply the transformation to align the images
     height, width = image1.shape
     aligned_image2 = cv2.warpAffine(image2, matrix, (width, height))
 
-    blurred_aligned_image2 = cv2.GaussianBlur(aligned_image2, (11, 11), 0)
+    blurred_aligned_image2 = cv2.GaussianBlur(aligned_image2, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
     aligned_difference = cv2.subtract(blurred_image1, blurred_aligned_image2)
 
     # Convert images to float32 for safe computation

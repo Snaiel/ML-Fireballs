@@ -8,9 +8,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from utils.constants import DATA_FOLDER, DATA_YAML, GFO_THUMB_EXT
 from object_detection.dataset.differenced.differenced_tiles import \
     DifferencedTiles
+from utils.paths import DATA_FOLDER, DATA_YAML, GFO_THUMB_EXT
 
 
 @dataclass

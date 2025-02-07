@@ -8,13 +8,14 @@ import numpy as np
 import onnxruntime as ort
 
 from object_detection.detectors.detector import Detector
+from utils.constants import DETECTOR_IOU
 
 
 class ONNXDetector(Detector):
 
     def __init__(self, path: str, conf: float) -> None:
         super().__init__(path, conf)
-        self.iou_threshold = 0.5
+        self.iou_threshold = DETECTOR_IOU
         self._initialize_model(path)
 
 

@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from utils.constants import GFO_FIXES_FOLDER, GFO_PICKINGS
+from utils.paths import GFO_FIXES_FOLDER, GFO_PICKINGS
 
 
 def main():

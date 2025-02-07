@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils.constants import DATA_FOLDER
+from utils.paths import DATA_FOLDER
 
 
 def main() -> None:

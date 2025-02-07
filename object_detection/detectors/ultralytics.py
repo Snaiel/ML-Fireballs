@@ -2,6 +2,7 @@ import numpy as np
 from ultralytics import YOLO
 
 from object_detection.detectors.detector import Detector
+from utils.constants import DETECTOR_IOU
 
 
 class UltralyticsDetector(Detector):
@@ -17,7 +18,7 @@ class UltralyticsDetector(Detector):
             verbose=False,
             imgsz=416,
             conf=self.conf,
-            iou=0.5
+            iou=DETECTOR_IOU
         )
 
         boxes = results[0].boxes

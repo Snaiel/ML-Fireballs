@@ -6,7 +6,8 @@ from matplotlib.animation import FuncAnimation
 from skimage import io
 
 from fireball_detection.tiling import retrieve_included_coordinates
-from utils.constants import GFO_JPEGS, SQUARE_SIZE
+from utils.constants import SQUARE_SIZE
+from utils.paths import GFO_JPEGS
 
 
 # Sample list of rectangle coordinates (top-left corner (x, y), width, height)

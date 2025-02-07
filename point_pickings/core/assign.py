@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from point_pickings.core.blobs import FireballBlobs
 from point_pickings.core.sequence import FireballAlignment
-from utils.constants import DE_BRUIJN_SEQUENCE
+from utils.de_bruijn import DE_BRUIJN_SEQUENCE
 
 
 @dataclass

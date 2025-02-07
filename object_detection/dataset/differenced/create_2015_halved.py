@@ -10,7 +10,8 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from utils.constants import DATA_FOLDER, DATA_YAML, RANDOM_SEED
+from utils.constants import RANDOM_SEED
+from utils.paths import DATA_FOLDER, DATA_YAML
 
 
 @dataclass

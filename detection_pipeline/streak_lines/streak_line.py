@@ -10,8 +10,15 @@ from skimage.feature import blob_dog
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.linear_model import LinearRegression, RANSACRegressor
 
-from utils.constants import RANDOM_SEED
-
+from utils.constants import (SAME_TRAJECTORY_MAX_ANGLE_DIFFERENCE,
+                             SAME_TRAJECTORY_MAX_PARALLEL_DISTANCE,
+                             SAME_TRAJECTORY_MAX_PERPENDICULAR_DISTANCE,
+                             SIMILAR_LINES_MAX_ANGLE_DIFFERENCE,
+                             SIMILAR_LINES_MAX_MIDPOINT_DISTANCE_RATIO,
+                             SIMILAR_LINES_MIN_LENGTH_RATIO,
+                             STREAK_LINE_BLOB_DETECTION_KWARGS,
+                             STREAK_LINE_MIN_BLOBS, STREAK_LINE_MIN_INLIERS,
+                             STREAK_LINE_RANSAC_KWARGS)
 
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
@@ -36,21 +43,13 @@ class StreakLine:
 
         image = ski.io.imread(image_path, as_gray=True)
 
-        blobs_dog = blob_dog(
-            image,
-            min_sigma=1,
-            max_sigma=10, 
-            sigma_ratio=5.0,
-            threshold_rel=0.2,
-            threshold=None,
-            overlap=0.5
-        )
+        blobs_dog = blob_dog(image, **STREAK_LINE_BLOB_DETECTION_KWARGS)
         
         # Compute radii in the 3rd column
         blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2) 
         self._blobs = blobs_dog
 
-        if len(self._blobs) < 3:
+        if len(self._blobs) < STREAK_LINE_MIN_BLOBS:
             self._is_valid = False
             return
 
@@ -59,13 +58,9 @@ class StreakLine:
 
         # RANSAC with Linear Regression
         try:
-            self._ransac = RANSACRegressor(
-                residual_threshold=10,
-                max_trials=100,
-                random_state=RANDOM_SEED
-            )
+            self._ransac = RANSACRegressor(**STREAK_LINE_RANSAC_KWARGS)
             self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
-            if self._ransac.inlier_mask_.sum() < 4:
+            if self._ransac.inlier_mask_.sum() < STREAK_LINE_MIN_INLIERS:
                 self._is_valid = False
         except:
             self._is_valid = False
@@ -241,15 +236,15 @@ class StreakLine:
 
     def similar_line(self, streak_line: StreakLine) -> bool:
         
-        if self.angle_between(streak_line) > 15:
+        if self.angle_between(streak_line) > SIMILAR_LINES_MAX_ANGLE_DIFFERENCE:
             return False
         
         longer_streak, shorter_streak = (self, streak_line) if self.length > streak_line.length else (streak_line, self)
 
-        if longer_streak.midpoint_to_midpoint(shorter_streak) > longer_streak.length * 0.25:
+        if longer_streak.midpoint_to_midpoint(shorter_streak) > SIMILAR_LINES_MAX_MIDPOINT_DISTANCE_RATIO * longer_streak.length:
             return False
         
-        if shorter_streak.length < 0.75 * longer_streak.length:
+        if shorter_streak.length < SIMILAR_LINES_MIN_LENGTH_RATIO * longer_streak.length:
             return False
 
         return True
@@ -258,18 +253,17 @@ class StreakLine:
     def same_trajectory(self, streak_line: StreakLine) -> bool:
 
         offset = abs(self.number - streak_line.number)
-
         angle_between = self.angle_between(streak_line)
 
-        if angle_between > 25 * offset:
+        if angle_between > SAME_TRAJECTORY_MAX_ANGLE_DIFFERENCE * offset:
             return False
 
         projected_point = self.project_point(streak_line.midpoint)
 
-        if self.midpoint_to_point(projected_point) > 1000 * offset:
+        if self.midpoint_to_point(projected_point) > SAME_TRAJECTORY_MAX_PARALLEL_DISTANCE * offset:
             return False
-        
-        if streak_line.midpoint_to_point(projected_point) > 200 * offset:
+
+        if streak_line.midpoint_to_point(projected_point) > SAME_TRAJECTORY_MAX_PERPENDICULAR_DISTANCE * offset:
             return False
 
         return True

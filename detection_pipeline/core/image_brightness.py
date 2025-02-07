@@ -1,8 +1,10 @@
 from pathlib import Path
 
-import numpy as np
-import skimage.io as io
 import cv2
+import numpy as np
+
+from utils.constants import (MAX_THRESHOLD_MEDIAN_BRIGHTNESS,
+                             MIN_THRESHOLD_MAX_BRIGHTNESS)
 
 
 def check_image_brightness(image_path: Path) -> None | str:
@@ -13,13 +15,11 @@ def check_image_brightness(image_path: Path) -> None | str:
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
     median = np.median(image)
-    median_max_threshold = 165
-    if median > median_max_threshold:
-        return f"median pixel brightness too bright ({median} > {median_max_threshold})"
+    if median > MAX_THRESHOLD_MEDIAN_BRIGHTNESS:
+        return f"median pixel brightness too bright ({median} > {MAX_THRESHOLD_MEDIAN_BRIGHTNESS})"
     
     max = np.max(image)
-    max_min_threshold =40
-    if max < max_min_threshold:
-        return f"max pixel brightness too low ({max} < {max_min_threshold})"
+    if max < MIN_THRESHOLD_MAX_BRIGHTNESS:
+        return f"max pixel brightness too low ({max} < {MIN_THRESHOLD_MAX_BRIGHTNESS})"
     
     return None

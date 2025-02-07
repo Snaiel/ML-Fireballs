@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 from fireball_detection.detect import detect_fireballs, plot_boxes
 from fireball_detection.val import VAL_FIREBALL_DETECTION_FOLDER
-from utils.constants import DATA_FOLDER
 from object_detection.detectors import DetectorSingleton
+from utils.paths import DATA_FOLDER
 
 
 @dataclass

@@ -7,7 +7,8 @@ import pandas as pd
 from tqdm import tqdm
 
 from fireball_detection.tiling import retrieve_included_coordinates
-from utils.constants import GFO_PICKINGS, MIN_POINTS_IN_TILE, SQUARE_SIZE
+from utils.constants import MIN_POINTS_IN_TILE, SQUARE_SIZE
+from utils.paths import GFO_PICKINGS
 
 
 def main() -> None:

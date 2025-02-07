@@ -19,7 +19,8 @@ from fireball_detection.tiling import (get_image_tile,
                                        retrieve_included_coordinates)
 from object_detection.detectors import Detector, get_detector
 from object_detection.utils import add_border, diagonal_length
-from utils.constants import MIN_DIAGONAL_LENGTH, SQUARE_SIZE
+from utils.constants import MIN_DIAGONAL_LENGTH
+
 
 INCLUDED_COORDINATES = retrieve_included_coordinates()
 

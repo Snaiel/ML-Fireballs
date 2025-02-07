@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 from ultralytics import YOLO, settings
 
-from utils.constants import DATA_FOLDER
+from utils.paths import DATA_FOLDER
 
 
 settings.update({"wandb": False})

@@ -15,18 +15,19 @@ from skimage import io
 from structlog.typing import EventDict, WrappedLogger
 from tqdm import tqdm
 
+from detection_pipeline.core import (FilteredDetections,
+                                     check_image_brightness,
+                                     remove_saved_detection)
 from detection_pipeline.image_differencing import difference_images
-from detection_pipeline.streak_lines import (find_similar_lines,
-                                             find_slow_objects,
-                                             get_streak_lines)
-from detection_pipeline.core import (FilteredDetections, check_image_brightness,
-                                      remove_saved_detection)
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes,
                                        merge_bboxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
-from utils.constants import MAX_TIME_DIFFERENCE, MIN_DIAGONAL_LENGTH
+from utils.constants import (DETECTOR_CONF, MAX_TIME_DIFFERENCE,
+                             MERGE_BBOXES_MARGIN, MIN_DIAGONAL_LENGTH,
+                             TILE_BORDER_SIZE)
+
 
 VERSION = "1.0.0"
 
@@ -121,7 +122,7 @@ class DetectionWorkerProcess(mp.Process):
 
 
     def run(self):
-        self.detector = DetectorSingleton.get_detector(self.args.detector, self.args.model_path, 0.2)
+        self.detector = DetectorSingleton.get_detector(self.args.detector, self.args.model_path, DETECTOR_CONF)
 
         processors: list = structlog.get_config()["processors"]
         processors.insert(len(processors) - 1, DetectionLoggingProcessor(self))
@@ -166,7 +167,7 @@ class DetectionWorkerProcess(mp.Process):
         
         image_name = images.current.split(".")[0]
 
-        detected_tiles = detect_differenced_tiles_norm(differenced_image, self.detector, 5)
+        detected_tiles = detect_differenced_tiles_norm(differenced_image, self.detector, TILE_BORDER_SIZE)
         detections = []
 
         if detected_tiles:
@@ -178,7 +179,7 @@ class DetectionWorkerProcess(mp.Process):
     
             fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
             
-            detected_fireballs = merge_bboxes(fireball_boxes)
+            detected_fireballs = merge_bboxes(fireball_boxes, MERGE_BBOXES_MARGIN)
             detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 
             if detected_fireballs:

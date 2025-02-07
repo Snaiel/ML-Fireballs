@@ -8,8 +8,8 @@ from fireball_detection.tiling import (get_image_tile,
                                        retrieve_included_coordinates)
 from object_detection.dataset.dataset_tiles import (DatasetTiles, FireballTile,
                                                     plot_fireball_tile)
-from utils.constants import (GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT,
-                             MIN_POINTS_IN_TILE, RANDOM_SEED, SQUARE_SIZE)
+from utils.constants import MIN_POINTS_IN_TILE, RANDOM_SEED, SQUARE_SIZE
+from utils.paths import GFO_JPEGS, GFO_PICKINGS, GFO_THUMB_EXT
 
 
 included_coordinates = retrieve_included_coordinates()

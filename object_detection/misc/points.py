@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from skimage import io
 
-from utils.constants import GFO_JPEGS, GFO_PICKINGS
+from utils.paths import GFO_JPEGS, GFO_PICKINGS
 
 
 def show_points(fireball_name: str) -> None:
