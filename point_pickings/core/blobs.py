@@ -150,10 +150,10 @@ def get_circle_brightness(image: np.ndarray, x: int, y: int, r: float) -> float:
     circle_pixels = image[dist_from_center <= r]
     
     # Calculate and return the average brightness
-    return circle_pixels.mean()
+    return np.mean(circle_pixels)
 
 
-def get_blob_brightnesses(image: np.ndarray, blobs: FireballBlobs) -> list[float]:
+def get_blob_brightnesses(image: np.ndarray, blobs: FireballBlobs) -> np.ndarray:
     """
         Calculates the average brightness within each blob in a grayscale image.
 
@@ -169,10 +169,7 @@ def get_blob_brightnesses(image: np.ndarray, blobs: FireballBlobs) -> list[float
         | list[float] | List of average brightness of each blob.     |
     """
 
-    brightnesses = []
-    for x, y, r in blobs:
-        brightnesses.append(get_circle_brightness(image, x, y, r))
-    return brightnesses
+    return np.array([get_circle_brightness(image, x, y, r) for x, y, r in blobs])
 
 
 def get_false_positives_based_on_blobs(image: np.ndarray, blobs: FireballBlobs, threshold: float = -20) -> tuple[pd.Series, list[int]]:

@@ -10,6 +10,7 @@ from skimage.feature import blob_dog
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.linear_model import LinearRegression, RANSACRegressor
 
+from point_pickings.core.blobs import get_blob_brightnesses
 from utils.constants import (SAME_TRAJECTORY_MAX_ANGLE_DIFFERENCE,
                              SAME_TRAJECTORY_MAX_PARALLEL_DISTANCE,
                              SAME_TRAJECTORY_MAX_PERPENDICULAR_DISTANCE,
@@ -18,7 +19,7 @@ from utils.constants import (SAME_TRAJECTORY_MAX_ANGLE_DIFFERENCE,
                              SIMILAR_LINES_MIN_LENGTH_RATIO,
                              STREAK_LINE_BLOB_DETECTION_KWARGS,
                              STREAK_LINE_MIN_BLOBS, STREAK_LINE_MIN_INLIERS,
-                             STREAK_LINE_RANSAC_KWARGS)
+                             STREAK_LINE_RANSAC_KWARGS, STREAK_LINE_WEIGHT_SIGMOID_STEEPNESS)
 
 warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
@@ -26,6 +27,8 @@ warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 class StreakLine:
 
     _blobs: np.ndarray
+    _brightnesses: np.ndarray
+    _weights: np.ndarray
     _is_valid: bool
     _ransac: RANSACRegressor
     _y_coords: np.ndarray
@@ -47,19 +50,25 @@ class StreakLine:
         
         # Compute radii in the 3rd column
         blobs_dog[:, 2] = blobs_dog[:, 2] * math.sqrt(2) 
+        # Swap columns so that x comes before y
+        blobs_dog[:, [0, 1]] = blobs_dog[:, [1, 0]]
         self._blobs = blobs_dog
+
+        self._brightnesses = get_blob_brightnesses(image, self._blobs)
+        self._weights = (self._brightnesses - self._brightnesses.min()) / (self._brightnesses.max() - self._brightnesses.min() + 1e-6)
+        self._weights = 1 / (1 + np.exp(-STREAK_LINE_WEIGHT_SIGMOID_STEEPNESS * (self._weights - 0.5)))
 
         if len(self._blobs) < STREAK_LINE_MIN_BLOBS:
             self._is_valid = False
             return
 
-        self._y_coords = blobs_dog[:, 0]
-        self._x_coords = blobs_dog[:, 1]
+        self._x_coords = blobs_dog[:, 0]
+        self._y_coords = blobs_dog[:, 1]
 
         # RANSAC with Linear Regression
         try:
             self._ransac = RANSACRegressor(**STREAK_LINE_RANSAC_KWARGS)
-            self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords)
+            self._ransac.fit(self._x_coords.reshape(-1, 1), self._y_coords, sample_weight=self._weights)
             if self._ransac.inlier_mask_.sum() < STREAK_LINE_MIN_INLIERS:
                 self._is_valid = False
         except:
@@ -69,6 +78,16 @@ class StreakLine:
     @property
     def blobs(self) -> np.ndarray:
         return self._blobs
+
+
+    @property
+    def brightnesses(self) -> np.ndarray:
+        return self._brightnesses
+
+
+    @property
+    def weights(self) -> np.ndarray:
+        return self._weights
 
 
     @property

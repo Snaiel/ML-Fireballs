@@ -64,9 +64,11 @@ STREAK_LINE_BLOB_DETECTION_KWARGS = {
 }
 # minimum amount of blobs for streak line to be valid
 STREAK_LINE_MIN_BLOBS = 3
+STREAK_LINE_WEIGHT_SIGMOID_STEEPNESS = 50
 # arguments for RANSAC Linear regression on the blobs
 STREAK_LINE_RANSAC_KWARGS = {
     "residual_threshold": 10,
+    "min_samples": 0.5,
     "max_trials": 100,
     "random_state": RANDOM_SEED
 }
