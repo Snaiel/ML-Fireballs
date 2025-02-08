@@ -1,14 +1,13 @@
 import argparse
 import json
-import os
 from dataclasses import dataclass
-from multiprocessing import Pool
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import skimage as ski
+from matplotlib.axes import Axes
 
-from detection_pipeline.streak_lines.utils import create_streak_line
+from detection_pipeline.core import FilteredDetections
 
 
 def main():
@@ -25,62 +24,99 @@ def main():
     args = Args(**vars(parser.parse_args()))
     print("\nargs:", json.dumps(vars(args), indent=4), "\n")
 
-    folder_path = Path(args.folder_path)
 
+    folder_path = Path(args.folder_path)
     subfolders = sorted([d for d in folder_path.iterdir() if d.is_dir()])
+
 
     with open(Path(subfolders[0], subfolders[0].name + ".json")) as json_file:
         json_data = json.load(json_file)
 
-    original_image = Path(subfolders[0], json_data["original_image"])
+    if "original_image" in json_data:
+        original_image = Path(subfolders[0], json_data["original_image"])
+    else:
+        original_image = list(subfolders[0].glob("*.thumb.jpg"))[0]
+
 
     detections_images: list[Path] = []
 
-    for subfolder in subfolders:
-        with open(Path(subfolder, subfolder.name + ".json")) as json_file:
-            json_data = json.load(json_file)
-        for detection in map(lambda x: x["name"], json_data["detections"]):
-            detections_images.append(Path(subfolder, detection + ".differenced.jpg"))
+    filtered_detections = FilteredDetections(folder_path)
+    for i in filtered_detections.final_detections:
+        detections_images.append(Path(folder_path, i + ".differenced.jpg"))
 
     original = ski.io.imread(original_image)
 
-    _, ax = plt.subplots(figsize=(10, 10))
-    ax.imshow(original, cmap="gray", aspect="equal")
-    ax.set_title(f"Detections on {folder_path.name}")
+
+    ax1: Axes
+    ax2: Axes
+
+    # Create two side-by-side subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))  # 1 row, 2 columns
+
+    # --- Plot 1: All Detections ---
+    ax1.imshow(original, cmap="gray", aspect="equal")
+    ax1.set_title(f"All Detections on {folder_path.name}")
 
     colors = ["blue", "yellow", "orange", "green", "red", "purple", "cyan"]
 
-    with Pool() as pool:
-        streak_lines = pool.map(create_streak_line, detections_images)
-
     print("Invalid lines:")
 
-    for idx, streak in enumerate(streak_lines):
+    for idx, detection in enumerate(filtered_detections.all_detections):
+        streak = filtered_detections.streak_lines[detection]
 
         if not streak.is_valid:
-            print(detections_images[idx].name)
+            print(detection)
             continue
 
         start_point = streak.startpoint
         end_point = streak.endpoint
 
-        ax.plot(
+        ax1.plot(
             [start_point[0], end_point[0]],
             [start_point[1], end_point[1]],
             linestyle="-",
             color=colors[idx % len(colors)]
         )
 
-        ax.text(
+        ax1.text(
             streak.midpoint[0],
             streak.midpoint[1],
             streak.number,
             color="white"
         )
 
-    plt.axis("off")
+    ax1.axis("off")
+
+    # --- Plot 2: Final Detections ---
+    ax2.imshow(original, cmap="gray", aspect="equal")
+    ax2.set_title(f"Final Detections on {folder_path.name}")
+
+    for idx, detection in enumerate(filtered_detections.final_detections):
+        streak = filtered_detections.streak_lines[detection]
+
+        start_point = streak.startpoint
+        end_point = streak.endpoint
+
+        ax2.plot(
+            [start_point[0], end_point[0]],
+            [start_point[1], end_point[1]],
+            linestyle="-",
+            color=colors[idx % len(colors)]
+        )
+
+        ax2.text(
+            streak.midpoint[0],
+            streak.midpoint[1],
+            streak.number,
+            color="white"
+        )
+
+    ax2.axis("off")
+
+    # Ensure layout is properly adjusted
     plt.tight_layout()
     plt.show()
+
     
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ class FilteredDetections:
         """
         output_folder is the folder containing subfolders for each image
 
-        ```txt
+        ```
         DFNSMALL41 <- this one
             41_2015-01-14_110659_DSC_0108
                 41_2015-01-14_110659_DSC_0108.json
