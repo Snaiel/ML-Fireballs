@@ -100,3 +100,38 @@ def merge_bboxes(fireballs: list[FireballBox], margin: float = 0.1) -> list[Fire
         fireballs = copy.deepcopy(new_fireballs)
 
     return new_fireballs
+
+
+def find_groups_of_intersecting_boxes(boxes: list[FireballBox]) -> list[list[FireballBox]]:
+    groups = []  # List of sets
+
+    for box in boxes:
+        merged_sets = []  # Keep track of sets that need to be merged
+        new_set = {box}  # Start with a new set containing only this box
+
+        for group in groups:
+            group: set[FireballBox]
+            if any(intersects(existing_box.box, box.box) for existing_box in group):
+                merged_sets.append(group)
+
+        # Merge all found sets with the new set
+        for group in merged_sets:
+            new_set.update(group)
+            groups.remove(group)  # Remove merged sets
+
+        # Add the new or merged set to the list of groups
+        groups.append(new_set)
+
+    return groups
+
+
+def smallest_enclosing_box(fboxes: list[FireballBox]) -> tuple:
+    if not fboxes:
+        return None
+
+    min_x1 = min(fbox.box[0] for fbox in fboxes)
+    min_y1 = min(fbox.box[1] for fbox in fboxes)
+    max_x2 = max(fbox.box[2] for fbox in fboxes)
+    max_y2 = max(fbox.box[3] for fbox in fboxes)
+
+    return (min_x1, min_y1, max_x2, max_y2)

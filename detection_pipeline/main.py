@@ -15,19 +15,20 @@ from skimage import io
 from structlog.typing import EventDict, WrappedLogger
 from tqdm import tqdm
 
+import utils.constants
 from detection_pipeline.core import (FilteredDetections,
                                      check_image_brightness,
                                      remove_saved_detection)
 from detection_pipeline.image_differencing import difference_images
+from fireball_detection import FireballBox
+from fireball_detection.boxes.merge import (find_groups_of_intersecting_boxes,
+                                            smallest_enclosing_box)
 from fireball_detection.detect import (detect_differenced_tiles_norm,
-                                       get_absolute_fireball_boxes,
-                                       merge_bboxes)
+                                       get_absolute_fireball_boxes)
 from object_detection.detectors import Detector, DetectorSingleton
 from object_detection.utils import diagonal_length
-import utils.constants
 from utils.constants import (DETECTOR_CONF, MAX_TIME_DIFFERENCE,
-                             MERGE_BBOXES_MARGIN, MIN_DIAGONAL_LENGTH,
-                             TILE_BORDER_SIZE)
+                             MIN_DIAGONAL_LENGTH, TILE_BORDER_SIZE)
 
 
 VERSION = "1.0.0"
@@ -179,9 +180,16 @@ class DetectionWorkerProcess(mp.Process):
             )
     
             fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
-            
-            detected_fireballs = merge_bboxes(fireball_boxes, MERGE_BBOXES_MARGIN)
-            detected_fireballs = [f for f in detected_fireballs if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
+            groups = find_groups_of_intersecting_boxes(fireball_boxes)
+
+            merged_fireball_boxes: list[FireballBox] = []
+
+            for group in groups:
+                max_conf = max(fbox.conf for fbox in group)
+                new_box = smallest_enclosing_box(group)
+                merged_fireball_boxes.append(FireballBox(new_box, max_conf))
+
+            detected_fireballs = [f for f in merged_fireball_boxes if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 
             if detected_fireballs:
                 image_folder = Path(self.args.output_folder, image_name)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class FireballBox:
 
     box: tuple[float, float, float, float]  # xyxy
