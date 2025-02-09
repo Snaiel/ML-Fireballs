@@ -20,13 +20,11 @@ from detection_pipeline.core import (FilteredDetections,
                                      check_image_brightness,
                                      remove_saved_detection)
 from detection_pipeline.image_differencing import difference_images
-from fireball_detection import FireballBox
-from fireball_detection.boxes.merge import (find_groups_of_intersecting_boxes,
-                                            smallest_enclosing_box)
+from fireball_detection.boxes.merge import merge_groups_of_boxes
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes)
 from object_detection.detectors import Detector, DetectorSingleton
-from object_detection.utils import diagonal_length
+from object_detection.utils import diagonal_length, iom
 from utils.constants import (DETECTOR_CONF, MAX_TIME_DIFFERENCE,
                              MIN_DIAGONAL_LENGTH, TILE_BORDER_SIZE)
 
@@ -180,14 +178,10 @@ class DetectionWorkerProcess(mp.Process):
             )
     
             fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
-            groups = find_groups_of_intersecting_boxes(fireball_boxes)
-
-            merged_fireball_boxes: list[FireballBox] = []
-
-            for group in groups:
-                max_conf = max(fbox.conf for fbox in group)
-                new_box = smallest_enclosing_box(group)
-                merged_fireball_boxes.append(FireballBox(new_box, max_conf))
+            merged_fireball_boxes = merge_groups_of_boxes(
+                fireball_boxes,
+                lambda x, y: iom(x.box, y.box) >= 0.25
+            )
 
             detected_fireballs = [f for f in merged_fireball_boxes if diagonal_length(f.box) > MIN_DIAGONAL_LENGTH]
 

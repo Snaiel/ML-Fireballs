@@ -16,10 +16,12 @@ from skimage import io
 from fireball_detection import FireballBox
 from fireball_detection.boxes.fireball_boxes import (
     get_absolute_fireball_boxes, get_normalised_fireball_boxes)
-from fireball_detection.boxes.merge import merge_bboxes
+from fireball_detection.boxes.merge import merge_bboxes, merge_groups_of_boxes
 from fireball_detection.boxes.nms import nms
 from fireball_detection.boxes.wbf import weighted_boxes_fusion
 from fireball_detection.detect import detect_standalone_tiles
+from object_detection.detectors import DetectorSingleton
+from object_detection.utils import iom
 from utils.constants import IMAGE_DIMENSIONS
 
 
@@ -82,24 +84,38 @@ def plot_boxes_on_image(ax: Axes, image: ndarray, fireball_boxes: list[FireballB
 
 def main() -> None:
     fireball_image = "data/GFO_fireball_object_detection_training_set/jpegs/50_2017-02-22_172331_S_DSC_7698.thumb.jpg"
+    model_path = "data/yolo-fireball-detector.pt"
 
     image = io.imread(Path(Path(__file__).parents[2], fireball_image))
-    detected_tiles = detect_standalone_tiles(image, border_size=5)
+    detected_tiles = detect_standalone_tiles(image, DetectorSingleton.get_detector("Ultralytics", model_path, 0.5), border_size=5)
 
     absolute_fireball_boxes = get_absolute_fireball_boxes(detected_tiles)
     normalised_fireball_boxes = get_normalised_fireball_boxes(detected_tiles)
 
     intersect_fireball_boxes = merge_bboxes(absolute_fireball_boxes)
     
-    threshold = 0.25
+    threshold = 0.2
     nms_fireball_boxes = merge_with_nms(normalised_fireball_boxes, threshold)
     wbf_fireball_boxes = merge_with_wbf(normalised_fireball_boxes, threshold)
 
-    fig, axs = plt.subplots(2, 2, figsize=(15, 12))
+    iom_fireball_boxes = merge_groups_of_boxes(
+        absolute_fireball_boxes,
+        lambda x, y: iom(x.box, y.box) >= threshold
+    )
+
+    for i in iom_fireball_boxes:
+        print(i)
+
+    fig, axs = plt.subplots(2, 3, figsize=(15, 12))
+    
+    ax: Axes = axs[0, 2]
+    ax.axis('off')
+    
     plot_boxes_on_image(axs[0, 0], image, absolute_fireball_boxes, 'r', 'Boxes')
     plot_boxes_on_image(axs[0, 1], image, intersect_fireball_boxes, 'g', 'Intersect Boxes')
     plot_boxes_on_image(axs[1, 0], image, nms_fireball_boxes, 'b', f'NMS Boxes IoU≥{threshold}')
     plot_boxes_on_image(axs[1, 1], image, wbf_fireball_boxes, 'y', f'WBF Boxes IoU≥{threshold}')
+    plot_boxes_on_image(axs[1, 2], image, iom_fireball_boxes, 'orange', f'Grouped Boxes IoM≥{threshold}')
 
     fig.tight_layout()
     plt.show()

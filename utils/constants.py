@@ -49,10 +49,6 @@ DETECTOR_IOU = 0.5
 # experiments showed a border size of 5 gave the best performance.
 TILE_BORDER_SIZE = 5
 
-# adding a margin to boxes when merging them together just makes
-# them more likely to combine if they just miss each other originally.
-MERGE_BBOXES_MARGIN = 0.1
-
 # arguments when blob detection to establish the streak line
 STREAK_LINE_BLOB_DETECTION_KWARGS = {
     "min_sigma": 1,
