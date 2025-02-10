@@ -291,12 +291,12 @@ def main() -> None:
         description="Detect fireballs from images in a folder.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing images")
-    parser.add_argument("--output_path", type=str, required=False, default=None, help="Path to the folder to contain the output folder")
-    parser.add_argument("--model_path", type=str, required=True, help="Path to the YOLO model file")
-    parser.add_argument('--processes', type=int, default=8, help="Number of processes to use as workers")
-    parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use.')
-    parser.add_argument('--save_erroneous', action='store_true', default=False, help='Output erroneous detections.')
+    parser.add_argument("--folder_path", type=str, required=True, help="(REQUIRED) Path to the folder containing images.")
+    parser.add_argument("--output_path", type=str, required=False, default=None, help="Path to the folder to contain the output folder. If None, folder_path will contain the output folder.")
+    parser.add_argument("--model_path", type=str, required=True, help="(REQUIRED) Path to the YOLO model file.")
+    parser.add_argument('--processes', type=int, default=8, help="Number of processes to use.")
+    parser.add_argument('--detector', type=str, choices=['Ultralytics', 'ONNX'], default='Ultralytics', help='The type of detector to use. Ultralytics can use any format but ONNX must use .onnx')
+    parser.add_argument('--save_erroneous', action='store_true', default=False, help='Output erroneous detections. Useful for debug/testing/development.')
     parser.add_argument('--no_overwrite', action='store_true', default=False, help='Keep existing output folder if exists. Useful alongside other bash script behaviour.')
     
     args = Args(**vars(parser.parse_args()))

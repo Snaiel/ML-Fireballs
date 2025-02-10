@@ -9,6 +9,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 - [Running the Fireball Detection Pipeline on Setonix](#running-the-fireball-detection-pipeline-on-setonix)
   - [Installation](#installation)
   - [Custom-Trained YOLO Model](#custom-trained-yolo-model)
+  - [Images to Run Detections On](#images-to-run-detections-on)
   - [Running Jobs](#running-jobs)
     - [Processing a Single Folder (i.e a nights worth of images by a single camera)](#processing-a-single-folder-ie-a-nights-worth-of-images-by-a-single-camera)
     - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
@@ -20,12 +21,13 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 - [Usage](#usage)
 - [Directories](#directories)
 - [Detection Pipeline](#detection-pipeline)
+  - [Running the Detection Pipeline Directly](#running-the-detection-pipeline-directly)
   - [Logs](#logs)
   - [Methodology](#methodology)
   - [Implementation](#implementation)
 - [Fireball Detection](#fireball-detection)
 - [Object Detection](#object-detection)
-  - [What’s the Deal with `object_detection.detectors`?](#whats-the-deal-with-object_detectiondetectors)
+  - [Dataset \& Model Methodology](#dataset--model-methodology)
   - [Training a Model for the Detection Pipeline](#training-a-model-for-the-detection-pipeline)
     - [Requirements](#requirements)
     - [Creating Differenced Images](#creating-differenced-images)
@@ -33,6 +35,10 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
     - [Training a YOLO Model on the Tiles Dataset](#training-a-yolo-model-on-the-tiles-dataset)
     - [Validating Model](#validating-model)
     - [Converting Model to ONNX Format](#converting-model-to-onnx-format)
+  - [Miscellaneous Waffling](#miscellaneous-waffling)
+    - [Custom Detectors](#custom-detectors)
+    - [Standalone vs Differenced Dataset Subfolders](#standalone-vs-differenced-dataset-subfolders)
+    - [Adding a Border to Tiles?](#adding-a-border-to-tiles)
 - [Point Pickings](#point-pickings)
 
 <br>
@@ -43,9 +49,7 @@ Want to find missed fireballs in historical data? Want to validate your new obse
 
 ## Installation
 
-`ssh` into setonix.
-
-https://pawsey.atlassian.net/wiki/spaces/US/pages/51925858/Connecting+to+a+Supercomputer.
+`ssh` into setonix (Refer to [Connecting to a Supercomputer](https://pawsey.atlassian.net/wiki/spaces/US/pages/51925858/Connecting+to+a+Supercomputer)).
 
 You might want to make sure `$PAWSEY_PROJECT` is pointing to the correct one.
 
@@ -101,7 +105,7 @@ If you want to do testing on the first half of 2015 using Setonix for a proper d
 
 The respective `.pt` models are essentially the base that which the `.onnx` models were converted from. They can be used for testing, during development, or exporting to other formats like `.engine` which is optimised for Nvidia GPUs.
 
-We need to copy the models onto Setonix. We can use `scp` for that. Refer to https://pawsey.atlassian.net/wiki/spaces/US/pages/51925882/Transferring+Files+in+out+Pawsey+Filesystems.
+We need to copy the models onto Setonix. We can use `scp` for that (Refer to [Transferring Files in/out Pawsey Filesystems](https://pawsey.atlassian.net/wiki/spaces/US/pages/51925882/Transferring+Files+in+out+Pawsey+Filesystems)).
 
 The following is from your local machine, not within Setonix.
 
@@ -110,6 +114,17 @@ scp path/to/model.onnx [username]@data-mover.pawsey.org.au:/software/projects/[p
 ```
 
 For convenience, just put it in `$MYSOFTWARE/ML-Fireballs/data/`.
+
+<br>
+
+## Images to Run Detections On
+
+Either
+
+- Transfer data from Pawsey's Acacia object storage (Refer to [Transferring Files in/out Acacia](https://pawsey.atlassian.net/wiki/spaces/US/pages/51927322/Transferring+Files+in+out+Acacia)), or
+- Upload data to Setonix (Refer to [Transferring Files in/out Pawsey Filesystems](https://pawsey.atlassian.net/wiki/spaces/US/pages/51925882/Transferring+Files+in+out+Pawsey+Filesystems))
+
+In the following sections, we will refer to images taken from Acacia.
 
 <br>
 
@@ -478,7 +493,23 @@ Notice how `.` is used for package separators and `.py` is omitted. Tab completi
 
 This folder contains code for detecting fireballs in a folder of images. Functionality such as checking brightness of whole images, image differencing, tile pixel thresholds, and streak line analysis.
 
+## Running the Detection Pipeline Directly
+
 `detection_pipeline.main` is the main program where you give it a folder of images, an optional output destination, and a trained yolo model and it will run the detection pipeline on the input folder using the model, then generate outputs in the designated destination.
+
+This is only meant to run on a single computer for a single folder of images. Anything more and Setonix is the preferred method (Refer to [Running the Fireball Detection Pipeline on Setonix](#running-the-fireball-detection-pipeline-on-setonix)). A GPU-enabled machine probably won't be better than Setonix since the bottleneck isn't the object detection it's the culmination of all the steps together. Additionally, multiprocessing is heavily relied upon, so this really is a CPU-bound pipeline.
+
+If you want to process multiple sets of images on a single computer, you can put the images into one folder and it'll handle them, even across days or different cameras (*I think*).
+
+To run the pipeline directly, make sure you've set up the project (Refer to Working on the Project [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)).
+
+```sh
+python3 -m detection_pipeline.main -h
+```
+
+*Note: As of writing, I just [realised](https://stackoverflow.com/questions/24180527/argparse-required-arguments-listed-under-optional-arguments) that parameters that are required by design should be positional parameters and that parameters using `-` or `--` are meant to be optional. Whoops, the project was made with the use of `--` parameters a lot, so sorry if it's confusing in any way.*
+
+It's pretty simple from here, just give it the parameters... This is what the `detection_pipeline/bash_scripts/fireball_detection.slurm` script does to run it on Setonix.
 
 ## Logs
 
@@ -534,7 +565,7 @@ The following steps are performed to process a folder of sequential images captu
     
     - Perform object detection
     
-        - Run the custom-trained YOLOv8 object detection model on each tile.
+        - Run the custom-trained YOLOv8 object detection model on each tile (Wondering how the YOLOv8 model was made? Refer to [Dataset & Model Methodology](#dataset--model-methodology)).
         - Reposition each tile detection to its respective position in the full-sized image.
         - Find groups of overlapping bounding boxes and group them together.
         - Merge the bounding boxes within the separate groups.
@@ -614,9 +645,20 @@ https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
 
 The `object_detection` folder deals with YOLOv8 stuff.
 
-## What’s the Deal with `object_detection.detectors`?
+<br>
 
-YOLOv8 is made with the `ultralytics` Python package. It makes things very convenient by doing a lot of the work for you. But when doing detections on Setonix, more control over the inference using `onnxruntime` was required. So the custom `Detector` abstract class was made for this project, along with `ONNXDetector` and `UltralyticsDetector`. `ONNXDetector` just has some configurations that make things smoother for CPU inference in general, not just for Setonix. `UltralyticsDetector` basically just feeds the input into `ultralytics`, used in development for the convenience.
+## Dataset & Model Methodology
+
+Image differencing and tiling used here is explained in the Detection Pipeline [Methodology](#methodology).
+
+- Retrieve images of fireballs and their corresponding before and after images.
+- Retrieve best average composite differenced image out of the sequential pairs.
+- Tile image with overlap and discard tiles based on the circular fisheye lens and pixel thresholds.
+- Use tiles with at least a certain number of point pickings in the tile as positive samples for fireballs.
+- Create bounding boxes from point pickings around fireballs in tile.
+- Use ALL tiles with no point pickings as negative samples.
+
+This is implemented in the project. The following section shows you how to generate the dataset and train a model on it.
 
 <br>
 
@@ -812,7 +854,7 @@ python3 -m object_detection.val.val_tiles --yolo_pt_path runs/detect/object_dete
 
 Validating on an "all" dataset might not allow for a reliable comparison because the model has already seen the data in the training set but it enables a view of the expected fireballs to be detected when rerunning detections on already-trained data.
 
-If for example we did create a validation set, the program will test accordingly and provide a better judgement of the model on unseen data.
+If for example we did create a validation set, the program will test accordingly and provide a better judgement of the model on unseen data. The recall seen in this case will reflect the proper detection rate of fireballs on the actual images that these images are from, since it's guaranteed such tiles will be detected if they go through the pipeline, which they will. However, validating the precision / false positive rate requires actually testing on a real timeframe of images, which involves using the pipeline in its entirety.
 
 Example output:
 
@@ -888,6 +930,20 @@ If you want to export to any other formats, just modify `object_detection.model.
 <br>
 
 Congratulations, you've trained a model! It can now be used for fireball detection (Refer to [Running the Fireball Detection Pipeline on Setonix](#running-the-fireball-detection-pipeline-on-setonix)). 
+
+<br>
+
+## Miscellaneous Waffling
+
+Some rambling that may or may not be helpful.
+
+### Custom Detectors
+
+YOLOv8 is made with the `ultralytics` Python package. It makes things very convenient by doing a lot of the work for you. But when doing detections on Setonix, more control over the inference using `onnxruntime` was required. So the custom `Detector` abstract class was made for this project, along with `ONNXDetector` and `UltralyticsDetector`. `ONNXDetector` is configured to run CPU inference smoothly in general, not just for Setonix. `UltralyticsDetector` basically just feeds the input into `ultralytics`, used in development for the convenience.
+
+### Standalone vs Differenced Dataset Subfolders
+
+### Adding a Border to Tiles?
 
 <br>
 
