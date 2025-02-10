@@ -78,6 +78,8 @@ SIMILAR_LINES_MAX_MIDPOINT_DISTANCE_RATIO = 0.25
 # Minimum ratio of shorter streak length to longer streak length
 SIMILAR_LINES_MIN_LENGTH_RATIO = 0.75
 
+# How far to look forwards in images for detections
+SAME_TRAJECTORY_MAX_OFFSET = 3
 # Max angle difference per offset
 SAME_TRAJECTORY_MAX_ANGLE_DIFFERENCE = 25
 # Max midpoint distance per offset

@@ -21,12 +21,7 @@ def satisfies_thresholds(
     ) -> bool:
     
     if not thresholds:
-        thresholds = TilePreprocessingThresholds(
-            PIXEL_BRIGHTNESS_THRESHOLD,
-            MIN_PIXEL_TOTAL_THRESHOLD,
-            MAX_PIXEL_TOTAL_THRESHOLD,
-            1.0
-        )
+        thresholds = TilePreprocessingThresholds()
 
     pixels_over_threshold = np.sum(tile > thresholds.pixel_threshold)
     

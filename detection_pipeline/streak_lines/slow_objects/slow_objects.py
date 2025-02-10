@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from utils.constants import SAME_TRAJECTORY_MAX_OFFSET
+
 from ..streak_line import StreakLine
 
 
@@ -29,8 +31,8 @@ def find_slow_objects(camera_folder: Path, streak_lines: dict[str, StreakLine] =
         number = int(subfolder.split("_")[-1])
         neighbours = [
             n for n in
-            subfolders[i+1:max(len(subfolders),i+3+1)]
-            if abs(int(n.split("_")[-1]) - number) <= 3
+            subfolders[i+1:max(len(subfolders),i+SAME_TRAJECTORY_MAX_OFFSET+1)]
+            if abs(int(n.split("_")[-1]) - number) <= SAME_TRAJECTORY_MAX_OFFSET
         ]
 
         if not neighbours:

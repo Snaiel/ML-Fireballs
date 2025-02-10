@@ -6,7 +6,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 
 - [ML-Fireballs](#ml-fireballs)
 - [Table of Contents](#table-of-contents)
-- [Fireball detection on Setonix](#fireball-detection-on-setonix)
+- [Running the Fireball Detection Pipeline on Setonix](#running-the-fireball-detection-pipeline-on-setonix)
   - [Installation](#installation)
   - [Custom-Trained YOLO Model](#custom-trained-yolo-model)
   - [Running Jobs](#running-jobs)
@@ -21,9 +21,11 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 - [Directories](#directories)
 - [Detection Pipeline](#detection-pipeline)
   - [Logs](#logs)
+  - [Methodology](#methodology)
+  - [Implementation](#implementation)
 - [Fireball Detection](#fireball-detection)
 - [Object Detection](#object-detection)
-  - [What’s the Deal with object\_detection.detectors?](#whats-the-deal-with-object_detectiondetectors)
+  - [What’s the Deal with `object_detection.detectors`?](#whats-the-deal-with-object_detectiondetectors)
   - [Training a Model for the Detection Pipeline](#training-a-model-for-the-detection-pipeline)
     - [Requirements](#requirements)
     - [Creating Differenced Images](#creating-differenced-images)
@@ -35,7 +37,9 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 
 <br>
 
-# Fireball detection on Setonix
+# Running the Fireball Detection Pipeline on Setonix
+
+Want to find missed fireballs in historical data? Want to validate your new observatory prototype? You've come to the right place!
 
 ## Installation
 
@@ -166,6 +170,8 @@ So the final command may look like:
 
 From the above command, a folder `$MYSCRATCH/DFNSMALL09/` will be created containing the outputs of the program.
 
+Usually takes around 5 to 10 minutes to process a single folder of~1000 images.
+
 <br>
 
 ### Processing Multiple Folders (i.e each camera of a given day)
@@ -186,6 +192,8 @@ The final command may look like:
 
 From the above command, a folder `$MYSCRATCH/dfn-l0-20150101/` will be created containing the outputs of the program.
 
+Usually takes around 5 to 20 minutes to process a days worth of images across ~20 cameras.
+
 <br>
 
 ### Example: Processing an Entire Month of Detections
@@ -205,6 +213,8 @@ find /scratch/$PAWSEY_PROJECT/acacia_JPGs/ -maxdepth 1 -type d -name "*201501*" 
 	./detection_pipeline/bash_scripts/process_subfolders.sh $dir $MYSCRATCH/dfn-2015-01-candidates/ $MYSOFTWARE/ML-Fireballs/data/2015-trained-entire-year_differenced-norm-tiles_yolov8s-pt.onnx
 done
 ```
+
+Usually takes around an hour to process a month of images.
 
 <br>
 
@@ -466,13 +476,6 @@ Notice how `.` is used for package separators and `.py` is omitted. Tab completi
 
 # Detection Pipeline
 
-Building off of the paper: [Fireball streak detection with minimal CPU processing requirements for the Desert Fireball Network data processing pipeline
-](https://doi.org/10.1017/pasa.2019.48) by Towner et al. (2020).
-
-**Overview of the new detection pipeline**
-
-![Drawing 2025-01-25 19 31 21 excalidraw](https://github.com/user-attachments/assets/320a4d2c-4264-45c1-8e80-4d162420ee5a)
-
 This folder contains code for detecting fireballs in a folder of images. Functionality such as checking brightness of whole images, image differencing, tile pixel thresholds, and streak line analysis.
 
 `detection_pipeline.main` is the main program where you give it a folder of images, an optional output destination, and a trained yolo model and it will run the detection pipeline on the input folder using the model, then generate outputs in the designated destination.
@@ -493,6 +496,96 @@ Piping it to `less` makes it navigable. Up and down arrows, page up and page dow
 jq -r 'select(.final_detections != null) | .final_detections[]' "$MYSCRATCH/dfn-2015-01-candidates/dfn-l0-20150101/DFNSMALL09/dfn-l0-20150101_DFNSMALL09.log"
 ```
 
+## Methodology
+
+Building off of the paper: [Fireball streak detection with minimal CPU processing requirements for the Desert Fireball Network data processing pipeline
+](https://doi.org/10.1017/pasa.2019.48) by Towner et al. (2020).
+
+![Drawing 2025-01-25 19 31 21 excalidraw](https://github.com/user-attachments/assets/320a4d2c-4264-45c1-8e80-4d162420ee5a)
+
+The following steps are performed to process a folder of sequential images captured by a single camera:
+
+- For each image, create a triplet of the (before, current, after) images.
+
+   - If the current image is too bright or too dim, skip the triplet.
+   - If the before or after image were taken too far apart in time, don't include those images.
+   - If the current image has no valid before and after image, skip the triplet.
+
+- For each triplet
+   
+    - Consider both (before, current) and (current, after) if available. The current image will be referred to as `current`, while the other image as `other`.
+
+    - Create a composite differenced image.
+
+        - Do a simple subtraction of `current - other` to create an unaligned differenced image.
+        - Use Oriented FAST and Rotated BRIEF (ORB) to align `other` to `current` (In the hopes of the stars being aligned).
+        - If the transformation magnitude is too high, do not perform alignment.
+        - Subtract the `aligned other` image from `current` to create an aligned differenced image.
+        - Create the composite differenced image by comparing each pixel value in the aligned and unaligned differenced images and taking the lower value pixel for the composite image.
+
+    - Compare the composite images made from (before, current) and (current, after) and choose the composite image with the lower average brightness.
+
+    - Perform image tiling
+  
+        - Split image into `400x400` pixel tiles with a `50%` overlap in both horizontal and vertical directions.
+        - Discard tiles outside the circular image.
+        - Discard tiles based on thresholds around pixel brightness.
+        - Normalise each tile to have a range of `0 to 255`.
+    
+    - Perform object detection
+    
+        - Run the custom-trained YOLOv8 object detection model on each tile.
+        - Reposition each tile detection to its respective position in the full-sized image.
+        - Find groups of overlapping bounding boxes and group them together.
+        - Merge the bounding boxes within the separate groups.
+        - Discard resulting bounding boxes that are too small.
+    
+    - Save and log detections.
+
+- After each triplet has been processed, establish the streak lines of each detection.
+    
+    - Perform Difference of Gaussians (DoG) blob detection on the cropped differenced image.
+    - Retrieve average brightness of each detected blob.
+    - Normalise brightnesses between `0 and 1`.
+    - Apply a shifted sigmoid function with high steepness to introduce separation between brightness values.
+    - Perform linear regression on blobs with RANSAC while using the transformed brightness values as sample weights. This will hopefully fit a line to the most prominent bright streak while ignoring noise.
+    - Calculate start, end, midpoint, length, gradient, etc.
+
+- Identify similar streak lines throughout detections.
+
+    - Small angle between streak lines.
+    - Similar midpoint.
+    - Similar length.
+
+- Identify streaks with the same trajectory.
+
+    - For each image with detections, check the streaks of the recent subsequent images with detections.
+    - Consider the image offset (`IMG_0002` and `IMG_0005` have an offset of `3`) when checking if streak lines have the same trajectory between images.
+        
+        - Similar angle (`* offset`) between streak lines.
+        - Project midpoint of neighbour streak with line defined by current streak.
+        - Parallel distance from midpoint of current streak to projected point falls under threshold (`* offset`).
+        - Perpendicular distance from projected point to midpoint of neighbour streak falls under threshold (`* offset`).
+
+- Combine detections that have similar lines and trajectories into the set of all erroneous detections.
+- Calculate the difference between the set of all detections and the set of erroneous detections to retrieve the final detections.
+
+## Implementation
+
+- The steps outline in [Methodology](#methodology) above are executed by `detection_pipeline.main`.
+- This Python module deals with processing the images of one folder.
+- It uses multiprocessing to:
+    
+    - Process each triple.
+    - Establish streak lines of detections.
+
+- On Setonix, a batch job is scheduled to use one node (with all its CPU cores and available RAM) to run this module on one folder of images.
+- When processing a folder of a given day containing camera folders, one batch job is scheduled per camera folder, then one job is scheduled (dependant on all the others) which is a Python script that collates all detections by each camera into one `.json` file.
+- When processing a folder of a given month, the above step is repeated for each day.
+- There can be upwards of hundreds or even thousands of jobs scheduled, but the scheduling system of Setonix handles the allocation of resources.
+- A folder of images can take 5-10 minutes, a day of camera folders can take 5-20 minutes, a month takes around an hour.
+- All depends on how busy the supercomputer is.
+
 <br>
 
 # Fireball Detection
@@ -509,6 +602,8 @@ Running the module also shows a sample detection.
 python3 -m fireball_detection.detect
 ```
 
+This is an old animation which doesn't contain image differencing, discarding tiles that don't satisfy pixel thresholds, and other parts of the pipeline. However, it provides a good overview of tile splitting and object detection.
+
 Animation source: https://github.com/Snaiel/Manim-Fireball-Detection
 
 https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
@@ -517,11 +612,11 @@ https://github.com/user-attachments/assets/a7e529c7-e998-486c-b863-5cc67f60fd0a
 
 # Object Detection
 
-This deals with YOLOv8 stuff.
+The `object_detection` folder deals with YOLOv8 stuff.
 
-## What’s the Deal with object_detection.detectors?
+## What’s the Deal with `object_detection.detectors`?
 
-YOLOv8 is made through the `ultralytics` Python package. It makes things very convenient by doing a lot of the work for you. But when doing detections on Setonix, more control over the inference using `onnxruntime` was required. So the custom `Detector` abstract class was made for this project, along with `ONNXDetector` and `UltralyticsDetector`. `ONNXDetector` just has some configurations that make things smoother for CPU inference in general, not just for Setonix. `UltralyticsDetector` basically just feeds the input into `ultralytics`, used in development for the convenience.
+YOLOv8 is made with the `ultralytics` Python package. It makes things very convenient by doing a lot of the work for you. But when doing detections on Setonix, more control over the inference using `onnxruntime` was required. So the custom `Detector` abstract class was made for this project, along with `ONNXDetector` and `UltralyticsDetector`. `ONNXDetector` just has some configurations that make things smoother for CPU inference in general, not just for Setonix. `UltralyticsDetector` basically just feeds the input into `ultralytics`, used in development for the convenience.
 
 <br>
 
@@ -661,7 +756,7 @@ For example
 python3 -m object_detection.dataset.differenced.create_2015_halved --all_folder_path data/object_detection/differenced/all/
 ```
 
-This will created the folder `data/object_detection/differenced/halved/`
+This will create the folder `data/object_detection/differenced/halved/`
 
 `negative_ratio` refers to the ratio of tiles containing no fireballs to the fireball tiles. The default value of `-1` means it will use all the available negative samples in the dataset. **It was found through testing that having all available negative samples in the dataset provides the best performance.** A custom negative ratio may not result in the exact amount since there may not be enough negative samples.
 
@@ -792,7 +887,7 @@ If you want to export to any other formats, just modify `object_detection.model.
 
 <br>
 
-Congratulations, you've trained a model! It can now be used for fireball detection.
+Congratulations, you've trained a model! It can now be used for fireball detection (Refer to [Running the Fireball Detection Pipeline on Setonix](#running-the-fireball-detection-pipeline-on-setonix)). 
 
 <br>
 
