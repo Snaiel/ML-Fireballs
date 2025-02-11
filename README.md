@@ -973,6 +973,16 @@ Running `point_pickings.compare` shows a comparison between the automated system
 python3 -m point_pickings.compare
 ```
 
+![Screenshot from 2025-02-11 13-20-15](https://github.com/user-attachments/assets/8bdfd78f-56c2-45dd-a28e-7f776f01a3e3)
+
+![Screenshot from 2025-02-11 13-11-09](https://github.com/user-attachments/assets/4146f35c-3d88-43df-a9cd-0ae20433bffe)
+
+- White labels are manual pickings
+- Pink labels are automated pickings
+- Green blobs and dots are automated
+- Red dots are manual points
+- Pink blobs are the start of localised distance groups
+
 <br>
 
 The methodology of the point picking system is detailed in the [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing), but here is an overview:
