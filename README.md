@@ -38,7 +38,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
   - [Miscellaneous Waffling](#miscellaneous-waffling)
     - [Custom Detectors](#custom-detectors)
     - [Standalone vs Differenced Dataset Subfolders](#standalone-vs-differenced-dataset-subfolders)
-    - [Adding a Border to Tiles?](#adding-a-border-to-tiles)
+    - [Adding a Border to Tiles](#adding-a-border-to-tiles)
 - [Point Pickings](#point-pickings)
 
 <br>
@@ -943,7 +943,11 @@ YOLOv8 is made with the `ultralytics` Python package. It makes things very conve
 
 ### Standalone vs Differenced Dataset Subfolders
 
-### Adding a Border to Tiles?
+There are essentially two subfolders `object_detection.dataset.differenced` and `object_detection.dataset.standalone` that can be used to create a dataset for YOLO. `standalone` was developed first, without the image differencing. It just uses fireball images along with their point pickings. I'm not sure if that code is functional now but it's there just in case. `differenced` contains the Python modules that get used in the previous section. `object_detection.dataset.differenced.create_sampled_all` was made to retrieve a specific positive-negative sample ratio but it turns out using all available negative samples provided the best performance. When in doubt, just follow the instructions in the previous sections.
+
+### Adding a Border to Tiles
+
+A weird behaviour with the trained YOLO model is that adding a border around the input image dramatically increases performance. It's most likely the result of the tiles being `400x400` pixels while the model requires `416x416` pixels so the `ultralytics` package introduces a border to make it the right size. Additionally the data augmentation that happens during training changes the scale, rotation, and translation which may result in the tile being positioned on a coloured background. I tried looking through the source code to pinpoint what exactly happens and I've tried to replicate the transformations it does to the tiles but I could not get it to get the same results as the `ultralytics` package. As a result, the results that come from the inbuilt validation and manually doing validation using inference are different.
 
 <br>
 
