@@ -18,9 +18,9 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
     - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
     - [Example: Processing an Entire Month of Detections](#example-processing-an-entire-month-of-detections)
   - [Useful Setonix Commands](#useful-setonix-commands)
-- [Working on the project](#working-on-the-project)
+- [Working on the Project](#working-on-the-project)
   - [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)
-  - [Working On The Project In Setonix](#working-on-the-project-in-setonix)
+  - [In Setonix](#in-setonix)
 - [Usage](#usage)
 - [Directories](#directories)
 - [Detection Pipeline](#detection-pipeline)
@@ -333,7 +333,7 @@ done | awk -F'/' '{print $2}' | sort | uniq | wc -l
 
 <br>
 
-# Working on the project
+# Working on the Project
 
 Here are the steps if you are going to be tinkering around or doing development.
 
@@ -371,7 +371,7 @@ pip install -r requirements.txt
 
 <br>
 
-## Working On The Project In Setonix
+## In Setonix
 
 oh boy.
 
