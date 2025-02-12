@@ -5,7 +5,7 @@ import random
 import re
 import shutil
 from dataclasses import dataclass
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from tqdm import tqdm
@@ -125,8 +125,8 @@ def main() -> None:
         )
 
     def copy_files(tile_files, dest_folder):
-        with Pool() as pool:
-            list(tqdm(pool.imap(lambda tf: copy_file(tf, dest_folder), tile_files), total=len(tile_files)))
+        with ThreadPoolExecutor() as executor:
+            list(tqdm(executor.map(lambda tf: copy_file(tf, dest_folder), tile_files), total=len(tile_files)))
 
 
     train_fireball_tiles, train_negative_tiles = filter_and_sample_tiles(train_tiles, args.negative_ratio)

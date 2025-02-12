@@ -27,39 +27,19 @@ class DifferencedTiles(DatasetTiles):
         super().__init__(differenced_image_path.name.split(".")[0])
 
         differenced_image = io.imread(differenced_image_path)
-        original_image = io.imread(original_image_path)
-        
-        max_value = np.max(differenced_image)
-        norm_differenced_image = differenced_image
-        if max_value > 0:
-            norm_differenced_image = (norm_differenced_image / max_value) * 255
-
-        norm_differenced_image = norm_differenced_image.astype(np.uint8)
-        norm_differenced_image = np.expand_dims(norm_differenced_image, axis=-1)
-
-        img_4ch = np.concatenate((original_image, norm_differenced_image), axis=-1)
-
-        weights = np.array([1, 1, 1, 1])
-        weighted_image = img_4ch * weights
-
-        img_flat = weighted_image.reshape(-1, 4)
-        pca = PCA(n_components=3)
-        img_pca = pca.fit_transform(img_flat)
-        
-        # print(differenced_image_path)
-        # print(pca.explained_variance_ratio_)
-        # print(pca.components_)
-        
-        img_3ch = img_pca.reshape(img_4ch.shape[0], img_4ch.shape[1], 3)
-
-        image_result: np.ndarray = (img_3ch - img_3ch.min()) / (img_3ch.max() - img_3ch.min()) * 255
-        image_result = image_result.astype(np.uint8)
 
         points = pd.read_csv(Path(GFO_PICKINGS, self.fireball_name + ".csv"))
         
         for tile_pos in included_coordinates:
 
-            tile_image = get_image_tile(image_result, tile_pos)
+            tile_image = get_image_tile(differenced_image, tile_pos)
+
+            max_value = np.max(tile_image)
+            norm_tile = tile_image.copy()
+            if max_value > 0:
+                norm_tile = (tile_image / max_value) * 255
+            norm_tile = norm_tile.astype(np.uint8)
+
             differenced_tile = get_image_tile(differenced_image, tile_pos)
 
             points_in_tile = []
@@ -75,7 +55,7 @@ class DifferencedTiles(DatasetTiles):
                 self.fireball_tiles.append(
                     FireballTile(
                         tile_pos,
-                        tile_image,
+                        norm_tile,
                         pd.DataFrame(points_in_tile, columns=["x", "y"])
                     )
                 )
@@ -87,7 +67,7 @@ class DifferencedTiles(DatasetTiles):
             self.negative_tiles.append(
                 FireballTile(
                     tile_pos,
-                    tile_image
+                    norm_tile
                 )
             )
         
