@@ -571,7 +571,7 @@ The following steps are performed to process a folder of sequential images captu
     
         - Run the custom-trained YOLOv8 object detection model on each tile. Wondering how the YOLOv8 model was made? Refer to [Dataset & Model Methodology](#dataset--model-methodology).
         - Reposition each tile detection to its respective position in the full-sized image.
-        - Find groups of overlapping bounding boxes and group them together.
+        - Find groups of overlapping bounding boxes and group them together. Using Intersection over Minimum (IoM) since this is different parts of a fireball instead of boxes that encompass an entire object (Refer to [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing) sections "Intersection Over Minimum" and "Fireball Detection on Complete Images").
         - Merge the bounding boxes within the separate groups. I was initially just merging bounding boxes as an intersection was found, but that sometimes results in the resultant bigger merged bounding box now overlapping with other bounding boxes that weren't previously overlapping with the original boxes.
         - Discard resulting bounding boxes that are too small.
     
@@ -608,7 +608,7 @@ The following steps are performed to process a folder of sequential images captu
 
 <br>
 
-The constants and thresholds used in the pipeline are located in `ML-Fireballs/utils/constants.py` along with their explanations.
+The constants and thresholds used in the pipeline along with their explanations are located in `ML-Fireballs/utils/constants.py`.
 
 ## Implementation
 
@@ -666,8 +666,19 @@ Image differencing and tiling used here is explained in the Detection Pipeline [
 - Use tiles with at least a certain number of point pickings in the tile as positive samples for fireballs.
 - Create bounding boxes from point pickings around fireballs in tile.
 - Use ALL tiles with no point pickings as negative samples.
+- Normalise each tile before saving
 
 This is implemented in the project. The following section shows you how to generate the dataset and train a model on it.
+
+**The brilliant idea of using 4 channel images**
+
+Since an expert can use an RGB image to distinguish very easily between fireballs and satellites, this should work too right? Well, we already tried straight up RGB iamges before image differencing, and it wasn't great. But now we can use image differencing, discard tiles, then use RGB. Yeah I tested that and it was not better than just using the differenced image.
+
+OK, what if the model uses the differenced image to identify streaks and then have the RGB information to help it distinguish between the others, so 4 channels. Genuis right? I tried modifying YOLO to accept 4 channel images and only pain came from that experience. YOLO is stupidly hard-coded to use 3 channel images!!!! Even when inputting the single channel differenced images, I have to stack 3 of them together just for it to work...
+
+How about doing a principal component analysis on the 4 dimensions back into 3 dimensions?!?!?!?! Such a smart idea. Yeah I tried that and simple image differencing is better... In the end, doing image differencing, tiling the image, then normalising each tile resulted in the best performance.
+
+I think it's because the model is trying to do too many things at once. It might be good to train another model that classifies between detections using just RGB. At that point, it's not really trying to find potential streaks, just recognise what this detection is.
 
 <br>
 
