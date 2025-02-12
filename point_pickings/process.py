@@ -254,7 +254,7 @@ def visualise_fireball(fireball: FullAutoFireball):
 
 
 def main():
-    image_path = Path(Path(__file__).parents[1], "data", "fireball_highlights", "cropped", "025_2021-09-09_053629_E_DSC_0379-G_cropped.jpeg")
+    image_path = Path("data/dfn_highlights/025_Elginfield/025_2021-09-09_053629_E_DSC_0379-G_cropped.jpeg")
     fireball = retrieve_fireball(image_path)
     visualise_fireball(fireball)
 

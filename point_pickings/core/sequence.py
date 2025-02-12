@@ -4,7 +4,7 @@ import Levenshtein
 import numpy as np
 from Bio import Align
 
-from utils.constants import DE_BRUIJN_SEQUENCE
+from utils.de_bruijn import DE_BRUIJN_SEQUENCE
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,9 @@
 # ML-Fireballs
 
-Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) research. Contains code for automated point pickings and YOLO fireball detection.
+Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) research. Contains code for a new fireball detection pipeline and some code for an automated point pickings prototype.
+
+- [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing)
+- [Summer Internship Presentation Slides](https://docs.google.com/presentation/d/15pXYqanBoDktBvF3R0n6vxvQ9zNF6Bw05ZhSeDlDzgQ/edit?usp=sharing)
 
 # Table of Contents
 
@@ -15,9 +18,9 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
     - [Processing Multiple Folders (i.e each camera of a given day)](#processing-multiple-folders-ie-each-camera-of-a-given-day)
     - [Example: Processing an Entire Month of Detections](#example-processing-an-entire-month-of-detections)
   - [Useful Setonix Commands](#useful-setonix-commands)
-- [Working on the project](#working-on-the-project)
+- [Working on the Project](#working-on-the-project)
   - [Locally / On a Regular Server Like Nectar](#locally--on-a-regular-server-like-nectar)
-  - [Working On The Project In Setonix](#working-on-the-project-in-setonix)
+  - [In Setonix](#in-setonix)
 - [Usage](#usage)
 - [Directories](#directories)
 - [Detection Pipeline](#detection-pipeline)
@@ -38,7 +41,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
   - [Miscellaneous Waffling](#miscellaneous-waffling)
     - [Custom Detectors](#custom-detectors)
     - [Standalone vs Differenced Dataset Subfolders](#standalone-vs-differenced-dataset-subfolders)
-    - [Adding a Border to Tiles?](#adding-a-border-to-tiles)
+    - [Adding a Border to Tiles](#adding-a-border-to-tiles)
 - [Point Pickings](#point-pickings)
 
 <br>
@@ -330,7 +333,7 @@ done | awk -F'/' '{print $2}' | sort | uniq | wc -l
 
 <br>
 
-# Working on the project
+# Working on the Project
 
 Here are the steps if you are going to be tinkering around or doing development.
 
@@ -368,7 +371,7 @@ pip install -r requirements.txt
 
 <br>
 
-## Working On The Project In Setonix
+## In Setonix
 
 oh boy.
 
@@ -943,7 +946,11 @@ YOLOv8 is made with the `ultralytics` Python package. It makes things very conve
 
 ### Standalone vs Differenced Dataset Subfolders
 
-### Adding a Border to Tiles?
+There are essentially two subfolders `object_detection.dataset.differenced` and `object_detection.dataset.standalone` that can be used to create a dataset for YOLO. `standalone` was developed first, without the image differencing. It just uses fireball images along with their point pickings. I'm not sure if that code is functional now but it's there just in case. `differenced` contains the Python modules that get used in the previous section. `object_detection.dataset.differenced.create_sampled_all` was made to retrieve a specific positive-negative sample ratio but it turns out using all available negative samples provided the best performance. When in doubt, just follow the instructions in the previous sections.
+
+### Adding a Border to Tiles
+
+A weird behaviour with the trained YOLO model is that adding a border around the input image dramatically increases performance. It's most likely the result of the tiles being `400x400` pixels while the model requires `416x416` pixels so the `ultralytics` package introduces a border to make it the right size. Additionally the data augmentation that happens during training changes the scale, rotation, and translation which may result in the tile being positioned on a coloured background. I tried looking through the source code to pinpoint what exactly happens and I've tried to replicate the transformations it does to the tiles but I could not get it to get the same results as the `ultralytics` package. As a result, the results that come from the inbuilt validation and manually doing validation using inference are different. This was also discussed in the [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing).
 
 <br>
 
@@ -965,5 +972,39 @@ Running `point_pickings.compare` shows a comparison between the automated system
 ```sh
 python3 -m point_pickings.compare
 ```
+
+![Screenshot from 2025-02-11 13-20-15](https://github.com/user-attachments/assets/8bdfd78f-56c2-45dd-a28e-7f776f01a3e3)
+
+![Screenshot from 2025-02-11 13-11-09](https://github.com/user-attachments/assets/4146f35c-3d88-43df-a9cd-0ae20433bffe)
+
+- White labels are manual pickings
+- Pink labels are automated pickings
+- Green blobs and dots are automated
+- Red dots are manual points
+- Pink blobs are the start of localised distance groups
+
+<br>
+
+The methodology of the point picking system is detailed in the [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing), but here is an overview:
+
+- Input a cropped image of a fireball (the object detection stuff didn't end up being incorporated).
+- Rotate image if needed to make sure the fireball is horizontal (to accomodate an upright parabola being fit to the segments).
+- Perform Difference of Gaussians (DoG) blob detection.
+- Fit a parabola to the blobs with RANSAC to distinguis between stars and fireball segments.
+- Use blob size and brightnesses to remove false positive blobs that align with the fireball.
+- Calculate distances between consecutive blobs.
+- Establish localised distance groups based on the expected number of distances for the two types of encodings to show up.
+- Perform k-means clustering on each group to identify which gaps are short or long.
+- Check the short distances in each group and threshold distances that are too short.
+- Remove erroneous blobs and redo distance calculation and k-means clustering.
+- Perform local sequence alignment of the decoded sequence and its reverse with the established de Bruijn sequence.
+- Choose the alignment with the higher Levenshtein ratio.
+- Handle mismatched alignments by removing blobs.
+
+Notes:
+
+- Blob detection is unreliable for most types of images.
+- [Keypoint detection](https://github.com/tlpss/keypoint-detection) sounds like it would be a better option.
+- Need to figure out how to better handle mismatches in the alignment (e.g. iterative solution that tries new sequences until perfect alignment?).
 
 <br>
