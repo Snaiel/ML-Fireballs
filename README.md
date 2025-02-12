@@ -547,42 +547,43 @@ The following steps are performed to process a folder of sequential images captu
 
 - For each triplet
    
-    - Consider both (before, current) and (current, after) if available. The current image will be referred to as `current`, while the other image as `other`.
+    - Consider both `(before, current)` and `(current, after)` if available. The current image will be referred to as `current`, while the other image as `other`. The intuition behind `(before, current)` is that there could be new pixels in `current` that weren't in `before`. For `(current, after)`, there could be pixels in `current` that are no longer in `after`.
 
     - Create a composite differenced image.
 
-        - Do a simple subtraction of `current - other` to create an unaligned differenced image.
-        - Use Oriented FAST and Rotated BRIEF (ORB) to align `other` to `current` (In the hopes of the stars being aligned).
-        - If the transformation magnitude is too high, do not perform alignment.
+        - Do a simple subtraction of `current - other` to create an unaligned differenced image. This will remove the static foreground elements such as buildings and poles. However stars move ever so slightly between images, and they're small enough that the become unaligned. Doing a subtraction on this results in stars being partially removed, which doesn't help at all.
+        - Use Oriented FAST and Rotated BRIEF (ORB) to align `other` to `current`. This is in the hopes that the stars will be aligned. For a reason unknown to me, it does a good job of only picking the stars for the most part.
+        - If the transformation magnitude is too high, do not perform alignment. This is because at this point it is no longer aligning the stars together, it's doing something else funky.
+        - Gaussian blur the images to lessen noise.
         - Subtract the `aligned other` image from `current` to create an aligned differenced image.
         - Create the composite differenced image by comparing each pixel value in the aligned and unaligned differenced images and taking the lower value pixel for the composite image.
 
-    - Compare the composite images made from (before, current) and (current, after) and choose the composite image with the lower average brightness.
+    - Compare the composite images made from `(before, current)` and `(current, after)` and choose the composite image with the lower average brightness. The fireball will still be bright, but assumes that the lower average brightness corresponds to less background noise.
 
     - Perform image tiling
   
         - Split image into `400x400` pixel tiles with a `50%` overlap in both horizontal and vertical directions.
-        - Discard tiles outside the circular image.
-        - Discard tiles based on thresholds around pixel brightness.
-        - Normalise each tile to have a range of `0 to 255`.
+        - Discard tiles outside the circular image. `400` because it turns out that the median length of fireballs (from [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing)) are only 330 pixels long, which means theres a good chance that the entire fireball could be in a single tile. Also it's the tile size used in the original detection system.
+        - Discard tiles based on thresholds around pixel brightness. Based on estimates on manually surveying images and checking pixel values.
+        - Normalise each tile to have a range of `0 to 255`. Based on experiments with training a YOLO model on normalised vs unnormalised tiles.
     
     - Perform object detection
     
-        - Run the custom-trained YOLOv8 object detection model on each tile (Wondering how the YOLOv8 model was made? Refer to [Dataset & Model Methodology](#dataset--model-methodology)).
+        - Run the custom-trained YOLOv8 object detection model on each tile. Wondering how the YOLOv8 model was made? Refer to [Dataset & Model Methodology](#dataset--model-methodology).
         - Reposition each tile detection to its respective position in the full-sized image.
         - Find groups of overlapping bounding boxes and group them together.
-        - Merge the bounding boxes within the separate groups.
+        - Merge the bounding boxes within the separate groups. I was initially just merging bounding boxes as an intersection was found, but that sometimes results in the resultant bigger merged bounding box now overlapping with other bounding boxes that weren't previously overlapping with the original boxes.
         - Discard resulting bounding boxes that are too small.
     
-    - Save and log detections.
+    - Save and log all detections to disk. Why not only save detections we want to keep? Because you'll run out of RAM!
 
 - After each triplet has been processed, establish the streak lines of each detection.
     
     - Perform Difference of Gaussians (DoG) blob detection on the cropped differenced image.
     - Retrieve average brightness of each detected blob.
     - Normalise brightnesses between `0 and 1`.
-    - Apply a shifted sigmoid function with high steepness to introduce separation between brightness values.
-    - Perform linear regression on blobs with RANSAC while using the transformed brightness values as sample weights. This will hopefully fit a line to the most prominent bright streak while ignoring noise.
+    - Apply a shifted sigmoid function with high steepness to introduce separation between brightness values. This ensures high emphasis on the bright streak that the YOLO model would've seen.
+    - Perform linear regression on blobs with RANSAC while using the transformed brightness values as sample weights. This will hopefully fit a line to the most prominent bright streak while ignoring noise. I tried using parabolas and splines to fit better to the expected curve of the streaks, but streaks are often rotated to angles that don't fit nicely to an upright parabola or spline. I looked at rotating them, but the math is too complicated for me. You'll be dealing with relations instead of functions at this point. You'll have to fit 2 functions or something. Also, remapping rotated positions back to normal requires too much math and thinking. So i just used straight lines. In point pickings, I could rotate the image and fit a parabola to it because I wasn't worrying about remapping positions and comparing with other lines. Keeping things simple...
     - Calculate start, end, midpoint, length, gradient, etc.
 
 - Identify similar streak lines throughout detections.
@@ -594,7 +595,7 @@ The following steps are performed to process a folder of sequential images captu
 - Identify streaks with the same trajectory.
 
     - For each image with detections, check the streaks of the recent subsequent images with detections.
-    - Consider the image offset (`IMG_0002` and `IMG_0005` have an offset of `3`) when checking if streak lines have the same trajectory between images.
+    - Consider the image offset (`IMG_0002` and `IMG_0005` have an offset of `3`) when checking if streak lines have the same trajectory between images. This is pretty naive at this point, could definitely see more improvement. Maybe consider expected curvature?
         
         - Similar angle (`* offset`) between streak lines.
         - Project midpoint of neighbour streak with line defined by current streak.
@@ -603,6 +604,11 @@ The following steps are performed to process a folder of sequential images captu
 
 - Combine detections that have similar lines and trajectories into the set of all erroneous detections.
 - Calculate the difference between the set of all detections and the set of erroneous detections to retrieve the final detections.
+- Remove saved detections of erroneous if needed.
+
+<br>
+
+The constants and thresholds used in the pipeline are located in `ML-Fireballs/utils/constants.py` along with their explanations.
 
 ## Implementation
 
@@ -990,7 +996,7 @@ The methodology of the point picking system is detailed in the [NPSC3000 Final R
 - Input a cropped image of a fireball (the object detection stuff didn't end up being incorporated).
 - Rotate image if needed to make sure the fireball is horizontal (to accomodate an upright parabola being fit to the segments).
 - Perform Difference of Gaussians (DoG) blob detection.
-- Fit a parabola to the blobs with RANSAC to distinguis between stars and fireball segments.
+- Fit a parabola to the blobs with RANSAC to distinguish between stars and fireball segments.
 - Use blob size and brightnesses to remove false positive blobs that align with the fireball.
 - Calculate distances between consecutive blobs.
 - Establish localised distance groups based on the expected number of distances for the two types of encodings to show up.
