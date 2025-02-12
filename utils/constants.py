@@ -60,6 +60,8 @@ DETECTOR_IOU = 0.5
 # border size added to tile before going through model.
 # experiments showed a border size of 5 gave the best performance.
 TILE_BORDER_SIZE = 5
+# The one used by ultralytics i think
+TILE_BORDER_COLOUR = (114, 114, 114)
 
 # arguments when blob detection to establish the streak line.
 # Chosen from visual inspection of examples.

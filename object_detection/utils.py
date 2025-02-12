@@ -4,6 +4,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from utils.constants import TILE_BORDER_COLOUR
+
 
 def add_border(image: np.ndarray, border: int) -> np.ndarray:
     """
@@ -20,8 +22,7 @@ def add_border(image: np.ndarray, border: int) -> np.ndarray:
     """
     border = max(0, border)
     if border == 0: return image
-    return cv2.copyMakeBorder(image, border, border, border, border, cv2.BORDER_CONSTANT, value=(114, 114, 114))
-
+    return cv2.copyMakeBorder(image, border, border, border, border, cv2.BORDER_CONSTANT, value=TILE_BORDER_COLOUR)
 
 
 def box_area(xyxy):

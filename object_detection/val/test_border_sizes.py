@@ -46,7 +46,7 @@ def main():
     print("args:", vars(args))
     print()
 
-    model = YOLO(args.data_yaml_path)
+    model = YOLO(args.model_path)
 
 
     FOLDER_PATH = Path(args.data_yaml_path).parent
@@ -84,6 +84,9 @@ def main():
         # Run predictions on images with the current border size
         for file, image in tqdm(images.items(), desc=f"border size {b_size}", position=1):
             
+            if image.ndim == 2:
+                image = np.stack((image,) * 3, axis=-1)
+
             positive_sample = "negative" not in file
 
             if b_size > 0:
