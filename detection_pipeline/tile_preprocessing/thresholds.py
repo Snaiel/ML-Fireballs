@@ -9,9 +9,9 @@ from utils.constants import (MAX_PIXEL_TOTAL_THRESHOLD,
 
 @dataclass
 class TilePreprocessingThresholds:
-    pixel_threshold: int = MAX_PIXEL_TOTAL_THRESHOLD
+    pixel_threshold: int = PIXEL_BRIGHTNESS_THRESHOLD
     min_pixel: int = MIN_PIXEL_TOTAL_THRESHOLD
-    max_pixel: int = PIXEL_BRIGHTNESS_THRESHOLD
+    max_pixel: int = MAX_PIXEL_TOTAL_THRESHOLD
     variance_threshold: float = VARIANCE_THRESHOLD
 
 

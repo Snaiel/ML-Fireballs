@@ -15,9 +15,9 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 
+import cv2
 import matplotlib.pyplot as plt
 import pandas as pd
-import skimage.io as io
 from sklearn.metrics import fbeta_score, precision_score, recall_score
 from skopt import gp_minimize
 from skopt.plots import plot_evaluations, plot_objective
@@ -30,7 +30,6 @@ from fireball_detection.tiling import (get_image_tile,
                                        retrieve_included_coordinates)
 from utils.constants import MIN_POINTS_IN_TILE, RANDOM_SEED, SQUARE_SIZE
 from utils.paths import GFO_PICKINGS, GFO_THUMB_EXT
-
 
 included_coordinates = retrieve_included_coordinates()
 
@@ -57,7 +56,11 @@ def process_fireball(fireball_name: str) -> list:
 
 def evaluate_thresholds(differenced_image_path: Path, thresholds: TilePreprocessingThresholds):
     
-    differenced_image = io.imread(differenced_image_path)
+    differenced_image = cv2.imread(
+        differenced_image_path,
+        cv2.IMREAD_GRAYSCALE
+    )
+
     predictions = []
 
     for tile_pos in included_coordinates:
@@ -150,7 +153,7 @@ def main() -> None:
     #     50
     # )
 
-    # thresholds = None
+    # thresholds = TilePreprocessingThresholds()
 
     print(thresholds)
     print()
