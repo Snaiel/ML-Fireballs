@@ -632,7 +632,7 @@ The constants and thresholds used in the pipeline along with their explanations 
 
 The original presentation given to the SSTC on **05/02/2025** about my summer internship wasn't recorded, so here is a recorded version of the presentation. **Recorded 12/02/2025**.
 
-
+https://github.com/user-attachments/assets/f41b6d5a-b681-4f83-89c8-8858bf3967cf
 
 <br>
 
