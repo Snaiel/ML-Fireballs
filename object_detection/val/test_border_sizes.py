@@ -19,7 +19,8 @@ def main():
 
     @dataclass
     class Args:
-        split: int
+        data_yaml_path: str
+        model_path: str
         metric: str
         threshold: float | None
 
@@ -27,7 +28,8 @@ def main():
         description='For a given split, test recall of border sizes 0-32 inclusive.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--split', type=int, required=True, help='The split number to use for K-Fold cross-validation (0, 1, 2, 3, 4)')
+    parser.add_argument('--data_yaml_path', type=str, required=True, help='Path to the data.yaml file')
+    parser.add_argument('--model_path', type=str, required=True, help='Path to the YOLO model.')
     parser.add_argument('--metric', type=str, choices=['iom', 'iou', 'intersects'], required=True, help='Metric to be used')
     parser.add_argument('--threshold', type=float, help='Threshold value between 0.0 and 1.0')
 
@@ -44,14 +46,14 @@ def main():
     print("args:", vars(args))
     print()
 
-    model = YOLO(Path(Path(__file__).parents[2], "runs", "detect", f"train2{args.split}", "weights", "last.pt"))
+    model = YOLO(args.data_yaml_path)
 
 
-    KFOLD_FOLDER = Path(Path(__file__).parents[2], "data", "kfold_object_detection", f"split{args.split}")
-    VAL_IMAGES_FOLDER = Path(KFOLD_FOLDER, "images", "val")
-    VAL_LABELS_FOLDER = Path(KFOLD_FOLDER, "labels", "val")
+    FOLDER_PATH = Path(args.data_yaml_path).parent
+    VAL_IMAGES_FOLDER = Path(FOLDER_PATH, "images", "val")
+    VAL_LABELS_FOLDER = Path(FOLDER_PATH, "labels", "val")
 
-    print("kfold folder:", KFOLD_FOLDER)
+    print("folder:", FOLDER_PATH)
     print()
 
 
@@ -59,7 +61,7 @@ def main():
     total_positive_samples = sum(1 for i in image_files if not "negative" in i)
 
 
-    images = {}
+    images: dict[str, np.ndarray] = {}
     for i in tqdm(image_files, desc="loading images"):
         image = io.imread(Path(VAL_IMAGES_FOLDER, i))
         images[i] = image
