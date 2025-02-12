@@ -4,6 +4,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
 
 - [NPSC3000 Final Report](https://docs.google.com/document/d/1VIhHn5ITAtdnMW_uqT6OCrQ7q-S7ySy_1gwjdMkDZ2g/edit?usp=sharing)
 - [Summer Internship Presentation Slides](https://docs.google.com/presentation/d/15pXYqanBoDktBvF3R0n6vxvQ9zNF6Bw05ZhSeDlDzgQ/edit?usp=sharing)
+- See a recorded version of the Summer Internship Presentation at the Detection Pipeline [Video Explanation](#video-explanation) section.
 
 # Table of Contents
 
@@ -28,6 +29,7 @@ Repository of work for [Desert Fireball Network](https://dfn.gfo.rocks/) researc
   - [Logs](#logs)
   - [Methodology](#methodology)
   - [Implementation](#implementation)
+  - [Video Explanation](#video-explanation)
 - [Fireball Detection](#fireball-detection)
 - [Object Detection](#object-detection)
   - [Dataset \& Model Methodology](#dataset--model-methodology)
@@ -625,6 +627,12 @@ The constants and thresholds used in the pipeline along with their explanations 
 - There can be upwards of hundreds or even thousands of jobs scheduled, but the scheduling system of Setonix handles the allocation of resources.
 - A folder of images can take 5-10 minutes, a day of camera folders can take 5-20 minutes, a month takes around an hour.
 - All depends on how busy the supercomputer is.
+
+## Video Explanation
+
+The original presentation given to the SSTC on **05/02/2025** about my summer internship wasn't recorded, so here is a recorded version of the presentation. **Recorded 12/02/2025**.
+
+
 
 <br>
 
