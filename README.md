@@ -377,6 +377,8 @@ pip install -r requirements.txt
 
 oh boy.
 
+*Note: only `detection_pipeline.main` has been made with Setonix in mind. Running modules from other folders may or may not work.*
+
 Install the project. Refer to the [Installation](#installation) section in [Fireball detection on Setonix](#fireball-detection-on-setonix).
 
 Make changes locally, push commits. Then in Setonix pull changes. If you don't want to be committing code, then I guess just tinker while in Setonix.
@@ -810,6 +812,27 @@ ML-Fireballs/data/object_detection/differenced/all/
     fireballs.txt
 ```
 
+In my case, this was my output:
+
+```
+(.venv) snaiel@snaiel-pc:ML-Fireballs (main)$ python3 -m object_detection.dataset.differenced.generate_all_tiles --differenced_images_folder data/2015_before_after/differenced_images/ --original_images_folder data/2015_before_after/ --processes 8 --overwrite
+
+args: {
+    "differenced_images_folder": "data/2015_before_after/differenced_images/",
+    "original_images_folder": "data/2015_before_after/",
+    "overwrite": true,
+    "processes": 8
+} 
+
+
+removing existing folder...
+
+Training Set: 100%|███████████████████████████████████████████████████████████████| 1222/1222 [00:39<00:00, 31.33it/s]
+
+Total fireball tiles: 9217
+Total negative tiles: 67109
+```
+
 You can rename `data/object_detection/differenced/` to something more recognisable or if you want to differentiate between datasets.
 
 This is enough to train a model on all of this data, but if you want to create a validation and training split, you'll have to modify `object_detection.dataset.differenced.create_2015_halved` or write another python file that mimics it, sorry!
@@ -829,6 +852,34 @@ python3 -m object_detection.dataset.differenced.create_2015_halved --all_folder_
 This will create the folder `data/object_detection/differenced/halved/`
 
 `negative_ratio` refers to the ratio of tiles containing no fireballs to the fireball tiles. The default value of `-1` means it will use all the available negative samples in the dataset. **It was found through testing that having all available negative samples in the dataset provides the best performance.** A custom negative ratio may not result in the exact amount since there may not be enough negative samples.
+
+In my case, this was my output:
+
+```
+(.venv) snaiel@snaiel-pc:ML-Fireballs (main)$ python3 -m object_detection.dataset.differenced.create_2015_halved --all_folder_path data/object_detection/differenced/all/ --overwrite
+
+args: {
+    "all_folder_path": "data/object_detection/differenced/all/",
+    "negative_ratio": -1,
+    "overwrite": true
+} 
+
+Tiles in all folder: 76326 
+
+100%|█████████████████████████████████████████████████████████████████████████| 65928/65928 [00:09<00:00, 6627.97it/s]
+100%|█████████████████████████████████████████████████████████████████████████| 10398/10398 [00:01<00:00, 6978.76it/s]
+
+Total train tiles: 65928
+Total fireball tiles in train: 7210
+Total negative tiles in train: 58718
+
+Total validation tiles: 10398
+Total fireball tiles in validation: 2007
+Total negative tiles in validation: 8391
+
+Train tiles ratio: 1 to 8.14
+Validation tiles ratio: 1 to 4.18
+```
 
 <br>
 
@@ -884,7 +935,7 @@ Validating on an "all" dataset might not allow for a reliable comparison because
 
 If for example we did create a validation set, the program will test accordingly and provide a better judgement of the model on unseen data. The recall seen in this case will reflect the proper detection rate of fireballs on the actual images that these images are from, since it's guaranteed such tiles will be detected if they go through the pipeline, which they will. However, validating the precision / false positive rate requires actually testing on a real timeframe of images, which involves using the pipeline in its entirety.
 
-Example output:
+In my case, this was my output:
 
 ```
 (.venv) ubuntu@fireballs-detection:/data/ML-Fireballs$ python3 -m object_detection.val.val_tiles --data_yaml_path data/object_detection/2015_differenced_norm_tiles/halved/data.yaml --yolo_pt_path runs/detect/object_detection-2015_differenced_norm_tiles-halved-yolov8s.pt/weights/last.pt 
