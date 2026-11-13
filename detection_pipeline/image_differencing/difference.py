@@ -14,27 +14,38 @@ def difference_images(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     if len(image2.shape) == 3:
         image2 = cv2.cvtColor(image2, cv2.COLOR_RGB2GRAY)
 
+    # Registration can be undefined on sparse images that still pass the image
+    # brightness gates. Preserve the existing unaligned subtraction in that case.
+    blurred_image1 = cv2.GaussianBlur(image1, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
+    blurred_image2 = cv2.GaussianBlur(image2, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
+    unaligned_difference = cv2.subtract(blurred_image1, blurred_image2)
+
     # Step 1: Detect keypoints and descriptors using ORB
     orb = cv2.ORB.create()
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
     keypoints2, descriptors2 = orb.detectAndCompute(image2, None)
+    if descriptors1 is None or descriptors2 is None:
+        return unaligned_difference
 
     # Step 2: Match keypoints using BFMatcher
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = bf.match(descriptors1, descriptors2)
     matches = sorted(matches, key=lambda x: x.distance)
+    if len(matches) < 2:
+        return unaligned_difference
 
     # Step 3: Extract matched keypoints
     points1 = np.float32([keypoints1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     points2 = np.float32([keypoints2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
 
-    # Step 4: Estimate homography (can handle rotation and scaling)
-    matrix, mask = cv2.estimateAffinePartial2D(points2, points1, method=cv2.RANSAC)
+    # Step 4: Estimate a partial affine transform (rotation, scale, translation).
+    try:
+        matrix, mask = cv2.estimateAffinePartial2D(points2, points1, method=cv2.RANSAC)
+    except cv2.error:
+        return unaligned_difference
+    if matrix is None or not np.isfinite(matrix).all():
+        return unaligned_difference
     transformation_magnitude = np.linalg.norm(matrix - np.eye(2, 3))
-    
-    blurred_image1 = cv2.GaussianBlur(image1, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
-    blurred_image2 = cv2.GaussianBlur(image2, (GAUSSIAN_BLUR_SIZE, GAUSSIAN_BLUR_SIZE), 0)
-    unaligned_difference = cv2.subtract(blurred_image1, blurred_image2)
 
     output_image = unaligned_difference
 

@@ -2,10 +2,8 @@ import argparse
 import json
 import multiprocessing as mp
 import os
-import re
 import shutil
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 import cv2
@@ -20,6 +18,7 @@ from detection_pipeline.core import (FilteredDetections,
                                      check_image_brightness,
                                      remove_saved_detection)
 from detection_pipeline.image_differencing import difference_images
+from detection_pipeline.image_sequence import ImagesTriple, build_image_triples, filter_camera_images
 from fireball_detection.boxes.merge import merge_groups_of_boxes
 from fireball_detection.detect import (detect_differenced_tiles_norm,
                                        get_absolute_fireball_boxes)
@@ -29,7 +28,7 @@ from utils.constants import (DETECTOR_CONF, MAX_TIME_DIFFERENCE,
                              MIN_DIAGONAL_LENGTH, TILE_BORDER_SIZE)
 
 
-VERSION = "1.0.0"
+VERSION = "1.0.3"
 
 
 def module_processor(logger: WrappedLogger, log_method: str, event_dict: EventDict) -> EventDict:
@@ -98,14 +97,6 @@ class WorkerProcessArgs:
     output_folder: Path
     model_path: Path
     detector: str
-
-
-@dataclass
-class ImagesTriple:
-    index: int
-    before: str | None
-    current: str
-    after: str | None
 
 
 class DetectionWorkerProcess(mp.Process):
@@ -340,6 +331,9 @@ def main() -> None:
     images = [i for i in sorted(os.listdir(folder_path)) if i.endswith(".jpg")]
     logger.info("images", total=len(images), images=images)
 
+    images, foreign_images = filter_camera_images(images, folder_path.name)
+    skipped_images = [(name, f"camera prefix inconsistent with {folder_path.name}")
+                      for name in foreign_images]
 
     with mp.Pool() as pool:
         results = list(
@@ -352,7 +346,6 @@ def main() -> None:
 
     images_copy = images.copy()
     images = []
-    skipped_images = []
 
     for image, result in zip(images_copy, results):
         if result:
@@ -361,44 +354,11 @@ def main() -> None:
             images.append(image)
 
 
-    def get_time_seconds(fireball_label: str) -> int:
-        pattern = r"\d{4}-\d{2}-\d{2}_\d{6}"
-        datetime_str = re.search(pattern, fireball_label).group(0)
-        dt = datetime.strptime(datetime_str, "%Y-%m-%d_%H%M%S")
-        time_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
-        return time_seconds
-
     triples_queue = mp.Queue()
-    index = 0
-
-    for i in range(len(images)):
-        
-        current: str = images[i]
-        time_current: int = get_time_seconds(current)
-
-        before: str | None = None
-        after: str | None = None
-
-        if i > 0 and time_current - get_time_seconds(images[i-1]) <= MAX_TIME_DIFFERENCE:
-            before = images[i-1]
-
-        if i < len(images) - 1 and get_time_seconds(images[i+1]) - time_current <= MAX_TIME_DIFFERENCE:
-            after = images[i+1]
-
-        if not (before or after):
-            skipped_images.append((image, "lack of recent before or after images"))
-            continue
-        
-        triples_queue.put(
-            ImagesTriple(
-                index,
-                before,
-                current,
-                after
-            )
-        )
-
-        index += 1
+    triples, orphan_images = build_image_triples(images, MAX_TIME_DIFFERENCE)
+    for triple in triples:
+        triples_queue.put(triple)
+    skipped_images.extend((name, "lack of recent before or after images") for name in orphan_images)
 
     skipped_images.sort(key=lambda x: x[0])
     for image, reason in skipped_images:

@@ -13,6 +13,7 @@ from ultralytics import YOLO
 
 from fireball_detection.boxes.merge import intersects
 from object_detection.utils import add_border, iom, iou, xywhn2xyxy
+from object_detection.val.publication_metrics import clip_box, match_boxes, source_frame_id
 from utils.paths import DATA_FOLDER
 
 
@@ -56,7 +57,7 @@ def val_split(args: Args) -> dict:
     print("kfold folder:", data_path, "\n")
 
 
-    image_files = os.listdir(val_images_folder)
+    image_files = sorted(os.listdir(val_images_folder))
 
     # Filter image files based on the include argument
     if args.samples == 'positive':
@@ -93,11 +94,11 @@ def val_split(args: Args) -> dict:
 
         fireball = image_file.split(".")[0]
 
-        fireball_name = "_".join(fireball.split("_")[:5])
+        fireball_name = source_frame_id(fireball)
         ignore_for_total_fireball_detection = False
         if fireball_name in discard_fireballs:
             ignore_for_total_fireball_detection = True
-        else:
+        elif "negative" not in fireball:
             fireball_names.add(fireball_name)
 
         # Use the model to predict bounding boxes for the image
@@ -113,27 +114,22 @@ def val_split(args: Args) -> dict:
             continue
         
         with open(Path(val_labels_folder, fireball + ".txt")) as label_file:
-            xyxy = xywhn2xyxy(
-                np.array([float(i) for i in label_file.read().split(" ")[1:]]),  # Read and parse the label coordinates
-                400,
-                400
-            )
-        sample.ground_truth = xyxy
+            truth = [clip_box(xywhn2xyxy(np.array([float(i) for i in line.split()[1:]]),400,400),400,400)
+                     for line in label_file if line.strip()]
+        # Compare in visible tile coordinates; keep plotting in bordered space.
+        border = max(0,args.border_size)
+        predictions = [clip_box([float(c)-border for c in box],400,400) for box in boxes]
+        sample.ground_truth = np.array(truth)+border
 
         # Check for false negatives (no predicted boxes)
         if len(boxes) == 0:
             false_negative_samples_list.append(sample)  # Add to false negatives if no boxes predicted
             continue
 
-        ack_true_positive = False
-        for box in boxes:
-            if (args.metric == "intersects" and intersects(xyxy, box)) or \
-                (args.metric == "iom" and iom(xyxy, box) >= args.threshold) or \
-                (args.metric == "iou" and iou(xyxy, box) >= args.threshold):
-                true_positives += 1
-                if not ack_true_positive:
-                    detected_samples += 1
-                    ack_true_positive = True
+        pairs = match_boxes(truth,predictions,args.metric,args.threshold or 0.5)
+        true_positives += len(pairs)
+        ack_true_positive = bool(pairs)
+        detected_samples += ack_true_positive
         
         if ack_true_positive:
             if not ignore_for_total_fireball_detection:
@@ -142,15 +138,15 @@ def val_split(args: Args) -> dict:
             false_negative_samples_list.append(sample)
     
     false_negative_samples = positive_samples - detected_samples
-    recall_individual_samples = detected_samples / positive_samples
+    recall_individual_samples = detected_samples / positive_samples if positive_samples else 0.0
 
     total_fireballs = len(fireball_names)
     detected_fireballs = len(detected_fireball_names)
     false_negative_fireballs = fireball_names.difference(detected_fireball_names)
-    recall_entire_fireballs = len(detected_fireball_names) / len(fireball_names)
+    recall_entire_fireballs = len(detected_fireball_names) / len(fireball_names) if fireball_names else 0.0
     
     false_positives = total_boxes - true_positives
-    precision = true_positives / total_boxes
+    precision = true_positives / total_boxes if total_boxes else 0.0
 
 
     return {
@@ -220,10 +216,10 @@ def output_stats(args: Args, stats: dict) -> None:
             
             # Plot ground truth boxes in green
             if sample.ground_truth is not None:
-                gt_box = sample.ground_truth
-                rect = patches.Rectangle((gt_box[0], gt_box[1]), gt_box[2] - gt_box[0], gt_box[3] - gt_box[1], 
-                                            linewidth=2, edgecolor='green', facecolor='none')
-                ax.add_patch(rect)
+                for gt_box in sample.ground_truth:
+                    rect = patches.Rectangle((gt_box[0], gt_box[1]), gt_box[2] - gt_box[0], gt_box[3] - gt_box[1],
+                                             linewidth=2, edgecolor='green', facecolor='none')
+                    ax.add_patch(rect)
             
             # Plot predicted boxes in red
             for pred_box in sample.boxes:

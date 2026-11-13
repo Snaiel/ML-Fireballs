@@ -55,6 +55,10 @@ class StreakLine:
         self._blobs = blobs_dog
 
         self._brightnesses = get_blob_brightnesses(image, self._blobs)
+        if len(self._blobs) == 0:
+            self._weights = np.empty(0, dtype=float)
+            self._is_valid = False
+            return
         self._weights = (self._brightnesses - self._brightnesses.min()) / (self._brightnesses.max() - self._brightnesses.min() + 1e-6)
         self._weights = 1 / (1 + np.exp(-STREAK_LINE_WEIGHT_SIGMOID_STEEPNESS * (self._weights - 0.5)))
 

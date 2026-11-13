@@ -112,6 +112,7 @@ def main():
                     400,
                     400
                 )
+            xyxy += max(0, b_size)
 
             # Check for false negatives (no predicted boxes)
             if len(boxes) == 0:

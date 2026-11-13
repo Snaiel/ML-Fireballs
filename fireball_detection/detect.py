@@ -43,7 +43,10 @@ def detect_tiles_common(detector: Detector, border_size: int, tiles: list[Tile])
         input_image = add_border(tile.image, border_size)
         boxes, confidences, labels = detector.detect(input_image)
         if len(boxes) > 0:
-            tile.boxes = boxes
+            # Detectors return coordinates in the bordered input. Tile boxes
+            # must be relative to the original tile before adding its origin.
+            border = max(0, border_size)
+            tile.boxes = [tuple(float(c) - border for c in box) for box in boxes]
             tile.confidences = confidences
             detected_tiles.append(tile)
     
